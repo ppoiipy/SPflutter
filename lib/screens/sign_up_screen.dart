@@ -21,7 +21,7 @@ class SignUpScreen extends StatelessWidget {
               child: Stack(
                 children: [
                   Container(
-                    height: 490,
+                    height: 520,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       boxShadow: [
@@ -42,35 +42,11 @@ class SignUpScreen extends StatelessWidget {
                           padding: EdgeInsets.only(left: 20, right: 20),
                           child: Column(
                             children: [
-                              SizedBox(height: 30),
+                              SizedBox(height: 25),
                               // Sign up Field
                               SignUpField(),
-                              // !!! Remember me & Forgotpassword
-                              // Row(
-                              //   mainAxisAlignment:
-                              //       MainAxisAlignment.spaceBetween,
-                              //   children: [
-                              //     Text('Remember Me'),
-                              //     GestureDetector(
-                              //       onTap: () {
-                              //         // Navigator.push(
-                              //         //     context,
-                              //         //     MaterialPageRoute(
-                              //         //         builder: (context) =>
-                              //         //             ForgetPassScreen()));
-                              //       },
-                              //       child: Text(
-                              //         'Forgot Password?',
-                              //         style: TextStyle(
-                              //           color: Color(0xff4D7881),
-                              //           fontWeight: FontWeight.w600,
-                              //         ),
-                              //       ),
-                              //     ),
-                              //   ],
-                              // ),
                               SizedBox(height: 20),
-                              // 5. Go Sign up
+                              // Go Login
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -94,6 +70,7 @@ class SignUpScreen extends StatelessWidget {
                                   ),
                                 ],
                               ),
+                              SizedBox(height: 30),
                             ],
                           ),
                         ),
@@ -232,9 +209,11 @@ class SignUpField extends StatefulWidget {
 
 class SignUpFieldState extends State<SignUpField> {
   final formKey = GlobalKey<FormState>();
+
   final email = TextEditingController();
   final password = TextEditingController();
   final confirmPassword = TextEditingController();
+  String? emailError;
 
   bool _isPasswordState = false;
 
@@ -267,23 +246,31 @@ class SignUpFieldState extends State<SignUpField> {
                   if (value!.isEmpty) {
                     return 'Email is required';
                   }
+                  if (emailError != null) {
+                    return emailError; // Display error from asynchronous check
+                  }
                   return null;
+                },
+                onChanged: (value) async {
+                  // Perform asynchronous email existence check
+                  final db = DatabaseHelper();
+                  final exists = await db.checkEmailExists(value);
+
+                  setState(() {
+                    emailError = exists ? 'Email is already registered' : null;
+                  });
                 },
                 decoration: InputDecoration(
                   prefixIcon: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(
-                        width: 5,
-                      ),
+                      SizedBox(width: 5),
                       Icon(
                         Icons.email_outlined,
                         size: 20,
                         color: Color.fromARGB(255, 124, 124, 124),
                       ),
-                      SizedBox(
-                        width: 6,
-                      ),
+                      SizedBox(width: 6),
                       Container(
                         width: 1.5,
                         height: 20,
@@ -314,7 +301,7 @@ class SignUpFieldState extends State<SignUpField> {
                 ),
               ),
               TextFormField(
-                obscureText: _isPasswordState,
+                obscureText: !_isPasswordState,
                 controller: password,
                 validator: (value) {
                   if (value!.isEmpty) {
@@ -326,17 +313,13 @@ class SignUpFieldState extends State<SignUpField> {
                   prefixIcon: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(
-                        width: 5,
-                      ),
+                      SizedBox(width: 5),
                       Icon(
                         Icons.lock_outline,
                         size: 20,
                         color: Color.fromARGB(255, 124, 124, 124),
                       ),
-                      SizedBox(
-                        width: 6,
-                      ),
+                      SizedBox(width: 6),
                       Container(
                         width: 1.5,
                         height: 20,
@@ -351,18 +334,6 @@ class SignUpFieldState extends State<SignUpField> {
                           ? Icons.visibility
                           : Icons.visibility_off,
                     ),
-                    // child: Padding(
-                    //   padding: EdgeInsets.all(15),
-                    //   child: Image.asset(
-                    //     _isPasswordEye
-                    //         ? Icons.visibility
-                    //         : 'assets/images/open-eye.png',
-                    //     width: 4,
-                    //     height: 4,
-                    //     fit: BoxFit.contain,
-                    //     color: Color.fromARGB(255, 124, 124, 124),
-                    //   ),
-                    // ),
                   ),
                   hintText: '********',
                   hintStyle: TextStyle(
@@ -375,25 +346,25 @@ class SignUpFieldState extends State<SignUpField> {
           ),
           SizedBox(height: 10),
 
-          // Password
+          // Confirm Password
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Password',
+                'Confirm Password',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               TextFormField(
-                obscureText: _isPasswordState,
+                obscureText: !_isPasswordState,
                 controller: confirmPassword,
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Password is required';
                   } else if (password.text != confirmPassword.text) {
-                    return 'Password do not match';
+                    return 'Passwords do not match';
                   }
                   return null;
                 },
@@ -401,17 +372,13 @@ class SignUpFieldState extends State<SignUpField> {
                   prefixIcon: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(
-                        width: 5,
-                      ),
+                      SizedBox(width: 5),
                       Icon(
                         Icons.lock_outline,
                         size: 20,
                         color: Color.fromARGB(255, 124, 124, 124),
                       ),
-                      SizedBox(
-                        width: 6,
-                      ),
+                      SizedBox(width: 6),
                       Container(
                         width: 1.5,
                         height: 20,
@@ -426,18 +393,6 @@ class SignUpFieldState extends State<SignUpField> {
                           ? Icons.visibility
                           : Icons.visibility_off,
                     ),
-                    // child: Padding(
-                    //   padding: EdgeInsets.all(15),
-                    //   child: Image.asset(
-                    //     _isPasswordEye
-                    //         ? Icons.visibility
-                    //         : 'assets/images/open-eye.png',
-                    //     width: 4,
-                    //     height: 4,
-                    //     fit: BoxFit.contain,
-                    //     color: Color.fromARGB(255, 124, 124, 124),
-                    //   ),
-                    // ),
                   ),
                   hintText: '********',
                   hintStyle: TextStyle(
@@ -448,11 +403,11 @@ class SignUpFieldState extends State<SignUpField> {
               ),
             ],
           ),
-          SizedBox(height: 30),
+          SizedBox(height: 20),
 
-          // Create Account Buttonn
+          // Create Account Button
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (formKey.currentState!.validate()) {
                 final db = DatabaseHelper();
                 db
@@ -461,8 +416,13 @@ class SignUpFieldState extends State<SignUpField> {
                   usrPassword: password.text,
                 ))
                     .whenComplete(() {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => Homepage()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => Homepage(
+                              user: Users(
+                                  usrEmail: email.text,
+                                  usrPassword: password.text))));
                 });
               }
             },

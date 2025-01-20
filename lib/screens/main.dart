@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/startup_screen.dart';
 
 void main() {
-  runApp(MainApp());
+  runApp(MyApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: StartupScreen(),
+      title: 'User Management',
+      home: StartupScreen(), // Changed to StartupScreen
     );
   }
 }

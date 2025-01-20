@@ -9,25 +9,56 @@ Users welcomeFromJson(String str) => Users.fromJson(json.decode(str));
 String welcomeToJson(Users data) => json.encode(data.toJson());
 
 class Users {
-  final int? usrId;
-  final String usrEmail;
-  final String usrPassword;
+  int? usrId;
+  String usrEmail;
+  String usrPassword;
+  String? gender;
+  String? dateOfBirth;
+  double? height;
+  double? weight;
+  double? goalWeight;
+  int? activityLevel;
 
+  // Constructor
   Users({
     this.usrId,
     required this.usrEmail,
     required this.usrPassword,
+    this.gender,
+    this.dateOfBirth,
+    this.height,
+    this.weight,
+    this.goalWeight,
+    this.activityLevel,
   });
 
-  factory Users.fromJson(Map<String, dynamic> json) => Users(
-        usrId: json["usrId"],
-        usrEmail: json["usrEmail"],
-        usrPassword: json["usrPassword"],
-      );
+  // Convert Users object to JSON (for database storage)
+  Map<String, dynamic> toJson() {
+    return {
+      'usrId': usrId,
+      'usrEmail': usrEmail,
+      'usrPassword': usrPassword,
+      'gender': gender,
+      'dateOfBirth': dateOfBirth,
+      'height': height,
+      'weight': weight,
+      'goalWeight': goalWeight,
+      'activityLevel': activityLevel,
+    };
+  }
 
-  Map<String, dynamic> toJson() => {
-        "usrId": usrId,
-        "usrEmail": usrEmail,
-        "usrPassword": usrPassword,
-      };
+  // Convert JSON back to Users object
+  factory Users.fromJson(Map<String, dynamic> json) {
+    return Users(
+      usrId: json['usrId'],
+      usrEmail: json['usrEmail'],
+      usrPassword: json['usrPassword'],
+      gender: json['gender'],
+      dateOfBirth: json['dateOfBirth'],
+      height: json['height'],
+      weight: json['weight'],
+      goalWeight: json['goalWeight'],
+      activityLevel: json['activityLevel'],
+    );
+  }
 }

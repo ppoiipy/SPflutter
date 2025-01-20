@@ -30,12 +30,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  crypto: ^3.0.1 # Added crypto package for password hashing
+
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   sqflite: ^2.4.1
   path: ^1.9.0
+  intl: ^0.20.1
+  introduction_screen: ^3.1.14
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +72,11 @@ flutter:
       - assets/images/Jake-removebg-preview.png
       - assets/images/ez-removebg.png
       - assets/images/closed-eye.png
+      - assets/images/menu/sousvide.png
+      - assets/images/menu/rotisserie.png
+      - assets/images/menu/casserole.png
+      - assets/images/menu/blacktruffleparmesanpopcorn.png
+      - assets/images/skillet.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
