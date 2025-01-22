@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/SQLite/sqlite.dart';
-import 'package:flutter_application_1/screens/forget_pass_screen.dart';
 import 'package:flutter_application_1/screens/homepage.dart';
 import 'package:flutter_application_1/screens/sign_up_screen.dart';
+import 'package:flutter_application_1/SQLite/sqlite.dart';
 import 'package:flutter_application_1/JsonModels/users.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -205,33 +204,7 @@ class LoginFieldState extends State<LoginField> {
   final formKey = GlobalKey<FormState>();
   final email = TextEditingController();
   final password = TextEditingController();
-  bool? isChecked = false;
   bool isLoginTrue = false;
-  final db = DatabaseHelper();
-
-  login() async {
-    var response =
-        await db.login(Users(usrEmail: email.text, usrPassword: password.text));
-    if (response == true) {
-      // Retrieve user information after successful login
-      Users user =
-          await db.getUserProfile(email.text); // Assuming this method exists
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (context) => Homepage(user: user)));
-    } else {
-      setState(() {
-        isLoginTrue = true; // Provide more informative error message
-      });
-    }
-  }
-
-  bool _isPasswordState = false;
-
-  void _togglePasswordField() {
-    setState(() {
-      _isPasswordState = !_isPasswordState;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +270,7 @@ class LoginFieldState extends State<LoginField> {
                 ),
               ),
               TextFormField(
-                obscureText: !_isPasswordState,
+                obscureText: true,
                 controller: password,
                 validator: (value) {
                   if (value!.isEmpty) {
@@ -323,14 +296,6 @@ class LoginFieldState extends State<LoginField> {
                       ),
                     ],
                   ),
-                  suffixIcon: IconButton(
-                    onPressed: _togglePasswordField,
-                    icon: Icon(
-                      _isPasswordState
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                  ),
                   hintText: '********',
                   hintStyle: TextStyle(
                     color: Color.fromARGB(255, 124, 124, 124),
@@ -340,47 +305,27 @@ class LoginFieldState extends State<LoginField> {
               ),
             ],
           ),
-          SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Checkbox(
-                    side: BorderSide(width: 1),
-                    value: isChecked,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        isChecked = value;
-                      });
-                    },
-                    activeColor: const Color.fromARGB(255, 110, 110, 110),
-                  ),
-                  Text('Remember Me'),
-                ],
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ForgetPassScreen()));
-                },
-                child: Text(
-                  'Forgot Password?',
-                  style: TextStyle(
-                    color: Color(0xff4D7881),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
           SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (formKey.currentState!.validate()) {
-                login();
+                final db = DatabaseHelper();
+                bool success = await db.login(email.text, password.text);
+                if (success) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => Homepage(
+                            user: Users(
+                                usrEmail: email.text,
+                                usrPassword: password.text))),
+                  );
+                } else {
+                  setState(() {
+                    isLoginTrue =
+                        true;
+                  });
+                }
               }
             },
             style: ElevatedButton.styleFrom(

@@ -81,7 +81,17 @@ class _CalculateScreenState extends State<CalculateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Calculate')),
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text(
+          'Calories Calculation',
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Inter',
+            letterSpacing: 1,
+          ),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

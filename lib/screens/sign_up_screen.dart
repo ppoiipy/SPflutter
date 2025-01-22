@@ -246,19 +246,7 @@ class SignUpFieldState extends State<SignUpField> {
                   if (value!.isEmpty) {
                     return 'Email is required';
                   }
-                  if (emailError != null) {
-                    return emailError; // Display error from asynchronous check
-                  }
                   return null;
-                },
-                onChanged: (value) async {
-                  // Perform asynchronous email existence check
-                  final db = DatabaseHelper();
-                  final exists = await db.checkEmailExists(value);
-
-                  setState(() {
-                    emailError = exists ? 'Email is already registered' : null;
-                  });
                 },
                 decoration: InputDecoration(
                   prefixIcon: Row(
@@ -410,20 +398,18 @@ class SignUpFieldState extends State<SignUpField> {
             onPressed: () async {
               if (formKey.currentState!.validate()) {
                 final db = DatabaseHelper();
-                db
-                    .signup(Users(
-                  usrEmail: email.text,
-                  usrPassword: password.text,
-                ))
-                    .whenComplete(() {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => Homepage(
-                              user: Users(
-                                  usrEmail: email.text,
-                                  usrPassword: password.text))));
-                });
+                bool emailExists = await db.checkEmailExists(email.text);
+                if (emailExists) {
+                  setState(() {
+                    emailError = 'Email is already in use';
+                  });
+                } else {
+                  await db.signup(email.text, password.text);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => Homepage(user: Users(usrEmail: email.text, usrPassword: password.text))),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(
@@ -441,6 +427,11 @@ class SignUpFieldState extends State<SignUpField> {
               ),
             ),
           ),
+          if (emailError != null)
+            Text(
+              emailError!,
+              style: TextStyle(color: Colors.red),
+            ),
         ],
       ),
     );

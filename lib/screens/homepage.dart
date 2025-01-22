@@ -4,12 +4,14 @@ import 'favorite_screen.dart';
 import 'calculate_screen.dart';
 import 'profile_screen.dart';
 import 'package:flutter_application_1/JsonModels/users.dart';
-import 'package:flutter_application_1/JsonModels/menu_item.dart'; // Import the MenuItem model
+import 'package:flutter_application_1/JsonModels/menu_item.dart';
+import 'calorie_tracking_screen.dart';
+import 'meal_planning_screen.dart';
 
 class Homepage extends StatefulWidget {
-  final Users user; // Add user parameter
+  final Users user;
 
-  Homepage({required this.user}); // Constructor to accept user
+  Homepage({required this.user});
 
   @override
   _HomepageState createState() => _HomepageState();
@@ -21,25 +23,30 @@ class _HomepageState extends State<Homepage> {
   // Sample list of menu items
   final List<MenuItem> menuItems = [
     MenuItem(
-        name: 'Sous Vide City Ham With Balsamic',
-        imagePath: 'assets/images/menu/sousvide.png',
-        calories: 140),
+      name: 'Sous Vide City Ham With Balsamic',
+      imagePath: 'assets/images/menu/sousvide.png',
+      calories: 140,
+    ),
     MenuItem(
-        name: 'Grilled Chicken Salad',
-        imagePath: 'assets/images/menu/chicken_salad.png',
-        calories: 250),
+      name: 'Grilled Chicken Salad',
+      imagePath: 'assets/images/default.png',
+      calories: 250,
+    ),
     MenuItem(
-        name: 'Vegetable Stir Fry',
-        imagePath: 'assets/images/menu/stir_fry.png',
-        calories: 200),
+      name: 'Vegetable Stir Fry',
+      imagePath: 'assets/images/default.png',
+      calories: 200,
+    ),
     MenuItem(
-        name: 'Pasta Primavera',
-        imagePath: 'assets/images/menu/pasta_primavera.png',
-        calories: 300),
+      name: 'Pasta Primavera',
+      imagePath: 'assets/images/default.png',
+      calories: 300,
+    ),
     MenuItem(
-        name: 'Beef Tacos',
-        imagePath: 'assets/images/menu/beef_tacos.png',
-        calories: 350),
+      name: 'Beef Tacos',
+      imagePath: 'assets/images/default.png',
+      calories: 350,
+    ),
   ];
 
   Widget _getScreen(int index) {
@@ -53,7 +60,7 @@ class _HomepageState extends State<Homepage> {
       case 3:
         return CalculateScreen();
       case 4:
-        return ProfileScreen(); // Pass user to ProfileScreen
+        return ProfileScreen();
       default:
         return _buildHomeScreen();
     }
@@ -71,10 +78,15 @@ class _HomepageState extends State<Homepage> {
                   centerTitle: true,
                   title: Text(
                     'GinRaiDee',
-                    style: TextStyle(fontSize: 25, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Inter',
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ),
+
               // Search Field
               Column(
                 children: [
@@ -89,7 +101,7 @@ class _HomepageState extends State<Homepage> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(left: 12, right: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
                     child: Material(
                       borderRadius: BorderRadius.circular(15),
                       elevation: 4,
@@ -112,6 +124,7 @@ class _HomepageState extends State<Homepage> {
                   ),
                 ],
               ),
+
               // Function List
               SizedBox(height: 10),
               Column(
@@ -126,35 +139,28 @@ class _HomepageState extends State<Homepage> {
                       ),
                     ),
                   ),
+                  SizedBox(height: 5),
                   // Scroll Lists
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: List.generate(
-                        5,
-                        (index) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Container(
-                            width: 220,
-                            height: 160,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Function ${index + 1}',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 16),
-                              ),
-                            ),
-                          ),
+                      children: [
+                        FunctionCard(
+                          imagePath: 'assets/images/calorieTracking.png',
+                          functionName: 'Calorie Tracking',
+                          destinationScreen: CalorieTrackingScreen(),
                         ),
-                      ),
+                        FunctionCard(
+                          imagePath: 'assets/images/mealPlanning.png',
+                          functionName: 'Meal Planning',
+                          destinationScreen: MealPlanningScreen(),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
+
               // Recommended Menu
               SizedBox(height: 10),
               Column(
@@ -169,12 +175,13 @@ class _HomepageState extends State<Homepage> {
                       ),
                     ),
                   ),
+
                   // Display the menu items
-                  for (var item in menuItems) // Loop through the menu items
+                  for (var item in menuItems)
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 10),
-                      child: Container(
+                          vertical: 5, horizontal: 15),
+                      child: SizedBox(
                         width: MediaQuery.sizeOf(context).width,
                         height: 80,
                         child: Row(
@@ -185,7 +192,7 @@ class _HomepageState extends State<Homepage> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(15),
                                 child: Image.asset(
-                                  item.imagePath, // Use the image path from the menu item
+                                  item.imagePath,
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -195,7 +202,7 @@ class _HomepageState extends State<Homepage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  item.name, // Use the name from the menu item
+                                  item.name,
                                   style: TextStyle(fontWeight: FontWeight.w900),
                                 ),
                                 Row(
@@ -206,20 +213,20 @@ class _HomepageState extends State<Homepage> {
                                       size: 17,
                                     ),
                                     Text(
-                                      '${item.calories} Kcal', // Use the calorie count from the menu item
+                                      '${item.calories} Kcal',
                                       style: TextStyle(fontSize: 14),
                                     ),
                                   ],
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      Icons.local_fire_department_outlined,
+                                    Image.asset(
+                                      'assets/images/skillet.png',
                                       color: Colors.yellow,
-                                      size: 17,
+                                      width: 17,
                                     ),
                                     Text(
-                                      '${item.calories} Kcal', // Use the calorie count from the menu item
+                                      '${item.calories}',
                                       style: TextStyle(fontSize: 14),
                                     ),
                                   ],
@@ -227,12 +234,12 @@ class _HomepageState extends State<Homepage> {
                                 Row(
                                   children: [
                                     Icon(
-                                      Icons.local_fire_department_outlined,
+                                      Icons.receipt_long_outlined,
                                       color: Colors.blue,
                                       size: 17,
                                     ),
                                     Text(
-                                      '${item.calories} Kcal', // Use the calorie count from the menu item
+                                      '${item.calories}',
                                       style: TextStyle(fontSize: 14),
                                     ),
                                   ],
@@ -267,16 +274,111 @@ class _HomepageState extends State<Homepage> {
           },
           destinations: [
             NavigationDestination(
-                icon: Icon(Icons.home_outlined), label: 'Home'),
+                icon: Icon(
+                  Icons.home_outlined,
+                  color: Colors.black,
+                  size: 30,
+                ),
+                label: 'Home'),
             NavigationDestination(
-                icon: Icon(Icons.food_bank_outlined), label: 'Menu'),
+                icon: Icon(
+                  Icons.food_bank_outlined,
+                  color: Colors.black,
+                  size: 30,
+                ),
+                label: 'Menu'),
             NavigationDestination(
-                icon: Icon(Icons.favorite_outline), label: 'Favorites'),
+                icon: Icon(
+                  Icons.favorite_outline,
+                  color: Colors.black,
+                  size: 30,
+                ),
+                label: 'Favorites'),
             NavigationDestination(
-                icon: Icon(Icons.calculate_outlined), label: 'Calculate'),
+                icon: Icon(
+                  Icons.calculate_outlined,
+                  color: Colors.black,
+                  size: 30,
+                ),
+                label: 'Calculate'),
             NavigationDestination(
-                icon: Icon(Icons.person_outline), label: 'Profile'),
+                icon: Icon(
+                  Icons.person_outline,
+                  color: Colors.black,
+                  size: 30,
+                ),
+                label: 'Profile'),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class FunctionCard extends StatelessWidget {
+  final String imagePath;
+  final String functionName;
+  final Widget destinationScreen;
+
+  FunctionCard(
+      {required this.imagePath,
+      required this.functionName,
+      required this.destinationScreen});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => destinationScreen),
+          );
+        },
+        child: Container(
+          width: 200,
+          height: 140,
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: Stack(alignment: Alignment.bottomCenter, children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      imagePath,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(10),
+                        bottomRight: Radius.circular(10),
+                      ),
+                    ),
+                    width: double.infinity,
+                    child: Text(
+                      functionName,
+                      textAlign: TextAlign.start,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ]),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -68,6 +68,7 @@ flutter:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
   assets:
+      - assets/images/default.png
       - assets/images/3Some-removebg-preview.png
       - assets/images/Jake-removebg-preview.png
       - assets/images/ez-removebg.png
@@ -77,6 +78,9 @@ flutter:
       - assets/images/menu/casserole.png
       - assets/images/menu/blacktruffleparmesanpopcorn.png
       - assets/images/skillet.png
+      - assets/images/calorieTracking.png
+      - assets/images/mealPlanning.png
+      - assets/images/0c42e0e25128dfaf306ab0ac15f14d9a.jfif # Background Image for Meal Planning
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -93,6 +97,9 @@ flutter:
     - family: InriaSans
       fonts:
         - asset: assets/fonts/InriaSans-Regular.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-VariableFont_opsz,wght.ttf
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro

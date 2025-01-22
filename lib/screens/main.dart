@@ -10,7 +10,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'User Management',
-      home: StartupScreen(), // Changed to StartupScreen
+      home: StartupScreen(),
     );
   }
 }
