@@ -206,6 +206,14 @@ class LoginFieldState extends State<LoginField> {
   final password = TextEditingController();
   bool isLoginTrue = false;
 
+  bool _isPasswordState = false;
+
+  void _togglePasswordField() {
+    setState(() {
+      _isPasswordState = !_isPasswordState;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -270,7 +278,7 @@ class LoginFieldState extends State<LoginField> {
                 ),
               ),
               TextFormField(
-                obscureText: true,
+                obscureText: !_isPasswordState,
                 controller: password,
                 validator: (value) {
                   if (value!.isEmpty) {
@@ -295,6 +303,14 @@ class LoginFieldState extends State<LoginField> {
                         color: Color.fromARGB(255, 124, 124, 124),
                       ),
                     ],
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: _togglePasswordField,
+                    icon: Icon(
+                      _isPasswordState
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
                   ),
                   hintText: '********',
                   hintStyle: TextStyle(
@@ -322,8 +338,7 @@ class LoginFieldState extends State<LoginField> {
                   );
                 } else {
                   setState(() {
-                    isLoginTrue =
-                        true;
+                    isLoginTrue = true;
                   });
                 }
               }

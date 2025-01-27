@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/SQLite/sqlite.dart';
 import 'package:flutter_application_1/JsonModels/menu_item.dart';
+import 'package:flutter_application_1/screens/food_detail_screen.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
@@ -15,26 +16,36 @@ class MenuScreenState extends State<MenuScreen> {
       name: 'Sous Vide City Ham With Balsamic',
       imagePath: 'assets/images/menu/sousvide.png',
       calories: 140,
+      cookingTechnique: '',
+      cookingRecipe: '',
     ),
     MenuItem(
       name: 'Grilled Chicken Salad',
       imagePath: 'assets/images/default.png',
       calories: 250,
+      cookingTechnique: '',
+      cookingRecipe: '',
     ),
     MenuItem(
       name: 'Vegetable Stir Fry',
       imagePath: 'assets/images/default.png',
       calories: 200,
+      cookingTechnique: '',
+      cookingRecipe: '',
     ),
     MenuItem(
       name: 'Pasta Primavera',
       imagePath: 'assets/images/default.png',
       calories: 300,
+      cookingTechnique: '',
+      cookingRecipe: '',
     ),
     MenuItem(
       name: 'Beef Tacos',
       imagePath: 'assets/images/default.png',
       calories: 350,
+      cookingTechnique: '',
+      cookingRecipe: '',
     ),
   ];
 
@@ -87,7 +98,9 @@ class MenuScreenState extends State<MenuScreen> {
                       fillColor: Colors.grey[250],
                       prefixIcon: Icon(Icons.search),
                       suffixIcon: GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          _showCalorieBottomSheet(context);
+                        },
                         child: Icon(Icons.tune),
                       ),
                       hintText: 'Auto-Gen food name',
@@ -156,80 +169,86 @@ class MenuScreenState extends State<MenuScreen> {
           ),
           SizedBox(height: 10),
 
-          // Function Lists
-          FunctionList(),
-          SizedBox(height: 10),
-
           // Display the menu items
           for (var item in menuItems)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 15),
-              child: Container(
-                width: MediaQuery.sizeOf(context).width,
-                height: 80,
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 80,
-                      height: 80,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(15),
-                        child: Image.asset(
-                          item.imagePath,
-                          fit: BoxFit.cover,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FoodDetailScreen(menuItem: item),
+                    ),
+                  );
+                },
+                child: SizedBox(
+                  width: MediaQuery.sizeOf(context).width,
+                  height: 80,
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Image.asset(
+                            item.imagePath,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(width: 5),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.name,
-                          style: TextStyle(fontWeight: FontWeight.w900),
-                        ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.local_fire_department_outlined,
-                              color: Colors.red,
-                              size: 17,
-                            ),
-                            Text(
-                              '${item.calories} Kcal',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Image.asset(
-                              'assets/images/skillet.png',
-                              color: Colors.yellow,
-                              width: 17,
-                            ),
-                            Text(
-                              '${item.calories}',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.receipt_long_outlined,
-                              color: Colors.blue,
-                              size: 17,
-                            ),
-                            Text(
-                              '${item.calories}',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
+                      SizedBox(width: 5),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            style: TextStyle(fontWeight: FontWeight.w900),
+                          ),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.local_fire_department_outlined,
+                                color: Colors.red,
+                                size: 17,
+                              ),
+                              Text(
+                                '${item.calories} Kcal',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Image.asset(
+                                'assets/images/skillet.png',
+                                color: Colors.yellow,
+                                width: 17,
+                              ),
+                              Text(
+                                '${item.cookingTechnique}',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.receipt_long_outlined,
+                                color: Colors.blue,
+                                size: 17,
+                              ),
+                              Text(
+                                '${item.cookingRecipe}',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -237,108 +256,323 @@ class MenuScreenState extends State<MenuScreen> {
       ),
     );
   }
-}
-
-class TextStyleBold {
-  static TextStyle boldTextStyle() {
-    return TextStyle(fontWeight: FontWeight.w800, fontSize: 16);
-  }
-}
-
-class FunctionList extends StatefulWidget {
-  const FunctionList({Key? key}) : super(key: key);
-
-  @override
-  FunctionListState createState() => FunctionListState();
-}
-
-class FunctionListState extends State<FunctionList> {
-  final List<Map<String, dynamic>> functionItems = [
-    {
-      'icon': Icons.tune,
-      'label': 'Settings',
-      'description': 'Adjust app preferences',
-    },
-    {
-      'label': 'Category',
-      'description': 'Browse food categories',
-    },
-    {
-      'label': 'Cooking Technique',
-      'description': 'Explore cooking techniques',
-    },
-    {
-      'label': 'Ingredients',
-      'description': 'Find ingredients info',
-    },
-    {
-      'label': 'Calories',
-      'description': 'Check calorie intake',
-    },
-    {
-      'label': 'Allergies',
-      'description': 'Manage allergy preferences',
-    },
-  ];
 
   void _showCalorieBottomSheet(BuildContext context) {
     double _selectedCalories = 100;
+    List<String> ingredients = ['Broccoli', 'Broccoli', 'Broccoli', 'Butter'];
+    List<String> cookingTechniques = [
+      'Boiling',
+      'Frying',
+      'Baking',
+      'Roasting',
+      'Grilling',
+      'Steaming',
+      'Poaching',
+      'Broiling',
+      'ETC'
+    ];
+    Set<String> selectedCookingTechniques = {};
+    List<String> foodAllergy = [
+      'Egg',
+      'Milk',
+      'Fish',
+      'Crustacean Shellfish',
+      'Tree Nuts',
+      'Sesame',
+      'Wheat',
+      'Soybeans'
+    ];
+    Set<String> selectedFoodAllergy = {};
+    List<String> foodCategory = [
+      'Italian',
+      'Japanese',
+      'Chinese',
+      'Korean',
+      'Thai'
+    ];
+    Set<String> selectedFoodCategory = {};
 
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      isScrollControlled: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
             return Container(
               width: MediaQuery.sizeOf(context).width,
               padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Calories',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Filter',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Calories: ${_selectedCalories.toStringAsFixed(0)} Kcal',
-                      style: TextStyle(fontSize: 14),
+                    SizedBox(height: 10),
+                    Material(
+                      borderRadius: BorderRadius.circular(15),
+                      elevation: 4,
+                      shadowColor: Colors.black,
+                      child: TextFormField(
+                        decoration: InputDecoration(
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(color: Colors.transparent),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[250],
+                          prefixIcon: Icon(Icons.search),
+                          hintText: 'Ingredient',
+                          hintStyle: TextStyle(
+                              color: const Color.fromARGB(255, 72, 72, 72)),
+                        ),
+                      ),
                     ),
-                  ),
-                  Slider(
-                    value: _selectedCalories,
-                    min: 0,
-                    max: 1000,
-                    divisions: 100,
-                    label: _selectedCalories.toStringAsFixed(0),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCalories = value;
-                      });
-                    },
-                    thumbColor: Color(0xFF1f5f5b),
-                    activeColor: Color(0xFF1f5f5b),
-                  ),
-                  SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      'Apply',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
+                    SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 0,
+                      children: List.generate(
+                        ingredients.length,
+                        (index) => Chip(
+                          label: Text(ingredients[index]),
+                          backgroundColor: Color(0xFF39C184).withOpacity(0.5),
+                          shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                  color: Color(0xFF39C184).withOpacity(0.5),
+                                  width: 1),
+                              borderRadius: BorderRadius.circular(7)),
+                          deleteIcon: Icon(Icons.close, size: 18),
+                          onDeleted: () {
+                            setState(() {
+                              ingredients.removeAt(index);
+                            });
+                          },
+                        ),
+                      ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF3fcc6e)),
-                  ),
-                ],
+                    SizedBox(height: 10),
+
+                    // Calories
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Calories',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Calories: ${_selectedCalories.toStringAsFixed(0)} Kcal',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Slider(
+                      value: _selectedCalories,
+                      min: 0,
+                      max: 1000,
+                      divisions: 100,
+                      label: _selectedCalories.toStringAsFixed(0),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCalories = value;
+                        });
+                      },
+                      thumbColor: Color(0xFF1f5f5b),
+                      activeColor: Color(0xFF1f5f5b),
+                    ),
+                    SizedBox(height: 10),
+
+                    // Cooking Techniques
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Cooking Techniques',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 0,
+                        children: List.generate(
+                          cookingTechniques.length,
+                          (index) {
+                            String technique = cookingTechniques[index];
+                            bool isSelected =
+                                selectedCookingTechniques.contains(technique);
+                            return ChoiceChip(
+                              label: Text(technique),
+                              selected: isSelected,
+                              selectedColor: Color(0xFF39C184).withOpacity(0.5),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? Color(0xFF39C184).withOpacity(0.5)
+                                    : Colors.grey.withOpacity(0.4),
+                                width: 1,
+                              ),
+                              onSelected: (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    selectedCookingTechniques.add(technique);
+                                  } else {
+                                    selectedCookingTechniques.remove(technique);
+                                  }
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+
+                    // Allergy
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Food Allergy',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 0,
+                        children: List.generate(
+                          foodAllergy.length,
+                          (index) {
+                            String allergy = foodAllergy[index];
+                            bool isSelected =
+                                selectedFoodAllergy.contains(allergy);
+
+                            return ChoiceChip(
+                              label: Text(allergy),
+                              selected: isSelected,
+                              selectedColor: Color(0xFF39C184).withOpacity(0.5),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? Color(0xFF39C184).withOpacity(0.5)
+                                    : Colors.grey.withOpacity(0.4),
+                                width: 1,
+                              ),
+                              onSelected: (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    selectedFoodAllergy.add(allergy);
+                                  } else {
+                                    selectedFoodAllergy.remove(allergy);
+                                  }
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+
+                    // Category
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Category',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 0,
+                        children: List.generate(
+                          foodCategory.length,
+                          (index) {
+                            String category = foodCategory[index];
+                            bool isSelected =
+                                selectedFoodCategory.contains(category);
+
+                            return ChoiceChip(
+                              label: Text(category),
+                              selected: isSelected,
+                              selectedColor: Color(0xFF39C184).withOpacity(0.5),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? Color(0xFF39C184).withOpacity(0.5)
+                                    : Colors.grey.withOpacity(0.4),
+                                width: 1,
+                              ),
+                              onSelected: (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    selectedFoodCategory.add(category);
+                                  } else {
+                                    selectedFoodCategory.remove(category);
+                                  }
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+
+                    // Apply Button
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            'Reset',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[300],
+                              minimumSize: Size(120, 40),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(7))),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            'Apply',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF3fcc6e),
+                              minimumSize: Size(120, 40),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(7))),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                  ],
+                ),
               ),
             );
           },
@@ -346,53 +580,10 @@ class FunctionListState extends State<FunctionList> {
       },
     );
   }
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: List.generate(
-          functionItems.length,
-          (index) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: Column(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    if (functionItems[index]['label'] == 'Calories') {
-                      _showCalorieBottomSheet(context);
-                    } else {
-                      // Other actions for other options
-                    }
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: functionItems[index]['icon'] != null
-                          ? Icon(
-                              functionItems[index]['icon'],
-                              size: 24,
-                              color: Colors.black,
-                            )
-                          : Text(
-                              functionItems[index]['label'],
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.black),
-                            ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+class TextStyleBold {
+  static TextStyle boldTextStyle() {
+    return TextStyle(fontWeight: FontWeight.w800, fontSize: 16);
   }
 }

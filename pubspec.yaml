@@ -40,6 +40,7 @@ dependencies:
   path: ^1.9.0
   intl: ^0.20.1
   introduction_screen: ^3.1.14
+  fl_chart: ^0.70.2
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +70,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
       - assets/images/default.png
+      - assets/images/error.png
       - assets/images/3Some-removebg-preview.png
       - assets/images/Jake-removebg-preview.png
       - assets/images/ez-removebg.png
@@ -81,6 +83,8 @@ flutter:
       - assets/images/calorieTracking.png
       - assets/images/mealPlanning.png
       - assets/images/0c42e0e25128dfaf306ab0ac15f14d9a.jfif # Background Image for Meal Planning
+      - assets/images/surprise_box.png
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -61,6 +61,16 @@ class DatabaseHelper {
     return result.isNotEmpty;
   }
 
+  Future<Map<String, dynamic>?> getUserByEmail(String email) async {
+    final db = await initDB();
+    final result = await db.query(
+      'users',
+      where: 'usrEmail = ?',
+      whereArgs: [email],
+    );
+    return result.isNotEmpty ? result.first : null;
+  }
+
   Future<int> insertCalculation(Map<String, dynamic> data) async {
     final db = await initDB();
     return db.insert('calculations', data);

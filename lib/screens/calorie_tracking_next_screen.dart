@@ -1,5 +1,5 @@
 import 'dart:ffi';
-
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 
 class MealPlanningNextScreen extends StatefulWidget {
@@ -12,7 +12,15 @@ class MealPlanningNextScreen extends StatefulWidget {
 }
 
 class MealPlanningNextScreenState extends State<MealPlanningNextScreen> {
-  String selectedTab = 'Search'; // Default
+  String selectedTab = 'Search';
+
+  DateTime selectedDate = DateTime.now();
+
+  void _updateDate(int days) {
+    setState(() {
+      selectedDate = selectedDate.add(Duration(days: days));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +240,56 @@ class MealPlanningNextScreenState extends State<MealPlanningNextScreen> {
                     )
                   ],
                 )
-              : Text('Favorites Content', style: TextStyle(fontSize: 18)),
+              : Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                          border: Border(
+                              top: BorderSide(color: Colors.white, width: 2)),
+                          color: Color(0xFF40C5BD)),
+                      width: MediaQuery.sizeOf(context).width,
+                      height: 50,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              _updateDate(-1);
+                            },
+                            child: Icon(
+                              Icons.arrow_back_ios,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            DateFormat('dd MMMM yyyy').format(selectedDate),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              _updateDate(1);
+                            },
+                            child: Icon(Icons.arrow_forward_ios,
+                                color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Image.asset(
+                      'assets/images/error.png',
+                      width: 200,
+                    ),
+                    SizedBox(height: 20),
+                    Text('There are no food log today',
+                        style: TextStyle(fontSize: 16)),
+                  ],
+                ),
 
           //
         ],
