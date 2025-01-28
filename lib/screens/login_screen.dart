@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'dart:developer';
 import 'package:flutter_application_1/screens/homepage.dart';
 import 'package:flutter_application_1/screens/sign_up_screen.dart';
-import 'package:flutter_application_1/SQLite/sqlite.dart';
+// import 'package:flutter_application_1/SQLite/sqlite.dart';
 import 'package:flutter_application_1/JsonModels/users.dart';
+import 'package:flutter_application_1/auth/auth_service.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -202,11 +211,18 @@ class LoginField extends StatefulWidget {
 
 class LoginFieldState extends State<LoginField> {
   final formKey = GlobalKey<FormState>();
-  final email = TextEditingController();
-  final password = TextEditingController();
+  final _auth = AuthService();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
   bool isLoginTrue = false;
 
   bool _isPasswordState = false;
+
+  void dispose() {
+    super.dispose();
+    _email.dispose();
+    _password.dispose();
+  }
 
   void _togglePasswordField() {
     setState(() {
@@ -232,7 +248,7 @@ class LoginFieldState extends State<LoginField> {
                 ),
               ),
               TextFormField(
-                controller: email,
+                controller: _email,
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Email is required';
@@ -279,7 +295,7 @@ class LoginFieldState extends State<LoginField> {
               ),
               TextFormField(
                 obscureText: !_isPasswordState,
-                controller: password,
+                controller: _password,
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Password is required';
@@ -323,26 +339,27 @@ class LoginFieldState extends State<LoginField> {
           ),
           SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                final db = DatabaseHelper();
-                bool success = await db.login(email.text, password.text);
-                if (success) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => Homepage(
-                            user: Users(
-                                usrEmail: email.text,
-                                usrPassword: password.text))),
-                  );
-                } else {
-                  setState(() {
-                    isLoginTrue = true;
-                  });
-                }
-              }
-            },
+            onPressed: _login,
+            // onPressed: () async {
+            //   if (formKey.currentState!.validate()) {
+            //     final db = DatabaseHelper();
+            //     bool success = await db.login(email.text, password.text);
+            //     if (success) {
+            //       Navigator.pushReplacement(
+            //         context,
+            //         MaterialPageRoute(
+            //             builder: (context) => Homepage(
+            //                 user: Users(
+            //                     usrEmail: email.text,
+            //                     usrPassword: password.text))),
+            //       );
+            //     } else {
+            //       setState(() {
+            //         isLoginTrue = true;
+            //       });
+            //     }
+            //   }
+            // },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xff1f5f5b),
               fixedSize: Size(350, 50),
@@ -367,5 +384,20 @@ class LoginFieldState extends State<LoginField> {
         ],
       ),
     );
+  }
+
+  _login() async {
+    final user =
+        await _auth.loginUserWithEmailAndPassword(_email.text, _password.text);
+    if (user != null) {
+      log('User Logged In');
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              // builder: (context) => Homepage(
+              //     user: Users(
+              //         usrEmail: _email.text, usrPassword: _password.text))));
+              builder: (context) => Homepage()));
+    }
   }
 }

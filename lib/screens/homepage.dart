@@ -10,9 +10,9 @@ import 'calorie_tracking_screen.dart';
 import 'meal_planning_screen.dart';
 
 class Homepage extends StatefulWidget {
-  final Users user;
+  // final Users user;
 
-  Homepage({required this.user});
+  // Homepage({required this.user});
 
   @override
   _HomepageState createState() => _HomepageState();
@@ -126,7 +126,7 @@ class _HomepageState extends State<Homepage> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[250],
-                          suffixIcon: Icon(Icons.search),
+                          prefixIcon: Icon(Icons.search),
                           hintText: 'Auto-Gen food name',
                           hintStyle: TextStyle(
                               color: const Color.fromARGB(255, 72, 72, 72)),

@@ -93,23 +93,24 @@ class _CalculateScreenState extends State<CalculateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          'Calories Calculation',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Inter',
-            letterSpacing: 1,
-          ),
-        ),
-      ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              SizedBox(height: 30),
+              AppBar(
+                centerTitle: true,
+                title: Text(
+                  'Calories Calculation',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Inter',
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
               SizedBox(height: 20),
               Text(
                 'To calculate the appropriate calories for you',

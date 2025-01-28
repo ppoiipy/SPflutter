@@ -61,7 +61,7 @@ class MenuScreenState extends State<MenuScreen> {
               title: Text(
                 'GinRaiDee',
                 style: TextStyle(
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                   fontFamily: 'Inter',
                   letterSpacing: 1,
                 ),

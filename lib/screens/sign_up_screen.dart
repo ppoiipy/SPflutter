@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'dart:developer';
+import 'package:flutter_application_1/auth/auth_service.dart';
 import 'package:flutter_application_1/screens/homepage.dart';
 import 'package:flutter_application_1/screens/login_screen.dart';
 import 'package:flutter_application_1/JsonModels/users.dart';
-import 'package:flutter_application_1/SQLite/sqlite.dart';
+import 'package:flutter_application_1/screens/wrapper.dart';
+// import 'package:flutter_application_1/SQLite/sqlite.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
 
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -209,13 +217,19 @@ class SignUpField extends StatefulWidget {
 
 class SignUpFieldState extends State<SignUpField> {
   final formKey = GlobalKey<FormState>();
-
-  final email = TextEditingController();
-  final password = TextEditingController();
+  final _auth = AuthService();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
   final confirmPassword = TextEditingController();
   String? emailError;
 
   bool _isPasswordState = false;
+
+  void dispose() {
+    super.dispose();
+    _email.dispose();
+    _password.dispose();
+  }
 
   void _togglePasswordField() {
     setState(() {
@@ -241,7 +255,7 @@ class SignUpFieldState extends State<SignUpField> {
                 ),
               ),
               TextFormField(
-                controller: email,
+                controller: _email,
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Email is required';
@@ -290,7 +304,7 @@ class SignUpFieldState extends State<SignUpField> {
               ),
               TextFormField(
                 obscureText: !_isPasswordState,
-                controller: password,
+                controller: _password,
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Password is required';
@@ -351,7 +365,7 @@ class SignUpFieldState extends State<SignUpField> {
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Password is required';
-                  } else if (password.text != confirmPassword.text) {
+                  } else if (_password.text != confirmPassword.text) {
                     return 'Passwords do not match';
                   }
                   return null;
@@ -395,23 +409,28 @@ class SignUpFieldState extends State<SignUpField> {
 
           // Create Account Button
           ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                final db = DatabaseHelper();
-                bool emailExists = await db.checkEmailExists(email.text);
-                if (emailExists) {
-                  setState(() {
-                    emailError = 'Email is already in use';
-                  });
-                } else {
-                  await db.signup(email.text, password.text);
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => Homepage(user: Users(usrEmail: email.text, usrPassword: password.text))),
-                  );
-                }
-              }
-            },
+            onPressed: _signup,
+            // onPressed: () async {
+            //   if (formKey.currentState!.validate()) {
+            //     final db = DatabaseHelper();
+            //     bool emailExists = await db.checkEmailExists(email.text);
+            //     if (emailExists) {
+            //       setState(() {
+            //         emailError = 'Email is already in use';
+            //       });
+            //     } else {
+            //       await db.signup(_email.text, _password.text);
+            //       Navigator.pushReplacement(
+            //         context,
+            //         MaterialPageRoute(
+            //             builder: (context) => Homepage(
+            //                 user: Users(
+            //                     usrEmail: email.text,
+            //                     usrPassword: password.text))),
+            //       );
+            //     }
+            //   }
+            // },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xff1f5f5b),
               fixedSize: Size(350, 50),
@@ -435,5 +454,20 @@ class SignUpFieldState extends State<SignUpField> {
         ],
       ),
     );
+  }
+
+  _signup() async {
+    final user =
+        await _auth.createUserWithEmailAndPassword(_email.text, _password.text);
+    if (user != null) {
+      log('User Created Successfully');
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              // builder: (context) => Homepage(
+              //     user: Users(
+              //         usrEmail: _email.text, usrPassword: _password.text))));
+              builder: (context) => Wrapper()));
+    }
   }
 }
