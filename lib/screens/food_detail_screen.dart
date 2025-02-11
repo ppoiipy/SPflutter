@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/JsonModels/menu_item.dart';
+import 'package:flutter_application_1/api/fetch_food_api.dart';
 
 class FoodDetailScreen extends StatefulWidget {
   final MenuItem menuItem;
 
-  FoodDetailScreen({required this.menuItem});
+  const FoodDetailScreen({Key? key, required this.menuItem}) : super(key: key);
 
   @override
   FoodDetailScreenState createState() => FoodDetailScreenState();
@@ -54,7 +55,7 @@ class FoodDetailScreenState extends State<FoodDetailScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
-              child: Image.asset(
+              child: Image.network(
                 widget.menuItem.imagePath,
                 fit: BoxFit.cover,
                 width: double.infinity,
@@ -145,12 +146,13 @@ class FoodDetailScreenState extends State<FoodDetailScreen> {
                         fontSize: 20),
                   ),
                   SizedBox(height: 10),
-                  Text('4 salmon fillets (5 to 6 ounces; 140 to each)'),
-                  Text('Kosher salt'),
-                  Text('2 tablespoons (30ml) extra-virgin olive oil'),
-                  Text(
-                      'Aromatics such as fresh thyme, dill, parsley, thinly sliced shallots, and/or citrus zest (optional)'),
-                  Text('2 teaspoons (10ml) begetable oil, if serving seared'),
+                  Text('null'),
+                  // Text('4 salmon fillets (5 to 6 ounces; 140 to each)'),
+                  // Text('Kosher salt'),
+                  // Text('2 tablespoons (30ml) extra-virgin olive oil'),
+                  // Text(
+                  //     'Aromatics such as fresh thyme, dill, parsley, thinly sliced shallots, and/or citrus zest (optional)'),
+                  // Text('2 teaspoons (10ml) begetable oil, if serving seared'),
                   SizedBox(height: 10),
                   Container(
                     padding: EdgeInsets.symmetric(vertical: 10),

@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/forget_pass_screen.dart';
 import 'dart:developer';
 import 'package:flutter_application_1/screens/homepage.dart';
 import 'package:flutter_application_1/screens/sign_up_screen.dart';
 // import 'package:flutter_application_1/SQLite/sqlite.dart';
 import 'package:flutter_application_1/JsonModels/users.dart';
 import 'package:flutter_application_1/auth/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_application_1/screens/wrapper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -211,17 +216,17 @@ class LoginField extends StatefulWidget {
 
 class LoginFieldState extends State<LoginField> {
   final formKey = GlobalKey<FormState>();
-  final _auth = AuthService();
-  final _email = TextEditingController();
-  final _password = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool isLoginTrue = false;
 
   bool _isPasswordState = false;
 
   void dispose() {
     super.dispose();
-    _email.dispose();
-    _password.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
   }
 
   void _togglePasswordField() {
@@ -237,6 +242,7 @@ class LoginFieldState extends State<LoginField> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Email Field
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -248,7 +254,7 @@ class LoginFieldState extends State<LoginField> {
                 ),
               ),
               TextFormField(
-                controller: _email,
+                controller: _emailController,
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Email is required';
@@ -283,6 +289,8 @@ class LoginFieldState extends State<LoginField> {
             ],
           ),
           SizedBox(height: 10),
+
+          // Password Field
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -295,7 +303,7 @@ class LoginFieldState extends State<LoginField> {
               ),
               TextFormField(
                 obscureText: !_isPasswordState,
-                controller: _password,
+                controller: _passwordController,
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Password is required';
@@ -337,7 +345,30 @@ class LoginFieldState extends State<LoginField> {
               ),
             ],
           ),
+
+          SizedBox(height: 10),
+
+          // Forget Password
+          Align(
+            alignment: Alignment.centerRight,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ForgetPassScreen()));
+              },
+              child: Text(
+                'Forgot Password?',
+                style: TextStyle(
+                    color: Color(0xFF4D7881), fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+
           SizedBox(height: 20),
+
+          // Login Button
           ElevatedButton(
             onPressed: _login,
             // onPressed: () async {
@@ -386,18 +417,42 @@ class LoginFieldState extends State<LoginField> {
     );
   }
 
-  _login() async {
-    final user =
-        await _auth.loginUserWithEmailAndPassword(_email.text, _password.text);
-    if (user != null) {
-      log('User Logged In');
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              // builder: (context) => Homepage(
-              //     user: Users(
-              //         usrEmail: _email.text, usrPassword: _password.text))));
-              builder: (context) => Homepage()));
+  Future<void> _login() async {
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      // Check if the email is verified
+      if (userCredential.user != null && userCredential.user!.emailVerified) {
+        log('User logged in successfully');
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => Wrapper()));
+      } else {
+        log('Email is not verified');
+        await userCredential.user!.sendEmailVerification();
+        log('Verification email sent again');
+
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Email not verified'),
+            content:
+                Text('Please verify your email address before logging in.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      log('Error during login: $e');
     }
   }
 }

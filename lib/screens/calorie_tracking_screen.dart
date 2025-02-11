@@ -531,6 +531,11 @@ class RadialSectionsPainter extends CustomPainter {
       Colors.greenAccent,
       Colors.orangeAccent,
       Colors.purpleAccent
+
+      // Color(0xFF1F5F5B),
+      // Color(0xFF40C5BD),
+      // Color(0xFF1F5F5B),
+      // Color(0xFF40C5BD)
     ];
 
     // Draw each quarter (90 degrees each)

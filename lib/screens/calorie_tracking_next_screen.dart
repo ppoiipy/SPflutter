@@ -1,6 +1,9 @@
 import 'dart:ffi';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/api/fetch_food_api.dart';
+import 'package:flutter_application_1/JsonModels/menu_item.dart';
+import 'package:flutter_application_1/screens/food_detail_screen.dart';
 
 class MealPlanningNextScreen extends StatefulWidget {
   final String pageName;
@@ -15,6 +18,40 @@ class MealPlanningNextScreenState extends State<MealPlanningNextScreen> {
   String selectedTab = 'Search';
 
   DateTime selectedDate = DateTime.now();
+
+  late Future<List<FoodItem>?> _foodFuture; // Allow nullable list
+
+  TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFoodData(); // Initially fetch with default ingredient
+  }
+
+  // Fetch food data from the API with the provided ingredient
+  void _fetchFoodData([String ingredient = ""]) {
+    print(
+        "Fetching data for: $ingredient"); // Debugging: Check what ingredient is being used
+    setState(() {
+      _foodFuture = FoodApiService.fetchFoodData(ingredient: "");
+    });
+  }
+
+  // Called when the search field value changes
+  void _filterFoodItems(String query) {
+    print("Searching for: $query"); // Debugging query
+    setState(() {
+      if (query.isEmpty) {
+        // Clear the food data by calling the fetch with a default ingredient
+        _foodFuture = FoodApiService.fetchFoodData(
+            ingredient: ""); // or set an empty list here if needed
+      } else {
+        _foodFuture = FoodApiService.fetchFoodData(
+            ingredient: ""); // Pass the query to fetch data
+      }
+    });
+  }
 
   void _updateDate(int days) {
     setState(() {
@@ -237,7 +274,109 @@ class MealPlanningNextScreenState extends State<MealPlanningNextScreen> {
                               fontWeight: FontWeight.w500,
                             )),
                       ),
-                    )
+                    ),
+
+                    // Food Lists
+
+                    //
+                    // FutureBuilder<List<FoodItem>?>(
+                    //     future: _foodFuture,
+                    //     builder: (context, snapshot) {
+                    //       if (snapshot.connectionState ==
+                    //           ConnectionState.waiting) {
+                    //         return Center(child: CircularProgressIndicator());
+                    //       } else if (snapshot.hasError) {
+                    //         return Center(
+                    //             child: Text("Error: ${snapshot.error}"));
+                    //       } else if (!snapshot.hasData ||
+                    //           snapshot.data!.isEmpty) {
+                    //         return Center(child: Text("No food items found"));
+                    //       }
+
+                    //       return ListView.builder(
+                    //         itemCount: snapshot.data!.length,
+                    //         itemBuilder: (context, index) {
+                    //           final item = snapshot.data![index];
+                    //           return ListTile(
+                    //             leading: Image.network(
+                    //               item.imageUrl.isNotEmpty
+                    //                   ? item.imageUrl
+                    //                   : 'assets/images/default.png',
+                    //               width: 60,
+                    //               height: 60,
+                    //               errorBuilder: (context, error, stackTrace) {
+                    //                 return Image.asset(
+                    //                   'assets/images/default.png',
+                    //                   width: 60,
+                    //                   height: 60,
+                    //                   fit: BoxFit.cover,
+                    //                 );
+                    //               },
+                    //               fit: BoxFit.cover,
+                    //             ),
+                    //             title: Text(item.name),
+                    //             subtitle: Column(
+                    //               children: [
+                    //                 Row(
+                    //                   children: [
+                    //                     Icon(
+                    //                       Icons.local_fire_department_outlined,
+                    //                       color: Colors.red,
+                    //                       size: 17,
+                    //                     ),
+                    //                     Text("${item.calories.toInt()} Kcal"),
+                    //                   ],
+                    //                 ),
+                    //                 Row(
+                    //                   children: [
+                    //                     Image.asset(
+                    //                       'assets/images/skillet.png',
+                    //                       color: Colors.yellow,
+                    //                       width: 17,
+                    //                     ),
+                    //                     Text(
+                    //                       'Cooking Technique',
+                    //                       style: TextStyle(fontSize: 14),
+                    //                     ),
+                    //                   ],
+                    //                 ),
+                    //                 Row(
+                    //                   children: [
+                    //                     Icon(
+                    //                       Icons.receipt_long_outlined,
+                    //                       color: Colors.blue,
+                    //                       size: 17,
+                    //                     ),
+                    //                     Text(
+                    //                       'Cooking Recipe',
+                    //                       style: TextStyle(fontSize: 14),
+                    //                     ),
+                    //                   ],
+                    //                 ),
+                    //               ],
+                    //             ),
+                    //             onTap: () {
+                    //               Navigator.push(
+                    //                 context,
+                    //                 MaterialPageRoute(
+                    //                   builder: (context) => FoodDetailScreen(
+                    //                       menuItem: MenuItem(
+                    //                     name: item.name,
+                    //                     imagePath: item.imageUrl,
+                    //                     calories: item.calories,
+                    //                     cookingTechnique: item.cookingTechnique,
+                    //                     cookingRecipe: item.cookingRecipe,
+                    //                   )),
+                    //                 ),
+                    //               );
+                    //             },
+                    //           );
+                    //         },
+                    //       );
+                    //     },
+                    //   ),
+                    // ),
+                    //
                   ],
                 )
               : Column(

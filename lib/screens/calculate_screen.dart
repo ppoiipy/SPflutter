@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/SQLite/sqlite.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
+
+import 'package:syncfusion_flutter_gauges/gauges.dart';
 
 class CalculateScreen extends StatefulWidget {
   @override
@@ -12,6 +17,16 @@ class _CalculateScreenState extends State<CalculateScreen> {
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _genderController = TextEditingController();
+  final List<String> genders = ["Male", "Female", "Other"];
+  final List<String> activityLevels = [
+    "Sedentary (little to no exercise)",
+    "Lightly active (1-3 days/week)",
+    "Moderately active (3-5 days/week)",
+    "Very active (6-7 days/week)",
+    "Super active (very hard exercise, physical job)"
+  ];
+
   double? _bmi, _bmr, _tdee;
 
   final DatabaseHelper _dbHelper = DatabaseHelper();
@@ -90,6 +105,105 @@ class _CalculateScreenState extends State<CalculateScreen> {
     });
   }
 
+  User? user = FirebaseAuth.instance.currentUser;
+  Map<String, dynamic>? userData;
+
+  Future<void> _loadUserData() async {
+    if (user == null) return;
+
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userData = userDoc.data() as Map<String, dynamic>;
+
+          String dobString = userData?["dob"] ?? '';
+          // _genderController.text = userData?["gender"] ?? '';
+          _weightController.text = userData?["weight"] ?? '';
+          _heightController.text = userData?["height"] ?? '';
+
+          // #1
+          // _selectedGender =
+          //     (userData != null && genders.contains(userData!["gender"]))
+          //         ? userData!["gender"]
+          //         : null;
+
+          _selectedGender = userData?["gender"]?.toLowerCase() == "male"
+              ? "Male"
+              : userData?["gender"]?.toLowerCase() == "female"
+                  ? "Female"
+                  : "Other"; // Default case
+
+          _selectedActivityLevel = userData?["activityLevel"] != null &&
+                  activityLevels.contains(userData?["activityLevel"])
+              ? userData!["activityLevel"]
+              : activityLevels.first; // Default to the first item
+
+          // #2
+          // _selectedActivityLevel = (userData != null &&
+          //         activityLevels.contains(userData!["activityLevel"]))
+          //     ? userData!["activityLevel"]
+          //     : null;
+
+          // #2
+          // _selectedGender = userData?["gender"]?.toLowerCase() == "male"
+          //     ? "Male"
+          //     : userData?["gender"]?.toLowerCase() == "female"
+          //         ? "Female"
+          //         : "Other"; // Default case
+
+          // #1
+          // _selectedActivityLevel = userData?["activityLevel"] ?? '';
+          //       _selectedActivityLevel = activityLevels.contains(userData?["activityLevel"])
+          // ? userData?["activityLevel"]
+          // : null;
+
+          if (dobString.isNotEmpty) {
+            DateTime dob =
+                DateTime.parse(dobString); // Convert string to DateTime
+            int age = _calculateAge(dob); // Calculate age
+            _ageController.text = age.toString(); // Set age in the text field
+          } else {
+            _ageController.text = ''; // Default if dob is empty
+          }
+        });
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
+  }
+
+  double? _calculatedBMI() {
+    final height = double.tryParse(_heightController.text);
+    final weight = double.tryParse(_weightController.text);
+
+    if (height != null && weight != null && height > 0) {
+      return weight / ((height / 100) * (height / 100)); // BMI formula
+    }
+    return null; // Return null if the input values are invalid
+  }
+
+// Function to calculate age
+  int _calculateAge(DateTime dob) {
+    DateTime today = DateTime.now();
+    int age = today.year - dob.year;
+    if (today.month < dob.month ||
+        (today.month == dob.month && today.day < dob.day)) {
+      age--; // Reduce age if the birthday hasn't occurred yet this year
+    }
+    return age;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,13 +225,17 @@ class _CalculateScreenState extends State<CalculateScreen> {
                   ),
                 ),
               ),
+
               SizedBox(height: 20),
+
               Text(
                 'To calculate the appropriate calories for you',
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
               ),
+
               SizedBox(height: 20),
-              // Buttons for BMI, BMR, TDEE selection in a single container with background color for each
+
+              // Container for BMI, BMR, and TDEE
               Container(
                 padding: EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
@@ -127,16 +245,10 @@ class _CalculateScreenState extends State<CalculateScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // BMI Button with background color
+                    // BMI Button
                     Expanded(
                       child: Container(
                         margin: EdgeInsets.symmetric(horizontal: 5),
-                        decoration: BoxDecoration(
-                          color: _selectedCalculation == 'BMI'
-                              ? const Color.fromARGB(255, 33, 243, 128)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
                         child: ElevatedButton(
                           onPressed: () {
                             setState(() {
@@ -144,8 +256,9 @@ class _CalculateScreenState extends State<CalculateScreen> {
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors
-                                .transparent, // Make button background transparent
+                            backgroundColor: _selectedCalculation == 'BMI'
+                                ? Color(0xFF1F5F5B)
+                                : Colors.grey[350],
                             padding: EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -165,16 +278,11 @@ class _CalculateScreenState extends State<CalculateScreen> {
                         ),
                       ),
                     ),
-                    // BMR Button with background color
+
+                    // BMR Button
                     Expanded(
                       child: Container(
                         margin: EdgeInsets.symmetric(horizontal: 5),
-                        decoration: BoxDecoration(
-                          color: _selectedCalculation == 'BMR'
-                              ? const Color.fromARGB(255, 33, 243, 128)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
                         child: ElevatedButton(
                           onPressed: () {
                             setState(() {
@@ -182,8 +290,9 @@ class _CalculateScreenState extends State<CalculateScreen> {
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors
-                                .transparent, // Make button background transparent
+                            backgroundColor: _selectedCalculation == 'BMR'
+                                ? Color(0xFF1F5F5B)
+                                : Colors.grey[350],
                             padding: EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -203,16 +312,11 @@ class _CalculateScreenState extends State<CalculateScreen> {
                         ),
                       ),
                     ),
-                    // TDEE Button with background color
+
+                    // TDEE Button
                     Expanded(
                       child: Container(
                         margin: EdgeInsets.symmetric(horizontal: 5),
-                        decoration: BoxDecoration(
-                          color: _selectedCalculation == 'TDEE'
-                              ? const Color.fromARGB(255, 33, 243, 128)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
                         child: ElevatedButton(
                           onPressed: () {
                             setState(() {
@@ -220,8 +324,9 @@ class _CalculateScreenState extends State<CalculateScreen> {
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors
-                                .transparent, // Make button background transparent
+                            backgroundColor: _selectedCalculation == 'TDEE'
+                                ? Color(0xFF1F5F5B)
+                                : Colors.grey[350],
                             padding: EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -245,39 +350,118 @@ class _CalculateScreenState extends State<CalculateScreen> {
                 ),
               ),
               SizedBox(height: 20),
-              _buildDropdownRow(
-                label: 'Gender',
-                value: _selectedGender,
-                items: ['Male', 'Female'],
-                onChanged: (value) => setState(() => _selectedGender = value),
+              // _buildDropdownRow(
+              //     label: 'Gender',
+              //     value: _selectedGender,
+              //     // controller: _genderController,
+              //     items: ['Male', 'Female', 'Other'],
+              //     // onChanged: (value) => setState(() => _selectedGender = value),
+              //     onChanged: (newValue) {
+              //       setState(() {
+              //         _selectedGender = newValue;
+              //       });
+              //     }),
+              Row(
+                children: [
+                  Expanded(flex: 2, child: Text('Gender')),
+                  Expanded(
+                    flex: 6,
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: _selectedGender, // Ensure this is in the list
+                      items: genders.map((String gender) {
+                        return DropdownMenuItem<String>(
+                          value: gender,
+                          child: Text(
+                            gender,
+                            style: TextStyle(
+                                color: Colors.grey[800],
+                                fontWeight: FontWeight.w400),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedGender = newValue!;
+                        });
+                      },
+                    ),
+                  )
+                ],
               ),
-              if (_selectedCalculation == 'BMR' ||
-                  _selectedCalculation == 'TDEE')
-                _buildInputRow(
-                  label: 'Age',
-                  unit: 'years',
-                  controller: _ageController,
-                ),
-              _buildInputRow(
-                label: 'Height',
-                unit: 'cm',
-                controller: _heightController,
+              Column(
+                children: [
+                  if (_selectedCalculation == 'BMR' ||
+                      _selectedCalculation == 'TDEE')
+                    _buildInputRow(
+                      label: 'Age',
+                      unit: 'years',
+                      controller: _ageController,
+                    ),
+                  _buildInputRow(
+                    label: 'Height',
+                    unit: 'cm',
+                    controller: _heightController,
+                  ),
+                  _buildInputRow(
+                    label: 'Weight',
+                    unit: 'kg',
+                    controller: _weightController,
+                  ),
+                ],
               ),
-              _buildInputRow(
-                label: 'Weight',
-                unit: 'kg',
-                controller: _weightController,
-              ),
+
               if (_selectedCalculation == 'TDEE')
-                _buildDropdownRow(
-                  label: 'Activity Level',
-                  value: _selectedActivityLevel,
-                  items: _activityMultipliers.keys.toList(),
-                  onChanged: (value) =>
-                      setState(() => _selectedActivityLevel = value),
+                // _buildDropdownRow(
+                //     label: 'Activity Level',
+                //     value: _selectedActivityLevel,
+                //     // controller: _activityLevelController,
+                //     // items: _activityMultipliers.keys.toList(),
+                //     items: [
+                //       'Sedentary',
+                //       'Lightly Active',
+                //       'Moderately Active',
+                //       'Very Active'
+                //     ],
+                //     // onChanged: () =>
+                //     //     setState(() => _selectedActivityLevel = value),
+                //     onChanged: (newValue) {
+                //       setState(() {
+                //         _selectedActivityLevel = newValue;
+                //       });
+                //     }),
+                Row(
+                  children: [
+                    Expanded(flex: 2, child: Text('Activity Level')),
+                    Expanded(
+                      flex: 6,
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: _selectedActivityLevel,
+                        items: activityLevels.map((String level) {
+                          return DropdownMenuItem<String>(
+                            value: level,
+                            child: Text(
+                              level,
+                              style: TextStyle(
+                                  color: Colors.grey[800],
+                                  fontWeight: FontWeight.w400),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedActivityLevel = newValue!;
+                          });
+                        },
+                      ),
+                    )
+                  ],
                 ),
+
               SizedBox(height: 20),
 
+              // Save Button
               Align(
                 alignment: Alignment.center,
                 child: ElevatedButton(
@@ -288,7 +472,7 @@ class _CalculateScreenState extends State<CalculateScreen> {
                   child: Container(
                     padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
                     child: Text(
-                      'Calculate and Save',
+                      'Calculate',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -297,6 +481,8 @@ class _CalculateScreenState extends State<CalculateScreen> {
                   ),
                 ),
               ),
+
+              //
               if (_bmi != null || _bmr != null || _tdee != null) ...[
                 SizedBox(height: 20),
                 if (_selectedCalculation == 'BMI' && _bmi != null)
@@ -308,7 +494,67 @@ class _CalculateScreenState extends State<CalculateScreen> {
                       padding: EdgeInsets.all(10),
                       child: Column(
                         children: [
-                          Text('BMI: ${_bmi!.toStringAsFixed(2)}'),
+                          // Text('BMI: ${_bmi!.toStringAsFixed(2)}'),
+                          SizedBox(
+                            width: 200, // Set a smaller width
+                            height: 200, // Set a smaller height
+                            child: SfRadialGauge(
+                              axes: <RadialAxis>[
+                                RadialAxis(
+                                  radiusFactor:
+                                      1, // Reduce the gauge size inside its container
+                                  minimum: 10,
+                                  maximum: 40,
+                                  ranges: <GaugeRange>[
+                                    GaugeRange(
+                                      startValue: 10,
+                                      endValue: 18.5,
+                                      color: Colors.blue,
+                                      label: 'Underweight',
+                                    ),
+                                    GaugeRange(
+                                      startValue: 18.5,
+                                      endValue: 24.9,
+                                      color: Colors.green,
+                                      label: 'Normal',
+                                    ),
+                                    GaugeRange(
+                                      startValue: 25,
+                                      endValue: 29.9,
+                                      color: Colors.orange,
+                                      label: 'Overweight',
+                                    ),
+                                    GaugeRange(
+                                      startValue: 30,
+                                      endValue: 40,
+                                      color: Colors.red,
+                                      label: 'Obese',
+                                    ),
+                                  ],
+                                  pointers: <GaugePointer>[
+                                    NeedlePointer(
+                                      value: _calculatedBMI() ??
+                                          0, // Dynamically pass BMI value
+                                    ),
+                                  ],
+                                  annotations: <GaugeAnnotation>[
+                                    GaugeAnnotation(
+                                      widget: Text(
+                                        "BMI: ${(_calculatedBMI() ?? 0).toStringAsFixed(1)}", // Show updated BMI
+                                        style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      angle: 90,
+                                      positionFactor:
+                                          0.8, // Adjust annotation position
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
                           Text(
                             "A Body Mass Index (BMI) of 25 or higher is classified as overweight, but it's essential to remember that BMI is just one of many indicators of health. The journey to achieving a healthy weight is not just about numbers; it's about making sustainable lifestyle changes that enhance your overall well-being.",
                           ),

@@ -15,6 +15,7 @@ class VerifyEmailScreen extends StatefulWidget {
 
 class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   bool isEmailVerified = false;
+  final userEmail = FirebaseAuth.instance.currentUser?.email ?? 'Unknown User';
 
   final _auth = AuthService();
   late Timer timer;
@@ -42,18 +43,40 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Widget build(BuildContext context) => isEmailVerified
       ? Homepage()
       : Scaffold(
-          body: Column(
-          children: [
-            Text('We have sent an email verification.'),
-            SizedBox(height: 20),
-            ElevatedButton(
+          body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Verify your email address',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Click the link in the email we just sent to your email ',
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                userEmail,
+                style: TextStyle(
+                    fontWeight: FontWeight.w600, color: Color(0xff1f5f5b)),
+              ),
+              SizedBox(height: 40),
+              ElevatedButton(
                 onPressed: () {
                   _auth.sendVerificationEmail();
                 },
-                child: Text(
-                  'Resend Verification',
-                  style: const TextStyle(fontSize: 18),
-                )),
-          ],
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xff1f5f5b)),
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  child: Text(
+                    'Resend Verification Email',
+                    style: const TextStyle(fontSize: 14, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ));
 }

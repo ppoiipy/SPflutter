@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "94846732323",
-    "project_id": "ginraideesp",
-    "storage_bucket": "ginraideesp.firebasestorage.app"
+    "project_number": "227376723804",
+    "project_id": "ginraidee-18b44",
+    "storage_bucket": "ginraidee-18b44.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:94846732323:android:d55c197f2467080287c996",
+        "mobilesdk_app_id": "1:227376723804:android:237182f03b7e437233f399",
         "android_client_info": {
           "package_name": "com.example.flutter_application_1"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyC6199FRg-wt5aw3xWguK5ikr8DmQ5Mjwg"
+          "current_key": "AIzaSyAAVRsbtpCjqYrifxQ6gUVhUDShGy13i7o"
         }
       ],
       "services": {

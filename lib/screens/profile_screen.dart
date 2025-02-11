@@ -1,16 +1,25 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'dart:async';
 import 'package:flutter_application_1/SQLite/sqlite.dart';
+import 'package:flutter_application_1/screens/calculate_test.dart';
+import 'package:flutter_application_1/screens/food_filter_screen.dart';
+import 'package:flutter_application_1/screens/food_search_screen.dart';
 import 'package:flutter_application_1/screens/homepage.dart';
 import 'package:flutter_application_1/screens/login_screen.dart';
 import 'package:flutter_application_1/screens/profile_edit_screen.dart';
 import 'package:flutter_application_1/auth/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/screens/user_calculation.dart';
+import 'package:flutter_application_1/widgets/chart_widget.dart';
+import 'package:fl_chart/fl_chart.dart';
 // import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final String userEmail;
+  // final String userEmail;
 
-  const ProfileScreen({Key? key, required this.userEmail}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -19,8 +28,10 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String _email = "Loading...";
   String _selected = 'D';
+  String _selectedTrack = 'Body Weight';
   String selectedTab = "profile";
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  Map<String, String> userProfile = {};
 
   @override
   void initState() {
@@ -34,45 +45,158 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  void _onSelectTrack(String track) {
+    setState(() {
+      _selectedTrack = track;
+    });
+  }
+
+  // void _navigateToEditScreen() async {
+  //   final updatedData = await Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => ProfileEditScreen(userEmail: widget.userEmail),
+  //     ),
+  //   );
+
+  //   if (updatedData != null && updatedData is Map<String, String>) {
+  //     setState(() {
+  //       userProfile = updatedData;
+  //     });
+  //   }
+  // }
+
+  // Future<void> _loadUserData() async {
+  //   User? user = FirebaseAuth.instance.currentUser;
+  //   Map<String, dynamic>? userData;
+  //   if (user == null) {
+  //     try {
+  //       // Assuming you are fetching user profile data from Firestore
+  //       // DocumentSnapshot userData = await FirebaseFirestore.instance
+  //       //     .collection('users')
+  //       //     .doc(user!.uid)
+  //       //     .get();
+
+  //       DocumentSnapshot userDoc = await FirebaseFirestore.instance
+  //           .collection('users')
+  //           .doc(user!.uid)
+  //           .get();
+
+  //       // if (userData.exists && userData.data() != null) {
+  //       // Safely retrieve data, use fallback values if field is missing or null
+  //       if (userDoc.exists) {
+  //         setState(() {
+  //           // userProfile = {
+  //           // "nickname": userData['email'] ?? "John Doe",
+  //           // "gender": userData["gender"] ?? "Male",
+  //           // "weight": userData["weight"] ?? "70",
+  //           // "height": userData['height'] ?? "175",
+  //           // "weightGoal": userData["weightGoal"] ?? "Maintain weight",
+  //           // "dob": userData["dob"] ?? "1995-06-15",
+  //           // "preferredFlavors": userData["preferredFlavors"] ?? "Vegetarian",
+  //           // "allergies": userData["allergies"] ?? "None",
+  //           // "activityLevel": userData["activityLevel"] ?? "Moderate",
+  //           // };
+  //           userData = userDoc.data() as Map<String, dynamic>;
+  //         });
+  //       } else {
+  //         // Handle case when user data doesn't exist or is null
+  //         setState(() {
+  //           userProfile = {
+  //             "nickname": "John Doe",
+  //             "gender": "Male",
+  //             "weight": "70",
+  //             "height": "175",
+  //             "weightGoal": "Maintain weight",
+  //             "dob": "1995-06-15",
+  //             "preferredFlavors": "Vegetarian",
+  //             "allergies": "None",
+  //             "activityLevel": "Moderate",
+  //           };
+  //         });
+  //       }
+  //     } catch (e) {
+  //       print("Error loading user data: $e");
+  //     }
+  //   } else {
+  //     print("No user is currently logged in");
+  //   }
+  // }
+
+  User? user = FirebaseAuth.instance.currentUser;
+  Map<String, dynamic>? userData;
+
   Future<void> _loadUserData() async {
-    final user = await _dbHelper.getUserByEmail(widget.userEmail);
-    if (user != null) {
-      setState(() {
-        _email = user['usrEmail'];
-      });
-    } else {
-      setState(() {
-        _email = "User not found";
-      });
+    if (user == null) return;
+
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userData = userDoc.data() as Map<String, dynamic>;
+        });
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
     }
   }
 
-  List<BarChartGroupData> _getBarGroups() {
-    return [
-      BarChartGroupData(
-          x: 0, barRods: [BarChartRodData(toY: 40, color: Color(0xff4D7881))]),
-      BarChartGroupData(
-          x: 1, barRods: [BarChartRodData(toY: 20, color: Color(0xff4D7881))]),
-      BarChartGroupData(
-          x: 2, barRods: [BarChartRodData(toY: 49, color: Color(0xff4D7881))]),
-      BarChartGroupData(
-          x: 3, barRods: [BarChartRodData(toY: 60, color: Color(0xff4D7881))]),
-      BarChartGroupData(
-          x: 4, barRods: [BarChartRodData(toY: 24, color: Color(0xff4D7881))]),
-      BarChartGroupData(
-          x: 5, barRods: [BarChartRodData(toY: 54, color: Color(0xff4D7881))]),
-      BarChartGroupData(
-          x: 6, barRods: [BarChartRodData(toY: 48, color: Color(0xff4D7881))]),
-    ];
-  }
+//   Future<void> _loadUserData() async {
+//   User? user = FirebaseAuth.instance.currentUser;
+//   if (user == null) {
+//     setState(() {
+//       _email = "No user logged in";
+//     });
+//     return;
+//   }
+
+//   try {
+//     var userData = await FirebaseFirestore.instance
+//         .collection('users')
+//         .doc(user.email)
+//         .get();
+
+//     if (userData.exists && userData.data() != null) {
+//       setState(() {
+//         userProfile = {
+//           "nickname": userData.data()?["nickname"] ?? "John Doe",
+//           "gender": userData.data()?["gender"] ?? "Male",
+//           "weight": userData.data()?["weight"]?.toString() ?? "70",
+//           "height": userData.data()?["height"]?.toString() ?? "175",
+//           "goal": userData.data()?["goal"] ?? "Maintain weight",
+//           "birthdate": userData.data()?["birthdate"] ?? "1995-06-15",
+//           "foodPref": userData.data()?["foodPref"] ?? "Vegetarian",
+//           "allergies": userData.data()?["allergies"] ?? "None",
+//           "activityLevel": userData.data()?["activityLevel"] ?? "Moderate",
+//         };
+//         _email = user.email ?? "No email found";
+//       });
+//     } else {
+//       setState(() {
+//         _email = "No user data available";
+//       });
+//     }
+//   } catch (e) {
+//     print("Error loading user data: $e");
+//     setState(() {
+//       _email = "Error loading data";
+//     });
+//   }
+// }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
+      // appBar: SliverAppBar(),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         centerTitle: true,
+        elevation: 0,
         title: Text(
           'User Profile',
           style: TextStyle(
@@ -106,7 +230,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                             TextButton(
-                              onPressed: () {
+                              onPressed: () async {
+                                await AuthService().signOut();
                                 Navigator.of(context).pop();
                                 Navigator.push(
                                   context,
@@ -129,133 +254,143 @@ class _ProfileScreenState extends State<ProfileScreen> {
           )
         ],
       ),
-      body: SingleChildScrollView(
-          child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: MediaQuery.sizeOf(context).width,
-                height: 330,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF1F5F5B), Color(0xFF40C5BD)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-              ),
-              Column(
+
+      body: CustomScrollView(
+        slivers: [
+          SliverList(
+              delegate: SliverChildListDelegate([
+            Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              Stack(
                 children: [
-                  SizedBox(height: 100),
-                  // Profile Picture
-                  Stack(children: [
-                    Center(
-                      child: CircleAvatar(
-                        radius: 60,
-                        backgroundImage:
-                            const AssetImage('assets/images/default.png'),
-                      ),
-                    ),
-                    // Positioned(
-                    //   bottom: 0,
-                    //   right: 120,
-                    //   child: Icon(
-                    //     Icons.camera_alt,
-                    //     size: 36,
-                    //   ),
-                    // ),
-                  ]),
-                  const SizedBox(height: 20),
-
-                  // Show user email
-                  Center(
-                    child: Text(
-                      _email,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                  Container(
+                    width: MediaQuery.sizeOf(context).width,
+                    height: 330,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF1F5F5B), Color(0xFF40C5BD)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                       ),
                     ),
                   ),
-
-                  SizedBox(height: 20),
-
-                  Container(
-                    margin: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          spreadRadius: 0,
-                          blurRadius: 4,
-                          offset: const Offset(0, 6),
+                  Column(
+                    children: [
+                      SizedBox(height: 100),
+                      // Profile Picture
+                      Stack(children: [
+                        Center(
+                          child: CircleAvatar(
+                            radius: 60,
+                            backgroundImage:
+                                const AssetImage('assets/images/default.png'),
+                          ),
                         ),
-                      ],
-                    ),
-                    width: MediaQuery.sizeOf(context).width,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        // Positioned(
+                        //   bottom: 0,
+                        //   right: 120,
+                        //   child: Icon(
+                        //     Icons.camera_alt,
+                        //     size: 36,
+                        //   ),
+                        // ),
+                      ]),
+                      const SizedBox(height: 20),
+
+                      // Show user email
+                      Center(
+                        child: Text(
+                          userData?['email'] ?? 'No email available',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: 20),
+
+                      Container(
+                        margin: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              spreadRadius: 0,
+                              blurRadius: 4,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        width: MediaQuery.sizeOf(context).width,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
                             children: [
                               Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    'Gender: ',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontWeight: FontWeight.w500,
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          'Gender: ',
+                                          style: TextStyle(
+                                            color: Colors.grey[500],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          userData?['gender'] ?? 'N/A',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xff4D7881),
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.male,
+                                          size: 16,
+                                          color: Color(0xff4D7881),
+                                        )
+                                      ],
                                     ),
                                   ),
-                                  Text(
-                                    'Male',
-                                    style: TextStyle(
-                                      color: Color(0xff4D7881),
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Birth Date: ',
+                                        style: TextStyle(
+                                          color: Colors.grey[500],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Text(
+                                        userData?["dob"] ?? 'N/A',
+                                        style: TextStyle(
+                                          color: Color(0xff4D7881),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Icon(
-                                    Icons.male,
-                                    size: 16,
-                                    color: Color(0xff4D7881),
-                                  )
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    'Birth Date: ',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  Text(
-                                    'xx/xx/xxxx',
-                                    style: TextStyle(
-                                      color: Color(0xff4D7881),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  SizedBox(width: 10),
                                   GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        // selectedTab = 'profile';
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ProfileEditScreen(
-                                                      userEmail: _email)),
-                                        );
-                                      });
+                                    onTap: () async {
+                                      final updatedProfile =
+                                          await Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      ProfileEditScreen()));
+                                      if (updatedProfile != null) {
+                                        setState() {
+                                          userData = updatedProfile
+                                              as Map<String, dynamic>;
+                                        }
+                                      }
                                     },
                                     child: Icon(
                                       Icons.edit,
@@ -265,782 +400,172 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
+                              SizedBox(height: 8),
                               Row(
                                 children: [
-                                  Text(
-                                    'Height: ',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontWeight: FontWeight.w500,
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          'Height: ',
+                                          style: TextStyle(
+                                            color: Colors.grey[500],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          "${userData?["height"]?.toString() ?? 'N/A'} cm",
+                                          style: TextStyle(
+                                            color: Color(0xff4D7881),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  Text(
-                                    '152 cm',
-                                    style: TextStyle(
-                                      color: Color(0xff4D7881),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  )
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    'Activity level: ',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontWeight: FontWeight.w500,
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          'Weight: ',
+                                          style: TextStyle(
+                                            color: Colors.grey[500],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          "${userData?["weight"]?.toString() ?? 'N/A'} kg",
+                                          style: TextStyle(
+                                            color: Color(0xff4D7881),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  Text(
-                                    'Sedentary',
-                                    style: TextStyle(
-                                      color: Color(0xff4D7881),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  )
                                 ],
                               ),
+                              SizedBox(height: 5),
                             ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          SizedBox(height: 10),
-
-          Container(
-            padding: EdgeInsets.all(10),
-            width: 300,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildPeriodButton('D'),
-                _buildPeriodButton('W'),
-                _buildPeriodButton('M'),
-                _buildPeriodButton('Y'),
-              ],
-            ),
-          ),
-
-          // Body Weight
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    spreadRadius: 0,
-                    blurRadius: 4,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              padding: EdgeInsets.all(10),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.monitor_weight,
-                            color: Color(0xff4D7881),
-                          ),
-                          SizedBox(width: 5),
-                          Text(
-                            'Body Weight',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '52.2 kg',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '+2.2',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            'Goal: 50',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      )
                     ],
                   ),
-                  Container(
-                    height: 200,
-                    child: BarChart(
-                      BarChartData(
-                        barGroups: _getBarGroups(),
-                        borderData: FlBorderData(show: false),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles:
-                                SideTitles(showTitles: true, reservedSize: 40),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, meta) {
-                                switch (value.toInt()) {
-                                  case 0:
-                                    return Text('Mon');
-                                  case 1:
-                                    return Text('Tue');
-                                  case 2:
-                                    return Text('Wed');
-                                  case 3:
-                                    return Text('Thu');
-                                  case 4:
-                                    return Text('Fri');
-                                  case 5:
-                                    return Text('Sat');
-                                  case 6:
-                                    return Text('Sun');
-                                  default:
-                                    return Text('');
-                                }
-                              },
-                              reservedSize: 32,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
-            ),
-          ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => FoodSearchScreen()));
+                },
+                child: Text(
+                  'Go to search',
+                  style: TextStyle(color: Color(0xFF1F5F5B)),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => FoodFilterScreen()));
+                },
+                child: Text(
+                  'Go to filter',
+                  style: TextStyle(color: Color(0xFF1F5F5B)),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => CalculateTest()));
+                },
+                child: Text(
+                  'Go to test',
+                  style: TextStyle(color: Color(0xFF1F5F5B)),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => UserCalculation()));
+                },
+                child: Text(
+                  'Go to cal',
+                  style: TextStyle(color: Color(0xFF1F5F5B)),
+                ),
+              ),
 
-          // Body Mass Index
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    spreadRadius: 0,
-                    blurRadius: 4,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+              SizedBox(height: 10),
+              Container(
+                padding: EdgeInsets.all(10),
+                width: 300,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildPeriodButton('D'),
+                    _buildPeriodButton('W'),
+                    _buildPeriodButton('M'),
+                    _buildPeriodButton('Y'),
+                  ],
+                ),
               ),
-              padding: EdgeInsets.all(10),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.monitor_weight,
-                            color: Color(0xff4D7881),
-                          ),
-                          SizedBox(width: 5),
-                          Text(
-                            'Body Mass Index',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '52.2 kg',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            'Obesity Level 3',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            'Appropriate Value: 18.5-22.9',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
-                  Container(
-                    height: 200,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: "Recommended Actions: ",
-                                  style: TextStyle(
-                                    color: Colors
-                                        .black, // Color for the first part of the text
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: "Consult a Professional: Seek advice. ",
-                                  style: TextStyle(
-                                    color: Colors
-                                        .blue, // Color for this part of the text
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text:
-                                      "Consider lifestyle changes including diet and exercise for weight management.",
-                                  style: TextStyle(
-                                    color: Colors
-                                        .green, // Color for this part of the text
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Image.asset(
-                          "assets/images/Jake-removebg-preview.png",
-                          width: 80,
-                        ),
-                        Expanded(
-                          child: Text(
-                              "Recommended Actions: Consult a Professional: Seek advice. Consider lifestyle changes including diet and exercise for weight management."),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
 
-          // BMI
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    spreadRadius: 0,
-                    blurRadius: 4,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+              //
+              Container(
+                padding: EdgeInsets.all(0),
+                width: MediaQuery.sizeOf(context).width,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildTrackDataButton('Body Weight'),
+                    _buildTrackDataButton('BMI'),
+                    _buildTrackDataButton('BMR'),
+                    _buildTrackDataButton('TDEE'),
+                    _buildTrackDataButton('Calorie'),
+                  ],
+                ),
               ),
-              padding: EdgeInsets.all(10),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.monitor_weight,
-                            color: Color(0xff4D7881),
-                          ),
-                          SizedBox(width: 5),
-                          Text(
-                            'BMI',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '52.2 kg',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '+2.2',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            'Goal: 50',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
-                  Container(
-                    height: 200,
-                    child: BarChart(
-                      BarChartData(
-                        barGroups: _getBarGroups(),
-                        borderData: FlBorderData(show: false),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles:
-                                SideTitles(showTitles: true, reservedSize: 40),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, meta) {
-                                switch (value.toInt()) {
-                                  case 0:
-                                    return Text('Mon');
-                                  case 1:
-                                    return Text('Tue');
-                                  case 2:
-                                    return Text('Wed');
-                                  case 3:
-                                    return Text('Thu');
-                                  case 4:
-                                    return Text('Fri');
-                                  case 5:
-                                    return Text('Sat');
-                                  case 6:
-                                    return Text('Sun');
-                                  default:
-                                    return Text('');
-                                }
-                              },
-                              reservedSize: 32,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+              ChartWidget(selectedTrack: _selectedTrack),
+              // _buildChart(),
 
-          // BMR
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    spreadRadius: 0,
-                    blurRadius: 4,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              padding: EdgeInsets.all(10),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.monitor_weight,
-                            color: Color(0xff4D7881),
-                          ),
-                          SizedBox(width: 5),
-                          Text(
-                            'BMR',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '52.2 kg',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '+2.2',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            'Goal: 50',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
-                  Container(
-                    height: 200,
-                    child: BarChart(
-                      BarChartData(
-                        barGroups: _getBarGroups(),
-                        borderData: FlBorderData(show: false),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles:
-                                SideTitles(showTitles: true, reservedSize: 40),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, meta) {
-                                switch (value.toInt()) {
-                                  case 0:
-                                    return Text('Mon');
-                                  case 1:
-                                    return Text('Tue');
-                                  case 2:
-                                    return Text('Wed');
-                                  case 3:
-                                    return Text('Thu');
-                                  case 4:
-                                    return Text('Fri');
-                                  case 5:
-                                    return Text('Sat');
-                                  case 6:
-                                    return Text('Sun');
-                                  default:
-                                    return Text('');
-                                }
-                              },
-                              reservedSize: 32,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+              // Chart
+              // ChartWidget(),
 
-          // TDEE
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    spreadRadius: 0,
-                    blurRadius: 4,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              padding: EdgeInsets.all(10),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.monitor_weight,
-                            color: Color(0xff4D7881),
-                          ),
-                          SizedBox(width: 5),
-                          Text(
-                            'TDEE',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '52.2 kg',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '+2.2',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            'Goal: 50',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
-                  Container(
-                    height: 200,
-                    child: BarChart(
-                      BarChartData(
-                        barGroups: _getBarGroups(),
-                        borderData: FlBorderData(show: false),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles:
-                                SideTitles(showTitles: true, reservedSize: 40),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, meta) {
-                                switch (value.toInt()) {
-                                  case 0:
-                                    return Text('Mon');
-                                  case 1:
-                                    return Text('Tue');
-                                  case 2:
-                                    return Text('Wed');
-                                  case 3:
-                                    return Text('Thu');
-                                  case 4:
-                                    return Text('Fri');
-                                  case 5:
-                                    return Text('Sat');
-                                  case 6:
-                                    return Text('Sun');
-                                  default:
-                                    return Text('');
-                                }
-                              },
-                              reservedSize: 32,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Calorie Tracker
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    spreadRadius: 0,
-                    blurRadius: 4,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              padding: EdgeInsets.all(10),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.monitor_weight,
-                            color: Color(0xff4D7881),
-                          ),
-                          SizedBox(width: 5),
-                          Text(
-                            'Calorie Tracker',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '52.2 kg',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xff4D7881),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '+2.2',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            'Goal: 50',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
-                  Container(
-                    height: 200,
-                    child: BarChart(
-                      BarChartData(
-                        barGroups: _getBarGroups(),
-                        borderData: FlBorderData(show: false),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles:
-                                SideTitles(showTitles: true, reservedSize: 40),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, meta) {
-                                switch (value.toInt()) {
-                                  case 0:
-                                    return Text('Mon');
-                                  case 1:
-                                    return Text('Tue');
-                                  case 2:
-                                    return Text('Wed');
-                                  case 3:
-                                    return Text('Thu');
-                                  case 4:
-                                    return Text('Fri');
-                                  case 5:
-                                    return Text('Sat');
-                                  case 6:
-                                    return Text('Sun');
-                                  default:
-                                    return Text('');
-                                }
-                              },
-                              reservedSize: 32,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+              // _buildProfileDetail("Nickname", userProfile["nickname"]!),
+              // _buildProfileDetail("Gender", userProfile["gender"]!),
+              // _buildProfileDetail("Weight", "${userProfile["weight"]} kg"),
+              // _buildProfileDetail("Height", "${userProfile["height"]} cm"),
+              // _buildProfileDetail("Goal", userProfile["goal"]!),
+              // _buildProfileDetail("Birthdate", userProfile["dob"]!),
+              // _buildProfileDetail(
+              //     "Food Preference", userProfile["preferredFlavors"]!),
+              // _buildProfileDetail("Allergies", userProfile["allergies"]!),
+              // _buildProfileDetail(
+              //     "Activity Level", userProfile["activityLevel"]!),
+            ]),
+          ]))
         ],
-      )),
+      ),
+    );
+  }
+
+  Widget _buildProfileDetail(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(value, style: TextStyle(fontSize: 16)),
+        ],
+      ),
     );
   }
 
@@ -1048,7 +573,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return GestureDetector(
       onTap: () => _onSelect(label),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
         decoration: BoxDecoration(
           color: _selected == label ? Color(0xff4D7881) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
@@ -1063,4 +588,171 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  Widget _buildTrackDataButton(String label) {
+    return GestureDetector(
+      onTap: () => _onSelectTrack(label),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+        decoration: BoxDecoration(
+          color:
+              _selectedTrack == label ? Color(0xff4D7881) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: _selectedTrack == label ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Widget _buildChart() {
+  //   switch (_selectedTrack) {
+  //     case 'Body Weight':
+  //       return _buildTrackDataButton('Body Weight');
+  //     case 'BMI':
+  //       return _buildTrackDataButton('TDEE');
+  //     case 'BMR':
+  //       return _buildTrackDataButton('BMR');
+  //     case 'TDEE':
+  //       return _buildTrackDataButton('TDEE');
+  //     case 'Calorie':
+  //       return _buildTrackDataButton('Calorie');
+  //     default:
+  //       return Container();
+  //   }
+  // }
+  // Widget _buildChart() {
+  //   switch (_selectedTrack) {
+  //     case 'Body Weight':
+  //       return _buildLineChart([60, 61, 62, 61.5, 62.3]);
+  //     case 'BMI':
+  //       return _buildLineChart([22.5, 22.6, 22.7, 22.65, 22.8]);
+  //     case 'BMR':
+  //       return _buildLineChart([1500, 1510, 1520, 1515, 1525]);
+  //     case 'TDEE':
+  //       return _buildLineChart([2000, 2050, 2100, 2150, 2200]);
+  //     case 'Calorie':
+  //       return _buildLineChart([1800, 1850, 1900, 1950, 2000]);
+  //     default:
+  //       return Container();
+  //   }
+  // }
+
+  Widget _buildLineChart(List<double> dataPoints) {
+    return SizedBox(
+      height: 300,
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(show: false),
+          titlesData: FlTitlesData(show: false),
+          borderData: FlBorderData(show: false),
+          lineBarsData: [
+            LineChartBarData(
+              spots: dataPoints
+                  .asMap()
+                  .entries
+                  .map((e) => FlSpot(e.key.toDouble(), e.value))
+                  .toList(),
+              isCurved: true,
+              // colors: [Colors.blue],
+              barWidth: 3,
+              isStrokeCapRound: true,
+              belowBarData: BarAreaData(show: false),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+
+// import 'package:flutter/material.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+
+// class ProfileScreen extends StatefulWidget {
+//   @override
+//   _ProfileScreenState createState() => _ProfileScreenState();
+// }
+
+// class _ProfileScreenState extends State<ProfileScreen> {
+//   User? user = FirebaseAuth.instance.currentUser;
+//   Map<String, dynamic>? userData;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     fetchUserData();
+//   }
+
+//   Future<void> fetchUserData() async {
+//     if (user == null) return;
+
+//     try {
+//       DocumentSnapshot userDoc = await FirebaseFirestore.instance
+//           .collection('users')
+//           .doc(user!.uid)
+//           .get();
+
+//       if (userDoc.exists) {
+//         setState(() {
+//           userData = userDoc.data() as Map<String, dynamic>;
+//         });
+//       }
+//     } catch (e) {
+//       print('Error fetching user data: $e');
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: Text('Profile')),
+//       body: userData == null
+//           ? Center(child: CircularProgressIndicator())
+//           : Padding(
+//               padding: EdgeInsets.all(16.0),
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text('Email: ${userData?['email'] ?? 'Not provided'}',
+//                       style: TextStyle(fontSize: 18)),
+//                   SizedBox(height: 10),
+//                   Text('Height: ${userData?['height'] ?? 'Not provided'} cm',
+//                       style: TextStyle(fontSize: 18)),
+//                   SizedBox(height: 10),
+//                   Text('Weight: ${userData?['weight'] ?? 'Not provided'} kg',
+//                       style: TextStyle(fontSize: 18)),
+//                   SizedBox(height: 10),
+//                   Text('Date of Birth: ${userData?['dob'] ?? 'Not provided'}',
+//                       style: TextStyle(fontSize: 18)),
+//                   SizedBox(height: 10),
+//                   Text('Gender: ${userData?['gender'] ?? 'Not provided'}',
+//                       style: TextStyle(fontSize: 18)),
+//                   SizedBox(height: 10),
+//                   Text(
+//                       'Allergies: ${userData?['allergies'] ?? 'Not provided'} kg',
+//                       style: TextStyle(fontSize: 18)),
+//                   SizedBox(height: 10),
+//                   Text(
+//                       'Weight Goal: ${userData?['weightGoal'] ?? 'Not provided'}',
+//                       style: TextStyle(fontSize: 18)),
+//                   SizedBox(height: 10),
+//                   Text(
+//                       'Preferred Flavors: ${userData?['preferredFlavors'] ?? 'Not provided'}',
+//                       style: TextStyle(fontSize: 18)),
+//                   SizedBox(height: 10),
+//                   Text(
+//                       'Activity Level: ${userData?['activityLevel'] ?? 'Not provided'}',
+//                       style: TextStyle(fontSize: 18)),
+//                 ],
+//               ),
+//             ),
+//     );
+//   }
+// }
