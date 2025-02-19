@@ -5,45 +5,36 @@ class RecipeApiService {
   static const String _appId = "720e210d";
   static const String _appKey = "446497202cda0b4ee6b1754ba948c3ac";
   static const String _baseUrl = "api.edamam.com";
-  static const String _userId = "ginraidee"; // Your user ID
+  static const String _userId = "ginraidee";
 
   static Future<List<RecipeItem>?> fetchRecipes({
-    required String ingredient,
+    required String query,
     double? maxCalories,
-    bool isVegetarian = false,
-    bool isGlutenFree = false,
-    List<String>? selectedAllergies,
   }) async {
-    final uri = Uri.https(_baseUrl, "/search", {
+    final uri = Uri.https(_baseUrl, "/api/recipes/v2", {
       "app_id": _appId,
       "app_key": _appKey,
-      "q": ingredient,
+      "q": query,
+      "type": "public", // Required for Edamam API
       if (maxCalories != null) "calories": "0-$maxCalories",
     });
 
-    print('Request URI: $uri'); // Log the request URI
+    print('Request URI: $uri');
 
     try {
-      final response = await http.get(
-        uri,
-        headers: {
-          "Edamam-Account-User": _userId, // Add the user ID here in the headers
-        },
-      );
+      final response = await http.get(uri);
 
-      print('Response body: ${response.body}'); // Log the response body
+      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List<dynamic> hits = data['hits'] ?? [];
-
-        print('Found ${hits.length} recipes'); // Log the number of recipes
+        print('Found ${hits.length} recipes');
 
         List<RecipeItem> recipes =
             hits.map((e) => RecipeItem.fromJson(e['recipe'])).toList();
 
-        // Now filter similar recipes based on the ingredients
-        return filterSimilarRecipes(recipes, ingredient);
+        return recipes;
       } else {
         throw Exception("Error: ${response.statusCode}, ${response.body}");
       }
@@ -53,22 +44,37 @@ class RecipeApiService {
     }
   }
 
-  // Content-based filtering: Recommend recipes with similar ingredients
-  static List<RecipeItem> filterSimilarRecipes(
-      List<RecipeItem> recipes, String currentIngredient) {
-    List<RecipeItem> recommendedRecipes = [];
+  //
+  static Future<RecipeItem?> fetchRecipeById(String id) async {
+    final uri = Uri.https(_baseUrl, "/search", {
+      "app_id": _appId,
+      "app_key": _appKey,
+      "q": id, // Using recipe URL or another unique identifier
+    });
 
-    // Loop through the recipes and compare their ingredients with the current ingredient
-    for (var recipe in recipes) {
-      // Check if the recipe contains the current ingredient (simple keyword match)
-      if (recipe.ingredients.any((ingredient) =>
-          ingredient.toLowerCase().contains(currentIngredient.toLowerCase()))) {
-        recommendedRecipes.add(recipe);
+    try {
+      final response = await http.get(
+        uri,
+        headers: {"Edamam-Account-User": _userId},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<dynamic> hits = data['hits'] ?? [];
+
+        if (hits.isNotEmpty) {
+          return RecipeItem.fromJson(hits[0]['recipe']);
+        } else {
+          print('No recipe found for ID: $id');
+          return null;
+        }
+      } else {
+        throw Exception("Error: ${response.statusCode}, ${response.body}");
       }
+    } catch (e) {
+      print("Exception: $e");
+      return null;
     }
-
-    print('Recommended ${recommendedRecipes.length} similar recipes');
-    return recommendedRecipes;
   }
 }
 
@@ -79,7 +85,6 @@ class RecipeItem {
   final String source;
   final String recipeUrl;
   final List<String> ingredients;
-  final String instructions;
 
   RecipeItem({
     required this.name,
@@ -88,23 +93,41 @@ class RecipeItem {
     required this.source,
     required this.recipeUrl,
     required this.ingredients,
-    required this.instructions,
   });
 
+  // Convert Firestore data to RecipeItem
+  factory RecipeItem.fromMap(Map<String, dynamic> map) {
+    return RecipeItem(
+      name: map['name'] ?? '',
+      imageUrl: map['imageUrl'] ?? '',
+      calories: (map['calories'] ?? 0).toDouble(),
+      source: map['source'] ?? '',
+      recipeUrl: map['recipeUrl'] ?? '',
+      ingredients: List<String>.from(map['ingredients'] ?? []),
+    );
+  }
+
+  // Convert RecipeItem to Map for Firebase
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'imageUrl': imageUrl,
+      'calories': calories,
+      'source': source,
+      'recipeUrl': recipeUrl,
+      'ingredients': ingredients,
+    };
+  }
+
+  // Convert JSON from API to RecipeItem
   factory RecipeItem.fromJson(Map<String, dynamic> json) {
-    // Make sure to access 'ingredients' properly
-    List<String> ingredients = List<String>.from(json['ingredientLines'] ?? []);
-
-    String instructions = json['instructions'] ?? 'No instructions available';
-
     return RecipeItem(
       name: json['label'] ?? 'Unknown Recipe',
       imageUrl: json['image'] ?? 'https://via.placeholder.com/100',
       calories: json['calories']?.toDouble() ?? 0.0,
       source: json['source'] ?? 'Unknown Source',
       recipeUrl: json['url'] ?? '',
-      ingredients: ingredients,
-      instructions: instructions,
+      ingredients: List<String>.from(json['ingredientLines'] ?? []),
     );
   }
 }

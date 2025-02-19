@@ -127,15 +127,37 @@ class _ChartWidgetState extends State<ChartWidget> {
         : (double.tryParse(userData?['weight']?.toString() ?? '') ?? 0.0);
   }
 
-  List<BarChartGroupData> _getBarGroups() {
-    return List.generate(7, (index) {
+  List<BarChartGroupData> _getBarGroups(String track) {
+    List<double> dataPoints;
+
+    switch (track) {
+      case 'Body Weight':
+        dataPoints = [60, 61, 62, 61.5, 62.3]; // Example, fetch actual data
+        break;
+      case 'BMI':
+        dataPoints = [22.5, 22.6, 22.7, 22.65, 22.8];
+        break;
+      case 'BMR':
+        dataPoints = [1500, 1510, 1520, 1515, 1525];
+        break;
+      case 'TDEE':
+        dataPoints = [2000, 2050, 2100, 2150, 2200];
+        break;
+      case 'Calorie':
+        dataPoints = [1800, 1850, 1900, 1950, 2000];
+        break;
+      default:
+        dataPoints = [0.0];
+    }
+
+    return List.generate(dataPoints.length, (index) {
       return BarChartGroupData(
         x: index + 1,
         barRods: [
           BarChartRodData(
-            toY: _getWeightValue(),
+            toY: dataPoints[index],
             color: Color(0xff4D7881),
-          )
+          ),
         ],
       );
     });
@@ -236,7 +258,7 @@ class _ChartWidgetState extends State<ChartWidget> {
                 height: 200,
                 child: BarChart(
                   BarChartData(
-                    barGroups: _getBarGroups(),
+                    barGroups: _getBarGroups(_selectedTrack),
                     borderData: FlBorderData(show: false),
                     titlesData: FlTitlesData(
                       leftTitles: AxisTitles(
@@ -283,595 +305,13 @@ class _ChartWidgetState extends State<ChartWidget> {
         ),
       ),
 
-      // Body Mass Index
-      Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                spreadRadius: 0,
-                blurRadius: 4,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.all(10),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.monitor_weight,
-                        color: Color(0xff4D7881),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        'Body Mass Index',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xff4D7881),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${userData?['weight'] ?? 'N/A'} kg',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xff4D7881),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        'Obesity Level 3',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.red,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        'Appropriate Value: 18.5-22.9',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-              Container(
-                height: 200,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: "Recommended Actions: ",
-                              style: TextStyle(
-                                color: Colors
-                                    .black, // Color for the first part of the text
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextSpan(
-                              text: "Consult a Professional: Seek advice. ",
-                              style: TextStyle(
-                                color: Colors
-                                    .blue, // Color for this part of the text
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            TextSpan(
-                              text:
-                                  "Consider lifestyle changes including diet and exercise for weight management.",
-                              style: TextStyle(
-                                color: Colors
-                                    .green, // Color for this part of the text
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Image.asset(
-                      "assets/images/Jake-removebg-preview.png",
-                      width: 80,
-                    ),
-                    Expanded(
-                      child: Text(
-                          "Recommended Actions: Consult a Professional: Seek advice. Consider lifestyle changes including diet and exercise for weight management."),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      // BMI
 
       // BMI
-      Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                spreadRadius: 0,
-                blurRadius: 4,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.all(10),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.monitor_weight,
-                        color: Color(0xff4D7881),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        'BMI',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xff4D7881),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '52.2 kg',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xff4D7881),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        '+2.2',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.red,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        'Goal: 50',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-              Container(
-                height: 200,
-                child: BarChart(
-                  BarChartData(
-                    barGroups: _getBarGroups(),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
-                        sideTitles:
-                            SideTitles(showTitles: true, reservedSize: 40),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            switch (value.toInt()) {
-                              case 0:
-                                return Text('Mon');
-                              case 1:
-                                return Text('Tue');
-                              case 2:
-                                return Text('Wed');
-                              case 3:
-                                return Text('Thu');
-                              case 4:
-                                return Text('Fri');
-                              case 5:
-                                return Text('Sat');
-                              case 6:
-                                return Text('Sun');
-                              default:
-                                return Text('');
-                            }
-                          },
-                          reservedSize: 32,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
 
-      // BMR
-      Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                spreadRadius: 0,
-                blurRadius: 4,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.all(10),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.monitor_weight,
-                        color: Color(0xff4D7881),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        'BMR',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xff4D7881),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '52.2 kg',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xff4D7881),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        '+2.2',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.red,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        'Goal: 50',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-              Container(
-                height: 200,
-                child: BarChart(
-                  BarChartData(
-                    barGroups: _getBarGroups(),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
-                        sideTitles:
-                            SideTitles(showTitles: true, reservedSize: 40),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            switch (value.toInt()) {
-                              case 0:
-                                return Text('Mon');
-                              case 1:
-                                return Text('Tue');
-                              case 2:
-                                return Text('Wed');
-                              case 3:
-                                return Text('Thu');
-                              case 4:
-                                return Text('Fri');
-                              case 5:
-                                return Text('Sat');
-                              case 6:
-                                return Text('Sun');
-                              default:
-                                return Text('');
-                            }
-                          },
-                          reservedSize: 32,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      // BMI
 
-      // TDEE
-      Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                spreadRadius: 0,
-                blurRadius: 4,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.all(10),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.monitor_weight,
-                        color: Color(0xff4D7881),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        'TDEE',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xff4D7881),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '52.2 kg',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xff4D7881),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        '+2.2',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.red,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        'Goal: 50',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-              Container(
-                height: 200,
-                child: BarChart(
-                  BarChartData(
-                    barGroups: _getBarGroups(),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
-                        sideTitles:
-                            SideTitles(showTitles: true, reservedSize: 40),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            switch (value.toInt()) {
-                              case 0:
-                                return Text('Mon');
-                              case 1:
-                                return Text('Tue');
-                              case 2:
-                                return Text('Wed');
-                              case 3:
-                                return Text('Thu');
-                              case 4:
-                                return Text('Fri');
-                              case 5:
-                                return Text('Sat');
-                              case 6:
-                                return Text('Sun');
-                              default:
-                                return Text('');
-                            }
-                          },
-                          reservedSize: 32,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-
-      // Calorie Tracker
-      Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                spreadRadius: 0,
-                blurRadius: 4,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.all(10),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.monitor_weight,
-                        color: Color(0xff4D7881),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        'Calorie Tracker',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xff4D7881),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '52.2 kg',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xff4D7881),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        '+2.2',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.red,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        'Goal: 50',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-              Container(
-                height: 200,
-                child: BarChart(
-                  BarChartData(
-                    barGroups: _getBarGroups(),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
-                        sideTitles:
-                            SideTitles(showTitles: true, reservedSize: 40),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            switch (value.toInt()) {
-                              case 0:
-                                return Text('Mon');
-                              case 1:
-                                return Text('Tue');
-                              case 2:
-                                return Text('Wed');
-                              case 3:
-                                return Text('Thu');
-                              case 4:
-                                return Text('Fri');
-                              case 5:
-                                return Text('Sat');
-                              case 6:
-                                return Text('Sun');
-                              default:
-                                return Text('');
-                            }
-                          },
-                          reservedSize: 32,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      // Calorie
     ]);
   }
 
@@ -883,20 +323,43 @@ class _ChartWidgetState extends State<ChartWidget> {
   }
 
   Widget _buildChart() {
-    switch (_selectedTrack) {
-      case 'Body Weight':
-        return _buildLineChart([60, 61, 62, 61.5, 62.3]);
-      case 'BMI':
-        return _buildLineChart([22.5, 22.6, 22.7, 22.65, 22.8]);
-      case 'BMR':
-        return _buildLineChart([1500, 1510, 1520, 1515, 1525]);
-      case 'TDEE':
-        return _buildLineChart([2000, 2050, 2100, 2150, 2200]);
-      case 'Calorie':
-        return _buildLineChart([1800, 1850, 1900, 1950, 2000]);
-      default:
-        return Container();
-    }
+    return BarChart(
+      BarChartData(
+        barGroups: _getBarGroups(_selectedTrack),
+        borderData: FlBorderData(show: false),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                DateTime today = DateTime.now();
+                DateTime date =
+                    today.subtract(Duration(days: 6 - value.toInt()));
+                String dateString = "${date.day}${[
+                  'Jan',
+                  'Feb',
+                  'Mar',
+                  'Apr',
+                  'May',
+                  'Jun',
+                  'Jul',
+                  'Aug',
+                  'Sep',
+                  'Oct',
+                  'Nov',
+                  'Dec'
+                ][date.month - 1]}";
+                return Text(dateString, style: TextStyle(fontSize: 12));
+              },
+              reservedSize: 32,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildLineChart(List<double> dataPoints) {
@@ -904,7 +367,7 @@ class _ChartWidgetState extends State<ChartWidget> {
       height: 300,
       child: BarChart(
         BarChartData(
-          barGroups: _getBarGroups(),
+          barGroups: _getBarGroups(_selectedTrack),
           borderData: FlBorderData(show: false),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(

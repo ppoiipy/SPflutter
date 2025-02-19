@@ -1,8 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/food_detail_screen.dart';
+import 'package:flutter_application_1/screens/nutrition_tracking_screen.dart';
 import 'package:flutter_application_1/screens/recipe_detail_screen.dart';
 
-import 'menu_screen.dart';
+import 'package:flutter_application_1/screens/menu_screen.dart';
 import 'favorite_screen.dart';
 import 'calculate_screen.dart';
 import 'profile_screen.dart';
@@ -10,8 +12,13 @@ import 'package:flutter_application_1/JsonModels/users.dart';
 import 'package:flutter_application_1/JsonModels/menu_item.dart';
 import 'calorie_tracking_screen.dart';
 import 'meal_planning_screen.dart';
-import 'package:flutter_application_1/api/fetch_food_api.dart';
+// import 'package:flutter_application_1/api/fetch_food_api.dart';
 import 'package:flutter_application_1/api/fetch_recipe_api.dart';
+import 'fetch_food_data.dart';
+
+// Get DB Path
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
 
 class Homepage extends StatefulWidget {
   @override
@@ -20,74 +27,107 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   int _selectedIndex = 0;
-  String loggedInEmail = "johndoe@example.com";
+  // String loggedInEmail = "johndoe@example.com";
 
-  late Future<List<FoodItem>?> _foodFuture; // Allow nullable list
+  // // late Future<List<FoodItem>?> _foodFuture; // Allow nullable list
 
-  // List<FoodItem> _filteredFoodItems = [];
-  TextEditingController _searchController = TextEditingController();
+  // // List<FoodItem> _filteredFoodItems = [];
+  // TextEditingController _searchController = TextEditingController();
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   // _fetchFoodData(); // Initially fetch with default ingredient
+  //   printDatabasePath();
+  // }
+
+  // Future<void> printDatabasePath() async {
+  //   final dbPath = await getDatabasesPath();
+  //   final path = join(dbPath, 'recipes.db');
+  //   print("Database Path: $path");
+  // }
+
+  // // Fetch food data from the API with the provided ingredient
+  // // void _fetchFoodData([String ingredient = ""]) {
+  // //   setState(() {
+  // //     _foodFuture = FoodApiService.fetchFoodData(ingredient: ingredient);
+  // //   });
+  // // }
+
+  // // Called when the search field value changes
+  // // void _filterFoodItems(String query) {
+  // //   print("Searching for: $query"); // Debugging query
+  // //   setState(() {
+  // //     if (query.isEmpty) {
+  // //       // Clear the food data by calling the fetch with a default ingredient
+  // //       _foodFuture = FoodApiService.fetchFoodData(
+  // //           ingredient: ""); // or set an empty list here if needed
+  // //     } else {
+  // //       _foodFuture = FoodApiService.fetchFoodData(
+  // //           ingredient: ""); // Pass the query to fetch data
+  // //     }
+  // //   });
+  // // }
+
+  // final TextEditingController _ingredientController = TextEditingController();
+  // double? _maxCalories;
+  // List<String> _selectedAllergies = [];
+  // bool _isVegetarian = false;
+  // bool _isGlutenFree = false;
+  // List<RecipeItem>? _foodResults;
+  // // List<menu_screen.RecipeItem>? _foodResults;
+  // bool _isLoading = false;
+
+  // // recipe
+  // void _searchFood() async {
+  //   setState(() => _isLoading = true);
+
+  //   String ingredient = _ingredientController.text.trim();
+  //   if (ingredient.isEmpty) {
+  //     print('Ingredient is empty');
+  //     return;
+  //   }
+
+  //   // Fetch recipes with additional filter parameters
+  //   List<RecipeItem>? results = await RecipeApiService.fetchRecipes(
+  //     query: ingredient,
+  //     maxCalories: _maxCalories,
+  //     // Pass additional parameters like dietary restrictions if needed
+  //     // isVegetarian: _isVegetarian,
+  //     // isGlutenFree: _isGlutenFree,
+  //     // selectedAllergies: _selectedAllergies,
+  //   );
+
+  //   setState(() {
+  //     _foodResults = results;
+  //     _isLoading = false;
+  //   });
+  // }
+
+  List foodItems = [];
+  bool isLoading = false;
+  final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchFoodData(); // Initially fetch with default ingredient
+    fetchFoodDataFromApi("chicken"); // Fetch default data on screen load
   }
 
-  // Fetch food data from the API with the provided ingredient
-  void _fetchFoodData([String ingredient = ""]) {
-    print(
-        "Fetching data for: $ingredient"); // Debugging: Check what ingredient is being used
+  Future<void> fetchFoodDataFromApi(String query) async {
     setState(() {
-      _foodFuture = FoodApiService.fetchFoodData(ingredient: "");
+      isLoading = true;
     });
-  }
 
-  // Called when the search field value changes
-  void _filterFoodItems(String query) {
-    print("Searching for: $query"); // Debugging query
-    setState(() {
-      if (query.isEmpty) {
-        // Clear the food data by calling the fetch with a default ingredient
-        _foodFuture = FoodApiService.fetchFoodData(
-            ingredient: ""); // or set an empty list here if needed
-      } else {
-        _foodFuture = FoodApiService.fetchFoodData(
-            ingredient: ""); // Pass the query to fetch data
-      }
-    });
-  }
-
-  final TextEditingController _ingredientController = TextEditingController();
-  double? _maxCalories;
-  List<String> _selectedAllergies = [];
-  bool _isVegetarian = false;
-  bool _isGlutenFree = false;
-  List<RecipeItem>? _foodResults;
-  bool _isLoading = false;
-
-  // recipe
-  void _searchFood() async {
-    setState(() => _isLoading = true);
-
-    String ingredient = _ingredientController.text.trim();
-    if (ingredient.isEmpty) {
-      print('Ingredient is empty');
-      return;
-    }
-
-    // Fetch recipes with additional filter parameters
-    List<RecipeItem>? results = await RecipeApiService.fetchRecipes(
-      ingredient: ingredient,
-      maxCalories: _maxCalories,
-      isVegetarian: _isVegetarian,
-      isGlutenFree: _isGlutenFree,
-      selectedAllergies: _selectedAllergies,
-    );
+    // Call the function that fetches food data
+    List<dynamic> fetchedFoodItems = await fetchFoodData(query);
 
     setState(() {
-      _foodResults = results;
-      _isLoading = false;
+      foodItems = fetchedFoodItems;
+      isLoading = false;
     });
+
+    print("Fetched ${foodItems.length} items.");
   }
 
   Widget _getScreen(int index) {
@@ -143,28 +183,36 @@ class _HomepageState extends State<Homepage> {
               borderRadius: BorderRadius.circular(15),
               elevation: 4,
               shadowColor: Colors.black,
+              // child: TextField(
+              //   // controller: _searchController,
+              //   controller: _ingredientController,
+              //   // onFieldSubmitted: _filterFoodItems,
+              //   onSubmitted: (_) {
+              //     // Call _searchFood when the user submits the input
+              //     _searchFood();
+              //   },
+
+              // ),
+
               child: TextField(
-                // controller: _searchController,
-                controller: _ingredientController,
-                // onFieldSubmitted: _filterFoodItems,
-                onSubmitted: (_) {
-                  // Call _searchFood when the user submits the input
-                  _searchFood();
-                },
+                controller: searchController,
                 decoration: InputDecoration(
+                  hintText: 'Enter ingredient', // Similar to homepage
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
                     borderSide: BorderSide(color: Colors.transparent),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[250],
+                  fillColor:
+                      Colors.grey[250], // Same background color as homepage
                   prefixIcon: IconButton(
                     icon: Icon(Icons.search),
-                    // onPressed: () => _filterFoodItems(_searchController.text),
-                    onPressed: _searchFood,
+                    onPressed: () {
+                      fetchFoodDataFromApi(searchController.text.trim());
+                    },
                   ),
-                  hintText: 'Enter food name',
-                  hintStyle: TextStyle(color: Colors.grey[700]),
+                  hintStyle: TextStyle(
+                      color: Colors.grey[700]), // Match the homepage text style
                 ),
               ),
             ),
@@ -192,6 +240,11 @@ class _HomepageState extends State<Homepage> {
                   imagePath: 'assets/images/calorieTracking.png',
                   functionName: 'Calorie Tracking',
                   destinationScreen: CalorieTrackingScreen(),
+                ),
+                FunctionCard(
+                  imagePath: 'assets/images/calorieTracking.png',
+                  functionName: 'Nutrition Tracking',
+                  destinationScreen: NutritionScreen(),
                 ),
                 FunctionCard(
                   imagePath: 'assets/images/mealPlanning.png',
@@ -310,90 +363,145 @@ class _HomepageState extends State<Homepage> {
           //     },
           //   ),
           // ),
-          Expanded(
-            child: _foodResults == null
-                ? Center(child: Text("No results yet"))
-                : _foodResults!.isEmpty
-                    ? Center(child: Text("No matching recipes found"))
-                    : ListView.builder(
-                        itemCount: _foodResults!.length,
-                        itemBuilder: (context, index) {
-                          final recipe = _foodResults![index];
-                          return ListTile(
-                            leading: Image.network(recipe.imageUrl,
-                                width: 50, height: 50, fit: BoxFit.cover),
-                            title: Text(recipe.name),
-                            subtitle: Text(
-                                "Calories: ${recipe.calories.toStringAsFixed(1)} kcal\nSource: ${recipe.source}"),
-                            trailing: Icon(Icons.arrow_forward),
-                            onTap: () {
-                              // Navigate to the RecipeDetailScreen
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      RecipeDetailScreen(recipe: recipe),
+          // Expanded(
+          //   child: _foodResults == null
+          //       ? Center(child: Text("No results yet"))
+          //       : _foodResults!.isEmpty
+          //           ? Center(child: Text("No matching recipes found"))
+          //           : ListView.builder(
+          //               itemCount: _foodResults!.length,
+          //               itemBuilder: (context, index) {
+          //                 final recipe = _foodResults![index];
+          //                 return ListTile(
+          //                   leading: Image.network(recipe.imageUrl,
+          //                       width: 50, height: 50, fit: BoxFit.cover),
+          //                   title: Text(recipe.name),
+          //                   subtitle: Text(
+          //                       "Calories: ${recipe.calories.toStringAsFixed(1)} kcal\nSource: ${recipe.source}"),
+          //                   trailing: Icon(Icons.arrow_forward),
+          //                   onTap: () {
+          //                     // Navigate to the RecipeDetailScreen
+          //                     Navigator.push(
+          //                       context,
+          //                       MaterialPageRoute(
+          //                         builder: (context) => RecipeDetailScreen(
+          //                           recipe: recipe,
+          //                         ),
+          //                       ),
+          //                     );
+          //                   },
+          //                 );
+          //               },
+          //             ),
+          // ),
+
+          isLoading
+              ? CircularProgressIndicator()
+              : Expanded(
+                  child: foodItems.isEmpty
+                      ? Center(child: Text("No food found"))
+                      : ListView.builder(
+                          itemCount: foodItems.length,
+                          itemBuilder: (context, index) {
+                            var food = foodItems[index]['food'];
+                            return ListTile(
+                              leading: CachedNetworkImage(
+                                imageUrl: food['image'] ?? '',
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) =>
+                                    CircularProgressIndicator(), // Shows a loading spinner
+                                errorWidget: (context, url, error) =>
+                                    Image.asset(
+                                  'assets/images/default.png',
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
                                 ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-          ),
+                              ),
+                              title: Text(food['label'] ?? "Unknown"),
+                              subtitle: Text(
+                                  "Calories: ${food['nutrients']['ENERC_KCAL'] ?? 'N/A'} kcal"),
+                              onTap: () {
+                                // Navigator.push(
+                                //   context,
+                                //   // MaterialPageRoute(
+                                //   //   builder: (context) => RecipeDetailScreen(
+                                //   //     recipe: food,
+                                //   //   ),
+                                //   // ),
+                                //   MaterialPageRoute(
+                                //     builder: (context) =>
+                                //         FoodDetailScreen(menuItem: food),
+                                //   ),
+                                // );
+                              },
+                            );
+                          },
+                        ),
+                ),
         ],
       ),
     );
   }
 
+  void _refreshFavorites() {
+    // Logic to refresh the favorite list if needed
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _getScreen(_selectedIndex),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        indicatorColor: Color(0xff4D7881),
-        onDestinationSelected: (int index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        destinations: [
-          NavigationDestination(
-              icon: Icon(
-                Icons.home_outlined,
-                color: Colors.black,
-                size: 30,
-              ),
-              label: 'Home'),
-          NavigationDestination(
-              icon: Icon(
-                Icons.food_bank_outlined,
-                color: Colors.black,
-                size: 30,
-              ),
-              label: 'Menu'),
-          NavigationDestination(
-              icon: Icon(
-                Icons.favorite_outline,
-                color: Colors.black,
-                size: 30,
-              ),
-              label: 'Favorites'),
-          NavigationDestination(
-              icon: Icon(
-                Icons.calculate_outlined,
-                color: Colors.black,
-                size: 30,
-              ),
-              label: 'Calculate'),
-          NavigationDestination(
-              icon: Icon(
-                Icons.person_outline,
-                color: Colors.black,
-                size: 30,
-              ),
-              label: 'Profile'),
-        ],
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: _getScreen(_selectedIndex),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _selectedIndex,
+          indicatorColor: Color(0xff4D7881),
+          onDestinationSelected: (int index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          destinations: [
+            NavigationDestination(
+                icon: Icon(
+                  Icons.home_outlined,
+                  color: Colors.black,
+                  size: 30,
+                ),
+                label: 'Home'),
+            NavigationDestination(
+                icon: Icon(
+                  Icons.food_bank_outlined,
+                  color: Colors.black,
+                  size: 30,
+                ),
+                label: 'Menu'),
+            NavigationDestination(
+                icon: Icon(
+                  Icons.favorite_outline,
+                  color: Colors.black,
+                  size: 30,
+                ),
+                label: 'Favorites'),
+            NavigationDestination(
+                icon: Icon(
+                  Icons.calculate_outlined,
+                  color: Colors.black,
+                  size: 30,
+                ),
+                label: 'Calculate'),
+            NavigationDestination(
+                icon: Icon(
+                  Icons.person_outline,
+                  color: Colors.black,
+                  size: 30,
+                ),
+                label: 'Profile'),
+          ],
+        ),
       ),
     );
   }

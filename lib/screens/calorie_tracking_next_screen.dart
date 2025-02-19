@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'dart:ffi';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/fetch_food_api.dart';
@@ -16,47 +20,125 @@ class MealPlanningNextScreen extends StatefulWidget {
 
 class MealPlanningNextScreenState extends State<MealPlanningNextScreen> {
   String selectedTab = 'Search';
-
   DateTime selectedDate = DateTime.now();
-
-  late Future<List<FoodItem>?> _foodFuture; // Allow nullable list
-
+  late Future<List<FoodItem>?> _foodFuture;
   TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _favoriteRecipes = [];
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
-    _fetchFoodData(); // Initially fetch with default ingredient
+    _fetchFoodData(); // Initially fetch food data
+    _loadFavorites();
+    loadJsonData();
   }
 
-  // Fetch food data from the API with the provided ingredient
+  // Fetch food data from the API (can be extended to include daily meals based on the date)
   void _fetchFoodData([String ingredient = ""]) {
-    print(
-        "Fetching data for: $ingredient"); // Debugging: Check what ingredient is being used
+    print("Fetching data for: $ingredient");
     setState(() {
       _foodFuture = FoodApiService.fetchFoodData(ingredient: "");
     });
   }
 
-  // Called when the search field value changes
-  void _filterFoodItems(String query) {
-    print("Searching for: $query"); // Debugging query
+  // Load favorite recipes from Firestore
+  Future<void> _loadFavorites() async {
+    var user = _auth.currentUser;
+    if (user == null) return;
+
+    var snapshot = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites')
+        .get();
+
+    List<Map<String, dynamic>> favoriteRecipes = [];
+    for (var doc in snapshot.docs) {
+      favoriteRecipes.add(doc.data());
+    }
+
     setState(() {
-      if (query.isEmpty) {
-        // Clear the food data by calling the fetch with a default ingredient
-        _foodFuture = FoodApiService.fetchFoodData(
-            ingredient: ""); // or set an empty list here if needed
-      } else {
-        _foodFuture = FoodApiService.fetchFoodData(
-            ingredient: ""); // Pass the query to fetch data
-      }
+      _favoriteRecipes = favoriteRecipes;
     });
   }
 
-  void _updateDate(int days) {
+  // Function to show meal plans (Breakfast, Lunch, Dinner) on the Diary Tab
+  Widget _buildMealPlans() {
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildMealCategory('Breakfast'),
+            _buildMealCategory('Lunch'),
+            _buildMealCategory('Dinner'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<dynamic> recipes = [];
+  List<dynamic> filteredRecipes = [];
+  TextEditingController searchController = TextEditingController();
+
+  // Load data from JSON file in assets/fetchMenu
+  void loadJsonData() async {
+    String jsonData =
+        await rootBundle.loadString('assets/fetchMenu/recipe_output.json');
+    Map<String, dynamic> jsonMap = json.decode(jsonData);
+    recipes = jsonMap['hits'].map((hit) => hit['recipe']).toList();
     setState(() {
-      selectedDate = selectedDate.add(Duration(days: days));
+      filteredRecipes = List.from(recipes);
     });
+  }
+
+  // Filter recipes based on search query and cuisineType
+  void filterRecipes(String query, String cuisineType) {
+    setState(() {
+      filteredRecipes = recipes
+          .where((recipe) =>
+              recipe['label'].toLowerCase().contains(query.toLowerCase()) &&
+              (cuisineType == "All" ||
+                  recipe['cuisineType']
+                      .toString()
+                      .toLowerCase()
+                      .contains(cuisineType.toLowerCase()) ||
+                  recipe['label']
+                      .toString()
+                      .toLowerCase()
+                      .contains(cuisineType.toLowerCase())))
+          .toList();
+    });
+  }
+
+  // Function to display a meal category (e.g., Breakfast, Lunch, Dinner)
+  Widget _buildMealCategory(String category) {
+    return Container(
+      padding: EdgeInsets.all(8),
+      margin: EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            category,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          // Example meal list for each category (you can replace with actual meal data)
+          for (int i = 1; i < 4; i++)
+            ListTile(
+              title: Text('$category Meal $i'),
+              subtitle: Text('Meal details here'),
+              onTap: () {},
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -64,6 +146,7 @@ class MealPlanningNextScreenState extends State<MealPlanningNextScreen> {
     return Scaffold(
       body: Column(
         children: [
+          // Top container with search and tabs
           Container(
             width: MediaQuery.sizeOf(context).width,
             height: 180,
@@ -91,26 +174,20 @@ class MealPlanningNextScreenState extends State<MealPlanningNextScreen> {
                       ),
                     ),
                     leading: IconButton(
-                      icon: Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.white,
-                      ),
+                      icon: Icon(Icons.arrow_back_ios, color: Colors.white),
                       onPressed: () {
                         Navigator.pop(context);
                       },
                     ),
                     actions: [
                       IconButton(
-                        icon: Icon(
-                          Icons.calendar_today_outlined,
-                          color: Colors.white,
-                        ),
+                        icon: Icon(Icons.calendar_today_outlined,
+                            color: Colors.white),
                         onPressed: () {},
                       ),
                     ],
                   ),
                 ),
-                // Search field
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
@@ -127,6 +204,7 @@ class MealPlanningNextScreenState extends State<MealPlanningNextScreen> {
                       ),
                       contentPadding: EdgeInsets.symmetric(vertical: 10),
                     ),
+                    // onChanged: _filterFoodItems,
                   ),
                 ),
                 Row(
@@ -140,20 +218,14 @@ class MealPlanningNextScreenState extends State<MealPlanningNextScreen> {
                       },
                       child: Column(
                         children: [
-                          Text(
-                            'Search',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                          Text('Search',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500)),
                           if (selectedTab == 'Search')
                             Container(
-                              height: 3,
-                              width: 80,
-                              color: Colors.white,
-                            ),
+                                height: 3, width: 80, color: Colors.white),
                         ],
                       ),
                     ),
@@ -165,20 +237,33 @@ class MealPlanningNextScreenState extends State<MealPlanningNextScreen> {
                       },
                       child: Column(
                         children: [
-                          Text(
-                            'Favorites',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                          Text('Favorites',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500)),
                           if (selectedTab == 'Favorites')
                             Container(
-                              height: 3,
-                              width: 95,
-                              color: Colors.white,
-                            ),
+                                height: 3, width: 95, color: Colors.white),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          selectedTab = 'Diary';
+                        });
+                      },
+                      child: Column(
+                        children: [
+                          Text('Diary',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500)),
+                          if (selectedTab == 'Diary')
+                            Container(
+                                height: 3, width: 80, color: Colors.white),
                         ],
                       ),
                     ),
@@ -196,241 +281,111 @@ class MealPlanningNextScreenState extends State<MealPlanningNextScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Flexible(
-                            child: GestureDetector(
-                              onTap: () {},
-                              child: Container(
-                                height: 100,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.shopping_basket_outlined),
-                                    Container(
-                                      padding: EdgeInsets.all(8),
-                                      width: double.infinity,
-                                      child: Text(
-                                        'Search',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 20,
+                          // Wrapping ListView.builder with Expanded
+                          Expanded(
+                            child: SingleChildScrollView(
+                              // Wrapping in SingleChildScrollView for better scrolling behavior
+                              child: Column(
+                                children: [
+                                  ListView.builder(
+                                    shrinkWrap:
+                                        true, // This tells the ListView to take as much space as it needs
+                                    physics:
+                                        NeverScrollableScrollPhysics(), // Disable internal scroll
+                                    itemCount: filteredRecipes.length < 3
+                                        ? filteredRecipes.length
+                                        : 3, // Show only 3 items
+                                    itemBuilder: (context, index) {
+                                      var recipe = filteredRecipes[index];
+                                      String imagePath = 'assets/fetchMenu/' +
+                                          recipe['label'].replaceAll(' ', '_') +
+                                          '.jpg';
+
+                                      return ListTile(
+                                        leading: Image.asset(
+                                          imagePath,
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (BuildContext context,
+                                              Object error,
+                                              StackTrace? stackTrace) {
+                                            return Image.asset(
+                                              'assets/images/default.png',
+                                              width: 50,
+                                              height: 50,
+                                              fit: BoxFit.cover,
+                                            );
+                                          },
                                         ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Flexible(
-                            child: GestureDetector(
-                              onTap: () {},
-                              child: Container(
-                                height: 100,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.list_alt),
-                                    Container(
-                                      padding: EdgeInsets.all(8),
-                                      width: double.infinity,
-                                      child: Text(
-                                        'Diary',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 20,
+                                        title: Text(recipe['label']),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons
+                                                      .local_fire_department_outlined,
+                                                  color: Colors.red,
+                                                ),
+                                                Text(
+                                                    "${recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt().toString()} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}"),
+                                              ],
+                                            ),
+                                            Text(recipe['source'])
+                                          ],
                                         ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  FoodDetailScreen(
+                                                      recipe: recipe),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-
-                    //
-                    Container(
-                      alignment: Alignment.centerLeft,
-                      width: MediaQuery.sizeOf(context).width,
-                      height: 50,
-                      color: Color(0xFF40C5BD),
-                      child: Padding(
-                        padding: EdgeInsets.only(left: 12),
-                        child: Text('Recently listed',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            )),
-                      ),
-                    ),
-
-                    // Food Lists
-
-                    //
-                    // FutureBuilder<List<FoodItem>?>(
-                    //     future: _foodFuture,
-                    //     builder: (context, snapshot) {
-                    //       if (snapshot.connectionState ==
-                    //           ConnectionState.waiting) {
-                    //         return Center(child: CircularProgressIndicator());
-                    //       } else if (snapshot.hasError) {
-                    //         return Center(
-                    //             child: Text("Error: ${snapshot.error}"));
-                    //       } else if (!snapshot.hasData ||
-                    //           snapshot.data!.isEmpty) {
-                    //         return Center(child: Text("No food items found"));
-                    //       }
-
-                    //       return ListView.builder(
-                    //         itemCount: snapshot.data!.length,
-                    //         itemBuilder: (context, index) {
-                    //           final item = snapshot.data![index];
-                    //           return ListTile(
-                    //             leading: Image.network(
-                    //               item.imageUrl.isNotEmpty
-                    //                   ? item.imageUrl
-                    //                   : 'assets/images/default.png',
-                    //               width: 60,
-                    //               height: 60,
-                    //               errorBuilder: (context, error, stackTrace) {
-                    //                 return Image.asset(
-                    //                   'assets/images/default.png',
-                    //                   width: 60,
-                    //                   height: 60,
-                    //                   fit: BoxFit.cover,
-                    //                 );
-                    //               },
-                    //               fit: BoxFit.cover,
-                    //             ),
-                    //             title: Text(item.name),
-                    //             subtitle: Column(
-                    //               children: [
-                    //                 Row(
-                    //                   children: [
-                    //                     Icon(
-                    //                       Icons.local_fire_department_outlined,
-                    //                       color: Colors.red,
-                    //                       size: 17,
-                    //                     ),
-                    //                     Text("${item.calories.toInt()} Kcal"),
-                    //                   ],
-                    //                 ),
-                    //                 Row(
-                    //                   children: [
-                    //                     Image.asset(
-                    //                       'assets/images/skillet.png',
-                    //                       color: Colors.yellow,
-                    //                       width: 17,
-                    //                     ),
-                    //                     Text(
-                    //                       'Cooking Technique',
-                    //                       style: TextStyle(fontSize: 14),
-                    //                     ),
-                    //                   ],
-                    //                 ),
-                    //                 Row(
-                    //                   children: [
-                    //                     Icon(
-                    //                       Icons.receipt_long_outlined,
-                    //                       color: Colors.blue,
-                    //                       size: 17,
-                    //                     ),
-                    //                     Text(
-                    //                       'Cooking Recipe',
-                    //                       style: TextStyle(fontSize: 14),
-                    //                     ),
-                    //                   ],
-                    //                 ),
-                    //               ],
-                    //             ),
-                    //             onTap: () {
-                    //               Navigator.push(
-                    //                 context,
-                    //                 MaterialPageRoute(
-                    //                   builder: (context) => FoodDetailScreen(
-                    //                       menuItem: MenuItem(
-                    //                     name: item.name,
-                    //                     imagePath: item.imageUrl,
-                    //                     calories: item.calories,
-                    //                     cookingTechnique: item.cookingTechnique,
-                    //                     cookingRecipe: item.cookingRecipe,
-                    //                   )),
-                    //                 ),
-                    //               );
-                    //             },
-                    //           );
-                    //         },
-                    //       );
-                    //     },
-                    //   ),
-                    // ),
-                    //
+                    // Other UI elements for the search tab
                   ],
                 )
-              : Column(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                          border: Border(
-                              top: BorderSide(color: Colors.white, width: 2)),
-                          color: Color(0xFF40C5BD)),
-                      width: MediaQuery.sizeOf(context).width,
-                      height: 50,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          GestureDetector(
+              : selectedTab == 'Favorites'
+                  ? Expanded(
+                      child: ListView.builder(
+                        itemCount: _favoriteRecipes.length,
+                        itemBuilder: (context, index) {
+                          var recipe = _favoriteRecipes[index];
+                          return ListTile(
+                            leading: recipe['imageUrl'] != null
+                                ? Image.network(recipe['imageUrl'],
+                                    width: 50, height: 50)
+                                : Icon(Icons.image, size: 50),
+                            title: Text(recipe['label'] ?? 'Unknown Recipe'),
                             onTap: () {
-                              _updateDate(-1);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      FoodDetailScreen(recipe: recipe),
+                                ),
+                              );
                             },
-                            child: Icon(
-                              Icons.arrow_back_ios,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            DateFormat('dd MMMM yyyy').format(selectedDate),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              _updateDate(1);
-                            },
-                            child: Icon(Icons.arrow_forward_ios,
-                                color: Colors.white),
-                          ),
-                        ],
+                          );
+                        },
                       ),
-                    ),
-                    SizedBox(height: 20),
-                    Image.asset(
-                      'assets/images/error.png',
-                      width: 200,
-                    ),
-                    SizedBox(height: 20),
-                    Text('There are no food log today',
-                        style: TextStyle(fontSize: 16)),
-                  ],
-                ),
-
-          //
+                    )
+                  : _buildMealPlans(), // Show diary meals when Diary tab is selected
         ],
       ),
     );

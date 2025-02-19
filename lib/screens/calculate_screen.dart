@@ -63,26 +63,31 @@ class _CalculateScreenState extends State<CalculateScreen> {
     }
 
     setState(() {
+      // based on International System of Units (SI) formula
       // Calculate BMI
       if (_selectedCalculation == 'BMI') {
         _bmi = weight / ((height / 100) * (height / 100));
       }
 
+      // based on the Mifflin-St Jeor Formula
       // Calculate BMR
       if (_selectedCalculation == 'BMR') {
         if (gender == 'Male') {
-          _bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age!);
+          // _bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age!);
+          _bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age!) + 5;
         } else {
-          _bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age!);
+          // _bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age!);
+          _bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age!) - 161;
         }
       }
 
+      // based on the Mifflin-St Jeor Formula
       // Calculate TDEE
       if (_selectedCalculation == 'TDEE') {
         if (gender == 'Male') {
-          _bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age!);
+          _bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age!) + 5;
         } else {
-          _bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age!);
+          _bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age!) - 161;
         }
         _tdee = _bmr! * _activityMultipliers[activityLevel]!;
       }
@@ -217,7 +222,7 @@ class _CalculateScreenState extends State<CalculateScreen> {
               AppBar(
                 centerTitle: true,
                 title: Text(
-                  'Calories Calculation',
+                  'Body Metrics Calculation',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Inter',
@@ -528,7 +533,7 @@ class _CalculateScreenState extends State<CalculateScreen> {
                                       startValue: 30,
                                       endValue: 40,
                                       color: Colors.red,
-                                      label: 'Obese',
+                                      label: 'Obesity',
                                     ),
                                   ],
                                   pointers: <GaugePointer>[

@@ -306,13 +306,13 @@ class CalorieTrackingScreen extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            GestureDetector(
-                              onTap: () {},
-                              child: Icon(
-                                Icons.arrow_back_ios,
-                                color: Colors.white,
-                              ),
-                            ),
+                            // GestureDetector(
+                            //   onTap: () {},
+                            //   child: Icon(
+                            //     Icons.arrow_back_ios,
+                            //     color: Colors.white,
+                            //   ),
+                            // ),
                             Text(
                               'Calorie Tracker',
                               style: TextStyle(
@@ -321,13 +321,13 @@ class CalorieTrackingScreen extends StatelessWidget {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            GestureDetector(
-                              onTap: () {},
-                              child: Icon(
-                                Icons.arrow_forward_ios,
-                                color: Colors.white,
-                              ),
-                            ),
+                            // GestureDetector(
+                            //   onTap: () {},
+                            //   child: Icon(
+                            //     Icons.arrow_forward_ios,
+                            //     color: Colors.white,
+                            //   ),
+                            // ),
                           ],
                         ),
                       ),

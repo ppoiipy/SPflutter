@@ -51,78 +51,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  // void _navigateToEditScreen() async {
-  //   final updatedData = await Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (context) => ProfileEditScreen(userEmail: widget.userEmail),
-  //     ),
-  //   );
-
-  //   if (updatedData != null && updatedData is Map<String, String>) {
-  //     setState(() {
-  //       userProfile = updatedData;
-  //     });
-  //   }
-  // }
-
-  // Future<void> _loadUserData() async {
-  //   User? user = FirebaseAuth.instance.currentUser;
-  //   Map<String, dynamic>? userData;
-  //   if (user == null) {
-  //     try {
-  //       // Assuming you are fetching user profile data from Firestore
-  //       // DocumentSnapshot userData = await FirebaseFirestore.instance
-  //       //     .collection('users')
-  //       //     .doc(user!.uid)
-  //       //     .get();
-
-  //       DocumentSnapshot userDoc = await FirebaseFirestore.instance
-  //           .collection('users')
-  //           .doc(user!.uid)
-  //           .get();
-
-  //       // if (userData.exists && userData.data() != null) {
-  //       // Safely retrieve data, use fallback values if field is missing or null
-  //       if (userDoc.exists) {
-  //         setState(() {
-  //           // userProfile = {
-  //           // "nickname": userData['email'] ?? "John Doe",
-  //           // "gender": userData["gender"] ?? "Male",
-  //           // "weight": userData["weight"] ?? "70",
-  //           // "height": userData['height'] ?? "175",
-  //           // "weightGoal": userData["weightGoal"] ?? "Maintain weight",
-  //           // "dob": userData["dob"] ?? "1995-06-15",
-  //           // "preferredFlavors": userData["preferredFlavors"] ?? "Vegetarian",
-  //           // "allergies": userData["allergies"] ?? "None",
-  //           // "activityLevel": userData["activityLevel"] ?? "Moderate",
-  //           // };
-  //           userData = userDoc.data() as Map<String, dynamic>;
-  //         });
-  //       } else {
-  //         // Handle case when user data doesn't exist or is null
-  //         setState(() {
-  //           userProfile = {
-  //             "nickname": "John Doe",
-  //             "gender": "Male",
-  //             "weight": "70",
-  //             "height": "175",
-  //             "weightGoal": "Maintain weight",
-  //             "dob": "1995-06-15",
-  //             "preferredFlavors": "Vegetarian",
-  //             "allergies": "None",
-  //             "activityLevel": "Moderate",
-  //           };
-  //         });
-  //       }
-  //     } catch (e) {
-  //       print("Error loading user data: $e");
-  //     }
-  //   } else {
-  //     print("No user is currently logged in");
-  //   }
-  // }
-
   User? user = FirebaseAuth.instance.currentUser;
   Map<String, dynamic>? userData;
 
@@ -144,49 +72,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       print('Error fetching user data: $e');
     }
   }
-
-//   Future<void> _loadUserData() async {
-//   User? user = FirebaseAuth.instance.currentUser;
-//   if (user == null) {
-//     setState(() {
-//       _email = "No user logged in";
-//     });
-//     return;
-//   }
-
-//   try {
-//     var userData = await FirebaseFirestore.instance
-//         .collection('users')
-//         .doc(user.email)
-//         .get();
-
-//     if (userData.exists && userData.data() != null) {
-//       setState(() {
-//         userProfile = {
-//           "nickname": userData.data()?["nickname"] ?? "John Doe",
-//           "gender": userData.data()?["gender"] ?? "Male",
-//           "weight": userData.data()?["weight"]?.toString() ?? "70",
-//           "height": userData.data()?["height"]?.toString() ?? "175",
-//           "goal": userData.data()?["goal"] ?? "Maintain weight",
-//           "birthdate": userData.data()?["birthdate"] ?? "1995-06-15",
-//           "foodPref": userData.data()?["foodPref"] ?? "Vegetarian",
-//           "allergies": userData.data()?["allergies"] ?? "None",
-//           "activityLevel": userData.data()?["activityLevel"] ?? "Moderate",
-//         };
-//         _email = user.email ?? "No email found";
-//       });
-//     } else {
-//       setState(() {
-//         _email = "No user data available";
-//       });
-//     }
-//   } catch (e) {
-//     print("Error loading user data: $e");
-//     setState(() {
-//       _email = "Error loading data";
-//     });
-//   }
-// }
 
   @override
   Widget build(BuildContext context) {
@@ -454,67 +339,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => FoodSearchScreen()));
-                },
-                child: Text(
-                  'Go to search',
-                  style: TextStyle(color: Color(0xFF1F5F5B)),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => FoodFilterScreen()));
-                },
-                child: Text(
-                  'Go to filter',
-                  style: TextStyle(color: Color(0xFF1F5F5B)),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => CalculateTest()));
-                },
-                child: Text(
-                  'Go to test',
-                  style: TextStyle(color: Color(0xFF1F5F5B)),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => UserCalculation()));
-                },
-                child: Text(
-                  'Go to cal',
-                  style: TextStyle(color: Color(0xFF1F5F5B)),
-                ),
-              ),
+              // TextButton(
+              //   onPressed: () {
+              //     Navigator.push(
+              //         context,
+              //         MaterialPageRoute(
+              //             builder: (context) => FoodSearchScreen()));
+              //   },
+              //   child: Text(
+              //     'Go to search',
+              //     style: TextStyle(color: Color(0xFF1F5F5B)),
+              //   ),
+              // ),
+              // TextButton(
+              //   onPressed: () {
+              //     Navigator.push(
+              //         context,
+              //         MaterialPageRoute(
+              //             builder: (context) => FoodFilterScreen()));
+              //   },
+              //   child: Text(
+              //     'Go to filter',
+              //     style: TextStyle(color: Color(0xFF1F5F5B)),
+              //   ),
+              // ),
+              // TextButton(
+              //   onPressed: () {
+              //     Navigator.push(context,
+              //         MaterialPageRoute(builder: (context) => CalculateTest()));
+              //   },
+              //   child: Text(
+              //     'Go to test',
+              //     style: TextStyle(color: Color(0xFF1F5F5B)),
+              //   ),
+              // ),
+              // TextButton(
+              //   onPressed: () {
+              //     Navigator.push(
+              //         context,
+              //         MaterialPageRoute(
+              //             builder: (context) => UserCalculation()));
+              //   },
+              //   child: Text(
+              //     'Go to cal',
+              //     style: TextStyle(color: Color(0xFF1F5F5B)),
+              //   ),
+              // ),
 
               SizedBox(height: 10),
-              Container(
-                padding: EdgeInsets.all(10),
-                width: 300,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildPeriodButton('D'),
-                    _buildPeriodButton('W'),
-                    _buildPeriodButton('M'),
-                    _buildPeriodButton('Y'),
-                  ],
-                ),
-              ),
+              // Container(
+              //   padding: EdgeInsets.all(10),
+              //   width: 300,
+              //   child: Row(
+              //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              //     children: [
+              //       _buildPeriodButton('D'),
+              //       _buildPeriodButton('W'),
+              //       _buildPeriodButton('M'),
+              //       _buildPeriodButton('Y'),
+              //     ],
+              //   ),
+              // ),
 
               //
               Container(
@@ -531,7 +416,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-              ChartWidget(selectedTrack: _selectedTrack),
+              ChartWidget(selectedTrack: _selectedTrack, dateRange: 'Day'),
               // _buildChart(),
 
               // Chart
@@ -569,29 +454,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildPeriodButton(String label) {
-    return GestureDetector(
-      onTap: () => _onSelect(label),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-        decoration: BoxDecoration(
-          color: _selected == label ? Color(0xff4D7881) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: _selected == label ? Colors.white : Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildPeriodButton(String label) {
+  //   return GestureDetector(
+  //     onTap: () => _onSelect(label),
+  //     child: Container(
+  //       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+  //       decoration: BoxDecoration(
+  //         color: _selected == label ? Color(0xff4D7881) : Colors.transparent,
+  //         borderRadius: BorderRadius.circular(8),
+  //       ),
+  //       child: Text(
+  //         label,
+  //         style: TextStyle(
+  //           color: _selected == label ? Colors.white : Colors.black,
+  //           fontWeight: FontWeight.bold,
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildTrackDataButton(String label) {
     return GestureDetector(
-      onTap: () => _onSelectTrack(label),
+      onTap: () => _onSelectTrack(label), // Update selected track when tapped
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
         decoration: BoxDecoration(
@@ -659,7 +544,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   .map((e) => FlSpot(e.key.toDouble(), e.value))
                   .toList(),
               isCurved: true,
-              // colors: [Colors.blue],
               barWidth: 3,
               isStrokeCapRound: true,
               belowBarData: BarAreaData(show: false),
@@ -667,6 +551,197 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class ChartWidget extends StatefulWidget {
+  final String selectedTrack;
+  final String dateRange;
+
+  ChartWidget({required this.selectedTrack, required this.dateRange});
+
+  @override
+  State<ChartWidget> createState() => _ChartWidgetState();
+}
+
+class _ChartWidgetState extends State<ChartWidget> {
+  double _getValueForTrack(String track, Map<String, dynamic>? userData) {
+    switch (track) {
+      case 'Body Weight':
+        return double.tryParse(userData?['weight']?.toString() ?? '') ?? 0.0;
+      case 'BMI':
+        return double.tryParse(userData?['bmi']?.toString() ?? '') ?? 0.0;
+      case 'BMR':
+        return double.tryParse(userData?['bmr']?.toString() ?? '') ?? 0.0;
+      case 'TDEE':
+        return double.tryParse(userData?['tdee']?.toString() ?? '') ?? 0.0;
+      case 'Calorie':
+        return double.tryParse(userData?['calorie']?.toString() ?? '') ?? 0.0;
+      default:
+        return 0.0;
+    }
+  }
+
+  List<BarChartGroupData> _getBarGroups(String track, String dateRange) {
+    List<double> dataPoints;
+    List<String> dateLabels = [];
+
+    // Sample data for the demonstration
+    switch (track) {
+      case 'Body Weight':
+        dataPoints = [60, 61, 62, 61.5, 62.3]; // Example values for testing
+        break;
+      case 'BMI':
+        dataPoints = [22.5, 22.6, 22.7, 22.65, 22.8];
+        break;
+      case 'BMR':
+        dataPoints = [1500, 1510, 1520, 1515, 1525];
+        break;
+      case 'TDEE':
+        dataPoints = [2000, 2050, 2100, 2150, 2200];
+        break;
+      case 'Calorie':
+        dataPoints = [1800, 1850, 1900, 1950, 2000];
+        break;
+      default:
+        dataPoints = [0.0];
+    }
+
+    // Adjust the dateLabels to show the dates starting from today (on the left)
+    for (int i = 0; i < dataPoints.length; i++) {
+      DateTime date = DateTime.now().subtract(Duration(days: i));
+      dateLabels.add(getFormattedDate(date)); // Get formatted date for each day
+    }
+
+    // Reverse the dateLabels to ensure today is on the leftmost side of the chart
+    dateLabels = dateLabels.reversed.toList();
+
+    return List.generate(dataPoints.length, (index) {
+      return BarChartGroupData(
+        x: index, // Ensuring that the chart starts from the left for today
+        barRods: [
+          BarChartRodData(
+            toY: dataPoints[index],
+            color: Color(0xff4D7881),
+          ),
+        ],
+      );
+    });
+  }
+
+  String getFormattedDate(DateTime date) {
+    final today = DateTime.now();
+    final yesterday = today.subtract(Duration(days: 1));
+
+    if (date.isAtSameMomentAs(today)) {
+      return "Today";
+    } else if (date.isAtSameMomentAs(yesterday)) {
+      return "Yesterday";
+    } else {
+      return "${date.day} ${_getMonthString(date.month)}";
+    }
+  }
+
+  String _getMonthString(int month) {
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ];
+    return monthNames[month - 1];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  spreadRadius: 0,
+                  blurRadius: 4,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.all(10),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.monitor_weight,
+                          color: Color(0xff4D7881),
+                        ),
+                        SizedBox(width: 5),
+                        Text(
+                          widget.selectedTrack,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xff4D7881),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Container(
+                  height: 200,
+                  child: BarChart(
+                    BarChartData(
+                      barGroups:
+                          _getBarGroups(widget.selectedTrack, widget.dateRange),
+                      borderData: FlBorderData(show: false),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles:
+                              SideTitles(showTitles: true, reservedSize: 40),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              String dateString = widget.dateRange == 'Day'
+                                  ? getFormattedDate(DateTime.now().subtract(
+                                      Duration(
+                                          days: (meta.max - value).toInt())))
+                                  : "Day ${value.toInt() + 1}";
+
+                              return Text(dateString,
+                                  style: TextStyle(fontSize: 12));
+                            },
+                            reservedSize: 32,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
