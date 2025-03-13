@@ -14,6 +14,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/screens/user_calculation.dart';
 import 'package:flutter_application_1/widgets/chart_widget.dart';
 import 'package:fl_chart/fl_chart.dart';
+
+import 'menu_screen.dart';
+import 'favorite_screen.dart';
+import 'calculate_screen.dart';
+
 // import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -26,6 +31,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final int _currentIndex = 4;
+
   String _email = "Loading...";
   String _selected = 'D';
   String _selectedTrack = 'Body Weight';
@@ -79,6 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       extendBodyBehindAppBar: true,
       // appBar: SliverAppBar(),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         centerTitle: true,
         elevation: 0,
@@ -236,10 +244,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           ),
                                         ),
                                         Icon(
-                                          Icons.male,
+                                          _getGenderIcon(userData?['gender']),
                                           size: 16,
                                           color: Color(0xff4D7881),
-                                        )
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -339,67 +347,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-              // TextButton(
-              //   onPressed: () {
-              //     Navigator.push(
-              //         context,
-              //         MaterialPageRoute(
-              //             builder: (context) => FoodSearchScreen()));
-              //   },
-              //   child: Text(
-              //     'Go to search',
-              //     style: TextStyle(color: Color(0xFF1F5F5B)),
-              //   ),
-              // ),
-              // TextButton(
-              //   onPressed: () {
-              //     Navigator.push(
-              //         context,
-              //         MaterialPageRoute(
-              //             builder: (context) => FoodFilterScreen()));
-              //   },
-              //   child: Text(
-              //     'Go to filter',
-              //     style: TextStyle(color: Color(0xFF1F5F5B)),
-              //   ),
-              // ),
-              // TextButton(
-              //   onPressed: () {
-              //     Navigator.push(context,
-              //         MaterialPageRoute(builder: (context) => CalculateTest()));
-              //   },
-              //   child: Text(
-              //     'Go to test',
-              //     style: TextStyle(color: Color(0xFF1F5F5B)),
-              //   ),
-              // ),
-              // TextButton(
-              //   onPressed: () {
-              //     Navigator.push(
-              //         context,
-              //         MaterialPageRoute(
-              //             builder: (context) => UserCalculation()));
-              //   },
-              //   child: Text(
-              //     'Go to cal',
-              //     style: TextStyle(color: Color(0xFF1F5F5B)),
-              //   ),
-              // ),
-
-              SizedBox(height: 10),
-              // Container(
-              //   padding: EdgeInsets.all(10),
-              //   width: 300,
-              //   child: Row(
-              //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              //     children: [
-              //       _buildPeriodButton('D'),
-              //       _buildPeriodButton('W'),
-              //       _buildPeriodButton('M'),
-              //       _buildPeriodButton('Y'),
-              //     ],
-              //   ),
-              // ),
 
               //
               Container(
@@ -417,27 +364,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               ChartWidget(selectedTrack: _selectedTrack, dateRange: 'Day'),
-              // _buildChart(),
-
-              // Chart
-              // ChartWidget(),
-
-              // _buildProfileDetail("Nickname", userProfile["nickname"]!),
-              // _buildProfileDetail("Gender", userProfile["gender"]!),
-              // _buildProfileDetail("Weight", "${userProfile["weight"]} kg"),
-              // _buildProfileDetail("Height", "${userProfile["height"]} cm"),
-              // _buildProfileDetail("Goal", userProfile["goal"]!),
-              // _buildProfileDetail("Birthdate", userProfile["dob"]!),
-              // _buildProfileDetail(
-              //     "Food Preference", userProfile["preferredFlavors"]!),
-              // _buildProfileDetail("Allergies", userProfile["allergies"]!),
-              // _buildProfileDetail(
-              //     "Activity Level", userProfile["activityLevel"]!),
             ]),
           ]))
         ],
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Color(0xFF1F5F5B),
+        unselectedItemColor: Colors.black,
+        selectedLabelStyle: TextStyle(color: Color(0xFF1F5F5B)),
+        unselectedLabelStyle: TextStyle(color: Colors.black),
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Homepage()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => MenuScreen()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => FavoriteScreen()),
+            );
+          } else if (index == 3) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => CalculateScreen()),
+            );
+          } else if (index == 4) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ProfileScreen()),
+            );
+          }
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.home_outlined,
+            ),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.food_bank_outlined,
+            ),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.favorite_border_outlined,
+            ),
+            label: 'Favorites',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.calculate_outlined,
+            ),
+            label: 'Calculate',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.person_outline,
+            ),
+            label: 'Profile',
+          ),
+        ],
+      ),
     );
+  }
+
+  IconData _getGenderIcon(String? gender) {
+    switch (gender) {
+      case 'Male':
+        return Icons.male;
+      case 'Female':
+        return Icons.female;
+      default:
+        return Icons.transgender;
+    }
   }
 
   Widget _buildProfileDetail(String label, String value) {
@@ -453,26 +463,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
-  // Widget _buildPeriodButton(String label) {
-  //   return GestureDetector(
-  //     onTap: () => _onSelect(label),
-  //     child: Container(
-  //       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-  //       decoration: BoxDecoration(
-  //         color: _selected == label ? Color(0xff4D7881) : Colors.transparent,
-  //         borderRadius: BorderRadius.circular(8),
-  //       ),
-  //       child: Text(
-  //         label,
-  //         style: TextStyle(
-  //           color: _selected == label ? Colors.white : Colors.black,
-  //           fontWeight: FontWeight.bold,
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
 
   Widget _buildTrackDataButton(String label) {
     return GestureDetector(
@@ -494,39 +484,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
-  // Widget _buildChart() {
-  //   switch (_selectedTrack) {
-  //     case 'Body Weight':
-  //       return _buildTrackDataButton('Body Weight');
-  //     case 'BMI':
-  //       return _buildTrackDataButton('TDEE');
-  //     case 'BMR':
-  //       return _buildTrackDataButton('BMR');
-  //     case 'TDEE':
-  //       return _buildTrackDataButton('TDEE');
-  //     case 'Calorie':
-  //       return _buildTrackDataButton('Calorie');
-  //     default:
-  //       return Container();
-  //   }
-  // }
-  // Widget _buildChart() {
-  //   switch (_selectedTrack) {
-  //     case 'Body Weight':
-  //       return _buildLineChart([60, 61, 62, 61.5, 62.3]);
-  //     case 'BMI':
-  //       return _buildLineChart([22.5, 22.6, 22.7, 22.65, 22.8]);
-  //     case 'BMR':
-  //       return _buildLineChart([1500, 1510, 1520, 1515, 1525]);
-  //     case 'TDEE':
-  //       return _buildLineChart([2000, 2050, 2100, 2150, 2200]);
-  //     case 'Calorie':
-  //       return _buildLineChart([1800, 1850, 1900, 1950, 2000]);
-  //     default:
-  //       return Container();
-  //   }
-  // }
 
   Widget _buildLineChart(List<double> dataPoints) {
     return SizedBox(

@@ -3,6 +3,10 @@ import 'package:flutter_application_1/SQLite/sqlite.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+import 'homepage.dart';
+import 'menu_screen.dart';
+import 'favorite_screen.dart';
+import 'profile_screen.dart';
 
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 
@@ -12,6 +16,8 @@ class CalculateScreen extends StatefulWidget {
 }
 
 class _CalculateScreenState extends State<CalculateScreen> {
+  final int _currentIndex = 3;
+
   String? _selectedGender;
   String? _selectedActivityLevel;
   final TextEditingController _ageController = TextEditingController();
@@ -218,9 +224,9 @@ class _CalculateScreenState extends State<CalculateScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 30),
               AppBar(
                 centerTitle: true,
+                automaticallyImplyLeading: false,
                 title: Text(
                   'Body Metrics Calculation',
                   style: TextStyle(
@@ -657,6 +663,74 @@ class _CalculateScreenState extends State<CalculateScreen> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Color(0xFF1F5F5B),
+        unselectedItemColor: Colors.black,
+        selectedLabelStyle: TextStyle(color: Color(0xFF1F5F5B)),
+        unselectedLabelStyle: TextStyle(color: Colors.black),
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Homepage()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => MenuScreen()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => FavoriteScreen()),
+            );
+          } else if (index == 3) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => CalculateScreen()),
+            );
+          } else if (index == 4) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ProfileScreen()),
+            );
+          }
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.home_outlined,
+            ),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.food_bank_outlined,
+            ),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.favorite_border_outlined,
+            ),
+            label: 'Favorites',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.calculate_outlined,
+            ),
+            label: 'Calculate',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.person_outline,
+            ),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }

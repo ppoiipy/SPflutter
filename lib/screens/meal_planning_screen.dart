@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:flutter_application_1/screens/homepage.dart';
 import 'package:flutter_application_1/api/fetch_food_api.dart';
 import 'package:flutter_application_1/api/fetch_recipe_api.dart';
+import 'package:flutter_application_1/screens/homepage.dart';
 import 'package:flutter_application_1/screens/menu_screen.dart';
+import 'package:flutter_application_1/screens/favorite_screen.dart';
+import 'package:flutter_application_1/screens/calculate_screen.dart';
+import 'package:flutter_application_1/screens/profile_screen.dart';
+
+int _currentIndex = 0;
 
 class MealPlanningScreen extends StatelessWidget {
   int _selectedIndex = 0;
@@ -88,6 +93,74 @@ class FirstPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.black,
+        selectedLabelStyle: TextStyle(color: Colors.black),
+        unselectedLabelStyle: TextStyle(color: Colors.black),
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Homepage()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => MenuScreen()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => FavoriteScreen()),
+            );
+          } else if (index == 3) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => CalculateScreen()),
+            );
+          } else if (index == 4) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ProfileScreen()),
+            );
+          }
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.home_outlined,
+            ),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.food_bank_outlined,
+            ),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.favorite_border_outlined,
+            ),
+            label: 'Favorites',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.calculate_outlined,
+            ),
+            label: 'Calculate',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.person_outline,
+            ),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }
@@ -545,6 +618,74 @@ class SecondPage extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.black,
+        selectedLabelStyle: TextStyle(color: Colors.black),
+        unselectedLabelStyle: TextStyle(color: Colors.black),
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Homepage()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => MenuScreen()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => FavoriteScreen()),
+            );
+          } else if (index == 3) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => CalculateScreen()),
+            );
+          } else if (index == 4) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ProfileScreen()),
+            );
+          }
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.home_outlined,
+            ),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.food_bank_outlined,
+            ),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.favorite_border_outlined,
+            ),
+            label: 'Favorites',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.calculate_outlined,
+            ),
+            label: 'Calculate',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.person_outline,
+            ),
+            label: 'Profile',
+          ),
+        ],
+      ),
     );
   }
 }
@@ -650,6 +791,74 @@ class ThirdPage extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.black,
+        selectedLabelStyle: TextStyle(color: Colors.black),
+        unselectedLabelStyle: TextStyle(color: Colors.black),
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Homepage()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => MenuScreen()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => FavoriteScreen()),
+            );
+          } else if (index == 3) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => CalculateScreen()),
+            );
+          } else if (index == 4) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ProfileScreen()),
+            );
+          }
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.home_outlined,
+            ),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.food_bank_outlined,
+            ),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.favorite_border_outlined,
+            ),
+            label: 'Favorites',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.calculate_outlined,
+            ),
+            label: 'Calculate',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.person_outline,
+            ),
+            label: 'Profile',
+          ),
+        ],
+      ),
     );
   }
 }
@@ -658,154 +867,6 @@ class FourthPage extends StatefulWidget {
   @override
   _FourthPageState createState() => _FourthPageState();
 }
-
-// Result Page
-// class _FourthPageState extends State<FourthPage> {
-//   final List<Map<String, String>> foodOptions = [
-//     {"name": "Sous Vide Poached Shrimp", "calories": "171 cal"},
-//     {"name": "Sous Vide Salmon", "calories": "900 cal"},
-//     {"name": "Zucchini Strand Spaghetti", "calories": "552 cal"},
-//     {"name": "Grilled Chicken", "calories": "250 cal"},
-//     {"name": "Beef Steak", "calories": "450 cal"},
-//   ];
-
-//   late List<Map<String, String>> displayedFoods;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _getRandomFoods();
-//   }
-
-//   void _getRandomFoods() {
-//     setState(() {
-//       final random = Random();
-//       displayedFoods = List.generate(3, (_) {
-//         return foodOptions[random.nextInt(foodOptions.length)];
-//       });
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       extendBodyBehindAppBar: true,
-//       appBar: AppBar(
-//         backgroundColor: Colors.transparent,
-//         elevation: 0,
-//         leading: IconButton(
-//           onPressed: () {
-//             // Navigate back to the Homepage
-//             Navigator.pushAndRemoveUntil(
-//               context,
-//               MaterialPageRoute(builder: (context) => Homepage()),
-//               (Route<dynamic> route) =>
-//                   false, // This ensures all previous routes are removed
-//             );
-//           },
-//           icon: Icon(
-//             Icons.arrow_back_ios_new_rounded,
-//             color: Colors.white,
-//           ),
-//         ),
-//         title: Text("Meal Planning", style: TextStyle(color: Colors.white)),
-//         centerTitle: true,
-//       ),
-//       body: Container(
-//         width: MediaQuery.sizeOf(context).width,
-//         decoration: BoxDecoration(
-//           gradient: LinearGradient(
-//             colors: [Color(0xFF00A57A), Color(0xFF004E64)],
-//             begin: Alignment.topCenter,
-//             end: Alignment.bottomCenter,
-//           ),
-//         ),
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             // แสดงอาหารใน 3 กรอบ
-//             ...displayedFoods.map((food) {
-//               return Container(
-//                 margin: EdgeInsets.symmetric(vertical: 8),
-//                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-//                 width: MediaQuery.of(context).size.width * 0.9,
-//                 decoration: BoxDecoration(
-//                   border: Border.all(color: Colors.white, width: 2),
-//                   borderRadius: BorderRadius.circular(12),
-//                 ),
-//                 child: Row(
-//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                   children: [
-//                     Expanded(
-//                       child: Text(
-//                         food['name']!,
-//                         style: TextStyle(fontSize: 16, color: Colors.white),
-//                         overflow: TextOverflow.ellipsis,
-//                       ),
-//                     ),
-//                     Text(
-//                       food['calories']!,
-//                       style: TextStyle(fontSize: 16, color: Colors.white),
-//                     ),
-//                   ],
-//                 ),
-//               );
-//             }).toList(),
-//             SizedBox(height: 20),
-//             // ปุ่ม History
-//             OutlinedButton.icon(
-//               onPressed: () {
-//                 Navigator.push(
-//                   context,
-//                   MaterialPageRoute(builder: (context) => HistoryPage()),
-//                 );
-//               },
-//               icon: Icon(Icons.history, size: 16, color: Colors.black),
-//               label: Text(
-//                 "History",
-//                 style: TextStyle(color: Colors.black),
-//               ),
-//               style: OutlinedButton.styleFrom(
-//                 backgroundColor: Colors.white,
-//                 shape: RoundedRectangleBorder(
-//                   borderRadius: BorderRadius.circular(20),
-//                 ),
-//                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-//               ),
-//             ),
-//             SizedBox(height: 20),
-//             // ปุ่ม Find Again
-//             ElevatedButton.icon(
-//               onPressed: _getRandomFoods, // สุ่มอาหารใหม่เมื่อกดปุ่ม Find Again
-//               icon: Icon(Icons.refresh, size: 16, color: Colors.white),
-//               label: Text("Find Again", style: TextStyle(color: Colors.white)),
-//               style: ElevatedButton.styleFrom(
-//                 backgroundColor: Colors.amber,
-//                 padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-//               ),
-//             ),
-//             SizedBox(height: 10),
-//             // ปุ่ม Back to Menu
-//             ElevatedButton(
-//               onPressed: () {
-//                 Navigator.popUntil(
-//                   context,
-//                   (route) => route.isFirst, // กลับไปหน้าแรก
-//                 );
-//               },
-//               style: ElevatedButton.styleFrom(
-//                 backgroundColor: Colors.grey[800],
-//                 padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-//               ),
-//               child: Text("Back to Menu",
-//                   style: TextStyle(fontSize: 16, color: Colors.white)),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 
 class _FourthPageState extends State<FourthPage> {
   final List<Map<String, String>> foodOptions = [
@@ -952,6 +1013,74 @@ class _FourthPageState extends State<FourthPage> {
           ],
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.black,
+        selectedLabelStyle: TextStyle(color: Colors.black),
+        unselectedLabelStyle: TextStyle(color: Colors.black),
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Homepage()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => MenuScreen()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => FavoriteScreen()),
+            );
+          } else if (index == 3) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => CalculateScreen()),
+            );
+          } else if (index == 4) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ProfileScreen()),
+            );
+          }
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.home_outlined,
+            ),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.food_bank_outlined,
+            ),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.favorite_border_outlined,
+            ),
+            label: 'Favorites',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.calculate_outlined,
+            ),
+            label: 'Calculate',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.person_outline,
+            ),
+            label: 'Profile',
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1057,6 +1186,74 @@ class HistoryPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.black,
+        selectedLabelStyle: TextStyle(color: Colors.black),
+        unselectedLabelStyle: TextStyle(color: Colors.black),
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Homepage()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => MenuScreen()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => FavoriteScreen()),
+            );
+          } else if (index == 3) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => CalculateScreen()),
+            );
+          } else if (index == 4) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ProfileScreen()),
+            );
+          }
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.home_outlined,
+            ),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.food_bank_outlined,
+            ),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.favorite_border_outlined,
+            ),
+            label: 'Favorites',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.calculate_outlined,
+            ),
+            label: 'Calculate',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.person_outline,
+            ),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }

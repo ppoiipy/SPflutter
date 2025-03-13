@@ -13,7 +13,7 @@ USER_ID = "ginraidee"  # ✅ Add your Edamam User ID
 cuisine_type = ""  # Set this to the cuisine type you want, like 'thai', 'asian', or leave it empty for all cuisines
 
 # ✅ Encode query to prevent errors
-query = urllib.parse.quote("salad")  # Use your desired query here, like 'chicken'
+query = urllib.parse.quote("thai")  # Use your desired query here, like 'chicken'
 
 # ✅ Define how many recipes to fetch per request
 recipes_per_page = 10
