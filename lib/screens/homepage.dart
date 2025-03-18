@@ -51,72 +51,6 @@ class _HomepageState extends State<Homepage> {
     loadJsonData();
   }
 
-  void printAllFavoriteRecipes() async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    final DateFormat dateFormat = DateFormat('dd MMMM yyyy HH:mm:ss');
-
-    try {
-      // Fetch all users
-      QuerySnapshot usersSnapshot = await firestore.collection('users').get();
-
-      for (var userDoc in usersSnapshot.docs) {
-        String userId = userDoc.id;
-        String userName = userDoc['email'] ?? 'Unknown User';
-
-        QuerySnapshot favoritesSnapshot = await firestore
-            .collection('users')
-            .doc(userId)
-            .collection('favorites')
-            .get();
-
-        QuerySnapshot clicksSnapshot = await firestore
-            .collection('users')
-            .doc(userId)
-            .collection('clicks')
-            .get();
-
-        QuerySnapshot foodLogsSnapshot = await firestore
-            .collection('users')
-            .doc(userId)
-            .collection('food_log')
-            .get();
-
-        if (favoritesSnapshot.docs.isNotEmpty) {
-          print("User: $userName ($userId)");
-          for (var favDoc in favoritesSnapshot.docs) {
-            print("favorites - ${favDoc.id}");
-          }
-        }
-        if (clicksSnapshot.docs.isNotEmpty) {
-          for (var clickDoc in clicksSnapshot.docs) {
-            print("clicks - ${clickDoc.id}");
-          }
-        }
-        if (foodLogsSnapshot.docs.isNotEmpty) {
-          print("  Food Log:");
-          for (var foodDoc in foodLogsSnapshot.docs) {
-            String recipeId = foodDoc.id;
-            String label = foodDoc['recipe']['label'] ?? 'Unknown Recipe';
-            // String formattedDate = foodDoc['date'] != null
-            //     ? dateFormat.format((foodDoc['date'] as Timestamp).toDate())
-            //     : 'No Date';
-
-            // String formattedLoggedDate = foodDoc['loggedDate'] != null
-            //     ? dateFormat
-            //         .format((foodDoc['loggedDate'] as Timestamp).toDate())
-            //     : 'No Logged Date';
-
-            print("    - Recipe Name: $label ($recipeId)");
-            // print("      Date: $formattedDate");
-            // print("      Logged Date: $formattedLoggedDate");
-          }
-        }
-      }
-    } catch (e) {
-      print("Error fetching favorite recipes: $e");
-    }
-  }
-
   void loadJsonData() async {
     String jsonData =
         await rootBundle.loadString('assets/fetchMenu/recipe_output.json');
@@ -625,12 +559,6 @@ class _HomepageState extends State<Homepage> {
             ),
           ),
 
-          SizedBox(height: 10),
-          ElevatedButton(
-              onPressed: () {
-                printAllFavoriteRecipes();
-              },
-              child: Text("do Print")),
           // Recommended Menu
           SizedBox(height: 10),
           Padding(

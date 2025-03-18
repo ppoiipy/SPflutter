@@ -1025,50 +1025,6 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
   }
   //
 
-  // Print
-  Future<void> printClickedRecipes() async {
-    try {
-      // Get the current user's ID (from FirebaseAuth)
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        // Access the Firestore instance
-        FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-        // Reference to the user's 'clicks' subcollection
-        CollectionReference clicks =
-            firestore.collection('users').doc(user.uid).collection('clicks');
-
-        // Fetch all click records from the user's 'clicks' collection
-        QuerySnapshot snapshot = await clicks.get();
-
-        // Check if there are documents in the clicks collection
-        if (snapshot.docs.isNotEmpty) {
-          // Iterate through the results and print the recipeLabel of each click
-          for (var doc in snapshot.docs) {
-            // If the document ID is the recipe label, you can access it using doc.id
-            String recipeLabel = doc.id; // The document ID is the recipe name
-
-            var data = doc.data() as Map<String, dynamic>;
-            int clickCount =
-                data['clickCount'] ?? 0; // Include the click count if needed
-            String shareAs =
-                data['shareAs'] ?? 'No Share Link'; // Include shareAs if needed
-
-            // Print the clicked recipe with its count
-            print(
-                'Clicked Recipe: $recipeLabel, Click Count: $clickCount, Share Link: $shareAs');
-          }
-        } else {
-          print('No clicks found.');
-        }
-      } else {
-        print('User is not logged in.');
-      }
-    } catch (e) {
-      print('Error fetching clicked recipes: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -1291,13 +1247,6 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
                     ),
                   ],
                 ),
-              ),
-
-              ElevatedButton(
-                onPressed: () {
-                  printClickedRecipes();
-                },
-                child: Text('Print Clicked Recipes'),
               ),
 
               // Info
