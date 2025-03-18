@@ -131,6 +131,46 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
     });
   }
 
+  Future<void> logRecipeClick(String recipeLabel, String recipeShareAs) async {
+    try {
+      // Get the current user's ID (from FirebaseAuth)
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Get reference to the user's 'clicks' subcollection
+        CollectionReference clicks = FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('clicks');
+
+        // Reference to the recipe document using the recipeLabel as document ID
+        DocumentReference recipeRef = clicks.doc(recipeLabel);
+
+        // Get the document to check if it exists
+        DocumentSnapshot snapshot = await recipeRef.get();
+
+        // If the document exists, increment the click count
+        if (snapshot.exists) {
+          // Update the existing click count
+          await recipeRef.update({
+            'clickCount': FieldValue.increment(1),
+          });
+        } else {
+          // If the document doesn't exist, create a new one with clickCount = 1
+          await recipeRef.set({
+            'clickCount': 1,
+            'shareAs': recipeShareAs,
+          });
+        }
+
+        print('Click logged successfully for $recipeLabel!');
+      } else {
+        print('User is not logged in.');
+      }
+    } catch (e) {
+      print('Error logging click: $e');
+    }
+  }
+
   String formatRecipeName(String recipeName) {
     // Remove special characters and replace spaces with underscores
     return recipeName.replaceAll(RegExp(r'[^\w\s]'), '').replaceAll(' ', '_');
@@ -249,7 +289,9 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                     var recipe = meal['recipe'];
                     return ListTile(
                       leading: Image.asset(
-                        'assets/fetchMenu/${formatRecipeName(recipe['label'])}.jpg',
+                        'assets/fetchMenu/' +
+                            recipe['label'].replaceAll(' ', '_') +
+                            '.jpg',
                         width: 50,
                         height: 50,
                         fit: BoxFit.cover,
@@ -270,6 +312,8 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                         onPressed: () => _removeMeal(meal),
                       ),
                       onTap: () {
+                        logRecipeClick(recipe['label'], recipe['shareAs']);
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -380,6 +424,7 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8),
                   child: AppBar(
+                    automaticallyImplyLeading: false,
                     backgroundColor: Colors.transparent,
                     centerTitle: true,
                     title: Text(
@@ -523,9 +568,8 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                     itemBuilder: (context, index) {
                       var recipe = filteredRecipes[index];
                       String imagePath = 'assets/fetchMenu/' +
-                          recipe['label']
-                              .replaceAll(' ', '_')
-                              .replaceAll('&', '&');
+                          recipe['label'].replaceAll(' ', '_') +
+                          '.jpg';
 
                       return Stack(
                         children: [
@@ -565,6 +609,8 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                                 ],
                               ),
                               onTap: () {
+                                logRecipeClick(
+                                    recipe['label'], recipe['shareAs']);
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -630,12 +676,10 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                             itemCount: _favoriteRecipes.length,
                             itemBuilder: (context, index) {
                               var recipe = _favoriteRecipes[index];
-                              String recipeName =
-                                  recipe['label']; // Recipe name
-                              String imageName = formatRecipeName(
-                                  recipeName); // Format it to match image name
-                              String imagePath =
-                                  'assets/fetchMenu/$imageName.jpg'; // Image path
+                              String recipeName = recipe['label'];
+                              String imagePath = 'assets/fetchMenu/' +
+                                  recipe['label'].replaceAll(' ', '_') +
+                                  '.jpg';
 
                               return Stack(
                                 children: [
@@ -679,6 +723,9 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                                         ],
                                       ),
                                       onTap: () {
+                                        logRecipeClick(
+                                            recipe['label'], recipe['shareAs']);
+
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(

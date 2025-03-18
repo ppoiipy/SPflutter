@@ -1,9 +1,14 @@
+import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/UserDataChartScreen.dart';
 import 'package:flutter_application_1/screens/botton_nav_bar.dart';
 import 'package:flutter_application_1/screens/food_detail_screen.dart';
 import 'package:flutter_application_1/screens/nutrition_tracking_screen.dart';
+import 'package:flutter/services.dart'; // For rootBundle
+import 'package:intl/intl.dart';
 
 import 'package:flutter_application_1/screens/menu_screen.dart';
 import 'favorite_screen.dart';
@@ -25,16 +30,104 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   int _currentIndex = 0;
   int _selectedIndex = 0;
   List foodItems = [];
   bool isLoading = false;
   final TextEditingController searchController = TextEditingController();
 
+  List<dynamic> recipes = [];
+  List<dynamic> filteredRecipes = [];
+
+  String selectedCuisineType = "All";
+
   @override
   void initState() {
     super.initState();
-    fetchFoodDataFromApi("chicken"); // Fetch default data on screen load
+    fetchFoodDataFromApi("chicken");
+    loadJsonData();
+  }
+
+  void printAllFavoriteRecipes() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final DateFormat dateFormat = DateFormat('dd MMMM yyyy HH:mm:ss');
+
+    try {
+      // Fetch all users
+      QuerySnapshot usersSnapshot = await firestore.collection('users').get();
+
+      for (var userDoc in usersSnapshot.docs) {
+        String userId = userDoc.id;
+        String userName = userDoc['email'] ?? 'Unknown User';
+
+        QuerySnapshot favoritesSnapshot = await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('favorites')
+            .get();
+
+        QuerySnapshot clicksSnapshot = await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('clicks')
+            .get();
+
+        QuerySnapshot foodLogsSnapshot = await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('food_log')
+            .get();
+
+        if (favoritesSnapshot.docs.isNotEmpty) {
+          print("User: $userName ($userId)");
+          for (var favDoc in favoritesSnapshot.docs) {
+            print("favorites - ${favDoc.id}");
+          }
+        }
+        if (clicksSnapshot.docs.isNotEmpty) {
+          for (var clickDoc in clicksSnapshot.docs) {
+            print("clicks - ${clickDoc.id}");
+          }
+        }
+        if (foodLogsSnapshot.docs.isNotEmpty) {
+          print("  Food Log:");
+          for (var foodDoc in foodLogsSnapshot.docs) {
+            String recipeId = foodDoc.id;
+            String label = foodDoc['recipe']['label'] ?? 'Unknown Recipe';
+            // String formattedDate = foodDoc['date'] != null
+            //     ? dateFormat.format((foodDoc['date'] as Timestamp).toDate())
+            //     : 'No Date';
+
+            // String formattedLoggedDate = foodDoc['loggedDate'] != null
+            //     ? dateFormat
+            //         .format((foodDoc['loggedDate'] as Timestamp).toDate())
+            //     : 'No Logged Date';
+
+            print("    - Recipe Name: $label ($recipeId)");
+            // print("      Date: $formattedDate");
+            // print("      Logged Date: $formattedLoggedDate");
+          }
+        }
+      }
+    } catch (e) {
+      print("Error fetching favorite recipes: $e");
+    }
+  }
+
+  void loadJsonData() async {
+    String jsonData =
+        await rootBundle.loadString('assets/fetchMenu/recipe_output.json');
+    Map<String, dynamic> jsonMap = json.decode(jsonData);
+    recipes = jsonMap['hits'].map((hit) => hit['recipe']).toList();
+
+    await _loadFavorites();
+
+    setState(() {
+      filteredRecipes = List.from(recipes);
+    });
   }
 
   Future<void> fetchFoodDataFromApi(String query) async {
@@ -51,6 +144,112 @@ class _HomepageState extends State<Homepage> {
     });
 
     print("Fetched ${foodItems.length} items.");
+  }
+
+  // Click
+  Future<void> logRecipeClick(String recipeLabel, String recipeShareAs) async {
+    try {
+      // Get the current user's ID (from FirebaseAuth)
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Get reference to the user's 'clicks' subcollection
+        CollectionReference clicks = FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('clicks');
+
+        // Reference to the recipe document using the recipeLabel as document ID
+        DocumentReference recipeRef = clicks.doc(recipeLabel);
+
+        // Get the document to check if it exists
+        DocumentSnapshot snapshot = await recipeRef.get();
+
+        // If the document exists, increment the click count
+        if (snapshot.exists) {
+          // Update the existing click count
+          await recipeRef.update({
+            'clickCount': FieldValue.increment(1),
+          });
+        } else {
+          // If the document doesn't exist, create a new one with clickCount = 1
+          await recipeRef.set({
+            'clickCount': 1,
+            'shareAs': recipeShareAs,
+          });
+        }
+
+        print('Click logged successfully for $recipeLabel!');
+      } else {
+        print('User is not logged in.');
+      }
+    } catch (e) {
+      print('Error logging click: $e');
+    }
+  }
+
+  Map<String, bool> favoriteRecipes = {};
+
+  Future<void> _loadFavorites() async {
+    var user = _auth.currentUser;
+    if (user == null) return;
+
+    var favoritesSnapshot = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites')
+        .get();
+
+    var favoriteSet = favoritesSnapshot.docs.map((doc) => doc.id).toSet();
+
+    setState(() {
+      favoriteRecipes = {
+        for (var recipe in recipes)
+          recipe['label']: favoriteSet.contains(recipe['label'])
+      };
+    });
+  }
+
+  Future<void> _toggleFavorite(
+      String recipeLabel, Map<String, dynamic> recipe) async {
+    var user = _auth.currentUser;
+    if (user == null) return;
+
+    var favoriteRef = _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites')
+        .doc(recipeLabel);
+
+    if (favoriteRecipes[recipeLabel] == true) {
+      // Remove from favorites
+      await favoriteRef.delete();
+    } else {
+      // Add to favorites
+      await favoriteRef.set(recipe);
+    }
+
+    setState(() {
+      favoriteRecipes[recipeLabel] = !favoriteRecipes[recipeLabel]!;
+    });
+  }
+
+  // Filter recipes based on search query and cuisineType
+  void filterRecipes(String query, String cuisineType) {
+    setState(() {
+      filteredRecipes = recipes
+          .where((recipe) =>
+              recipe['label'].toLowerCase().contains(query.toLowerCase()) &&
+              (cuisineType == "All" ||
+                  recipe['cuisineType']
+                      .toString()
+                      .toLowerCase()
+                      .contains(cuisineType.toLowerCase()) ||
+                  recipe['label']
+                      .toString()
+                      .toLowerCase()
+                      .contains(cuisineType.toLowerCase())))
+          .toList();
+    });
   }
 
   // final List<Widget> _pages = [
@@ -351,45 +550,39 @@ class _HomepageState extends State<Homepage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
             child: Material(
               borderRadius: BorderRadius.circular(15),
-              elevation: 4,
-              shadowColor: Colors.black,
-              // child: TextField(
-              //   // controller: _searchController,
-              //   controller: _ingredientController,
-              //   // onFieldSubmitted: _filterFoodItems,
-              //   onSubmitted: (_) {
-              //     // Call _searchFood when the user submits the input
-              //     _searchFood();
-              //   },
-
-              // ),
-
-              child: TextField(
+              elevation: 3,
+              shadowColor: Colors.black26,
+              child: TextFormField(
                 controller: searchController,
-                onSubmitted: (value) {
-                  searchController.text.trim();
-                },
                 decoration: InputDecoration(
-                  hintText: 'Enter ingredient',
+                  contentPadding: EdgeInsets.symmetric(vertical: 12),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
                     borderSide: BorderSide(color: Colors.transparent),
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide:
+                        BorderSide(color: Color(0xFF1F5F5B), width: 1.5),
+                  ),
                   filled: true,
-                  fillColor:
-                      Colors.grey[250], // Same background color as homepage
+                  fillColor: Colors.grey[200],
                   prefixIcon: IconButton(
-                    icon: Icon(Icons.search),
+                    icon: Icon(Icons.search, color: Colors.grey[700]),
+                    splashRadius: 22, // Better touch feedback
                     onPressed: () {
-                      fetchFoodDataFromApi(searchController.text.trim());
+                      filterRecipes(searchController.text, selectedCuisineType);
                     },
                   ),
-                  hintStyle: TextStyle(
-                      color: Colors.grey[700]), // Match the homepage text style
+                  hintText: 'Search food...',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
                 ),
+                onFieldSubmitted: (query) {
+                  filterRecipes(query, selectedCuisineType);
+                },
               ),
             ),
           ),
@@ -432,6 +625,12 @@ class _HomepageState extends State<Homepage> {
             ),
           ),
 
+          SizedBox(height: 10),
+          ElevatedButton(
+              onPressed: () {
+                printAllFavoriteRecipes();
+              },
+              child: Text("do Print")),
           // Recommended Menu
           SizedBox(height: 10),
           Padding(
@@ -448,48 +647,89 @@ class _HomepageState extends State<Homepage> {
           isLoading
               ? CircularProgressIndicator()
               : Expanded(
-                  child: foodItems.isEmpty
-                      ? Center(child: Text("No food found"))
-                      : ListView.builder(
-                          itemCount: foodItems.length,
-                          itemBuilder: (context, index) {
-                            var food = foodItems[index]['food'];
-                            return ListTile(
-                              leading: CachedNetworkImage(
-                                imageUrl: food['image'] ?? '',
+                  child: ListView.builder(
+                    itemCount: filteredRecipes.length,
+                    itemBuilder: (context, index) {
+                      var recipe = filteredRecipes[index];
+                      String imagePath = 'assets/fetchMenu/' +
+                          recipe['label'].replaceAll(' ', '_') +
+                          '.jpg';
+
+                      return Stack(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 20),
+                            child: ListTile(
+                              leading: Image.asset(
+                                imagePath,
                                 width: 50,
                                 height: 50,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) =>
-                                    CircularProgressIndicator(), // Shows a loading spinner
-                                errorWidget: (context, url, error) =>
-                                    Image.asset(
-                                  'assets/images/default.png',
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                ),
+                                errorBuilder: (BuildContext context,
+                                    Object error, StackTrace? stackTrace) {
+                                  return Image.asset(
+                                    'assets/images/default.png',
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                  );
+                                },
                               ),
-                              title: Text(food['label'] ?? "Unknown"),
-                              subtitle: Text(
-                                  "Calories: ${food['nutrients']['ENERC_KCAL'] ?? 'N/A'} kcal"),
+                              title: Text(recipe['label']),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.local_fire_department_outlined,
+                                        color: Colors.red,
+                                      ),
+                                      Text(
+                                        "${recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt()} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
+                                      ),
+                                    ],
+                                  ),
+                                  Text(recipe['source']),
+                                ],
+                              ),
                               onTap: () {
-                                // Navigator.push(
-                                //   context,
-                                //   // MaterialPageRoute(
-                                //   //   builder: (context) => RecipeDetailScreen(
-                                //   //     recipe: food,
-                                //   //   ),
-                                //   // ),
-                                //   MaterialPageRoute(
-                                //     builder: (context) =>
-                                //         FoodDetailScreen(menuItem: food),
-                                //   ),
-                                // );
+                                logRecipeClick(
+                                    recipe['label'], recipe['shareAs']);
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        FoodDetailScreen(recipe: recipe),
+                                  ),
+                                );
                               },
-                            );
-                          },
-                        ),
+                            ),
+                          ),
+                          // Favorite Icon on Top-Right
+                          Positioned(
+                            top: 5, // Adjust top position
+                            right: 5, // Adjust right position
+                            child: IconButton(
+                              icon: Icon(
+                                favoriteRecipes[recipe['label']] == true
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                size: 30,
+                                color: favoriteRecipes[recipe['label']] == true
+                                    ? Color.fromARGB(255, 255, 191, 0)
+                                    : Colors.grey,
+                              ),
+                              onPressed: () {
+                                _toggleFavorite(recipe['label'], recipe);
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
         ],
       ),

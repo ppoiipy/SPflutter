@@ -29,13 +29,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightGoalController = TextEditingController();
   final TextEditingController _birthController = TextEditingController();
-  final TextEditingController _preferredFlavorsController =
-      TextEditingController();
   final TextEditingController _allergiesController = TextEditingController();
   final TextEditingController _cuisineTypesController = TextEditingController();
   final TextEditingController _ingredientsActivityLevel =
       TextEditingController();
-  final TextEditingController _selectedActivityLevel = TextEditingController();
 
   List<String> allergies = [
     'Nuts',
@@ -44,14 +41,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     'Gluten',
     'Eggs',
     'Peanuts',
-  ];
-
-  List<String> flavors = [
-    'Sweet',
-    'Salty',
-    'Spicy',
-    'Sour',
-    'Bitter',
   ];
 
   List<String> activityLevels = [
@@ -118,14 +107,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   List<String> selectedIngredients = [];
 
   List<String> selectedAllergies = [];
-  List<String> selectedFlavors = [];
   List<String> selectedCuisineTypes = [];
+  String selectedActivityLevel = '';
 
   // Ver 2
   Set<String> selectedFoodCookingTechnique = {};
   Set<String> selectedFoodAllergy = {};
   Set<String> selectedFoodCategory = {};
-  Set<String> selectedFoodFlavor = {};
   List<String> foodCookingTechnique = [
     'Boiling',
     'Frying',
@@ -135,7 +123,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   ];
   List<String> foodAllergy = ['Egg', 'Milk', 'Fish', 'Nuts', 'Soybeans'];
   List<String> foodCategory = ['Italian', 'Japanese', 'Chinese', 'Thai'];
-  List<String> foodFlavor = ['Sweet', 'Salty', 'Spicy', 'Sour', 'Bitter'];
 
   List<String> genderOptions = ['Male', 'Female', 'Other'];
   String? selectedGender;
@@ -159,25 +146,28 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           .doc(user!.uid)
           .get();
 
-      if (userDoc.exists) {
+      if (userDoc.exists && mounted) {
+        // Ensure widget is still active
         setState(() {
           userData = userDoc.data() as Map<String, dynamic>;
 
-          // _genderController.text = userData?["gender"] ?? '';
           selectedGender = userData?["gender"] ?? 'Male';
           _weightController.text = (userData?["weight"] ?? '').toString();
           _heightController.text = (userData?["height"] ?? '').toString();
           _weightGoalController.text =
               (userData?["weightGoal"] ?? '').toString();
           _birthController.text = userData?["dob"] ?? '';
-          selectedFlavors =
-              List<String>.from(userData?["preferredFlavors"] ?? []);
           selectedAllergies = List<String>.from(userData?["allergies"] ?? []);
           selectedCuisineTypes =
               List<String>.from(userData?["cuisineTypes"] ?? []);
           selectedIngredients =
               List<String>.from(userData?["ingredients"] ?? []);
-          _selectedActivityLevel.text = userData?["activityLevel"] ?? '';
+
+          // Ensure that selectedActivityLevel exists in activityLevels
+          selectedActivityLevel =
+              activityLevels.contains(userData?["activityLevel"])
+                  ? userData!["activityLevel"]
+                  : activityLevels.first;
 
           selectedFoodCookingTechnique =
               Set<String>.from(userData?['foodCookingTechnique'] ?? []);
@@ -185,7 +175,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               Set<String>.from(userData?['foodAllergy'] ?? []);
           selectedFoodCategory =
               Set<String>.from(userData?['foodCategory'] ?? []);
-          selectedFoodFlavor = Set<String>.from(userData?['foodFlavor'] ?? []);
         });
       }
     } catch (e) {
@@ -225,19 +214,35 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               ),
               _buildDateInputRow(
                   label: 'Birth date', controller: _birthController),
-              // _buildFlavorDropdown(),
-              // _buildAllergyDropdown(),
-              // _buildCuisineTypesDropdown(),
-              // _buildIngredientsDropdown(),
+              _buildAllergyDropdown(),
+              _buildCuisineTypesDropdown(),
+              _buildIngredientsDropdown(),
 
               // Ver 2
-              _buildDropdown(foodCookingTechnique, selectedFoodCookingTechnique,
-                  "Cooking Techniques"),
-              _buildDropdown(
-                  foodAllergy, selectedFoodAllergy, "Food Allergies"),
-              _buildDropdown(
-                  foodCategory, selectedFoodCategory, "Food Categories"),
-              _buildDropdown(foodFlavor, selectedFoodFlavor, "Food Flavors"),
+              // _buildMultiSelectDropdown(
+              //     foodCookingTechnique,
+              //     selectedFoodCookingTechnique,
+              //     "Cooking Techniques", (newValues) {
+              //   setState(() {
+              //     selectedFoodCookingTechnique = newValues;
+              //   });
+              // }),
+
+              // _buildMultiSelectDropdown(
+              //     foodAllergy, selectedFoodAllergy, "Food Allergies",
+              //     (newValues) {
+              //   setState(() {
+              //     selectedFoodAllergy = newValues;
+              //   });
+              // }),
+
+              // _buildMultiSelectDropdown(
+              //     foodCategory, selectedFoodCategory, "Food Categories",
+              //     (newValues) {
+              //   setState(() {
+              //     selectedFoodCategory = newValues;
+              //   });
+              // }),
 
               _buildActivityLevelDropdown(),
 
@@ -385,15 +390,18 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
   }
 
-  Widget _buildDropdown(
-      List<String> options, Set<String> selected, String title) {
+  Widget _buildMultiSelectDropdown(
+      List<String> options,
+      Set<String> selectedValues,
+      String label,
+      Function(Set<String>) onChanged) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 25),
+      margin: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            label,
             style: TextStyle(
               color: Color(0xFF1F5F5B),
               fontWeight: FontWeight.w500,
@@ -401,235 +409,170 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
           ),
           MultiSelectDialogField(
-            items: options
-                .map((option) => MultiSelectItem<String>(option, option))
-                .toList(),
-            initialValue: selected.toList(),
-            title: Text(
-              title,
-              style: TextStyle(color: Color(0xFF1F5F5B)),
+            items: options.map((e) => MultiSelectItem<String>(e, e)).toList(),
+            title: Text("Select $label"),
+            selectedColor: Color(0xFF1F5F5B),
+            buttonText: Text(
+              selectedValues.isNotEmpty
+                  ? selectedValues.join(', ') // Show selected values
+                  : "Select $label",
+              style: TextStyle(fontSize: 14),
             ),
-            onConfirm: (selectedValues) {
+            initialValue:
+                selectedValues.toList(), // Ensure selected values appear
+            onConfirm: (values) {
               setState(() {
-                selected.clear();
-                selected.addAll(selectedValues.cast<String>());
+                onChanged(values.toSet());
               });
             },
-            chipDisplay: MultiSelectChipDisplay(
-              chipColor: Color(0xFF2E968F),
-              textStyle: TextStyle(color: Colors.white),
-              onTap: (item) {
-                setState(() {
-                  selected.remove(item);
-                });
-              },
-            ),
-            decoration: BoxDecoration(
-              // borderRadius: BorderRadius.circular(12),
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.black.withOpacity(0.5),
-                  width: 1.5,
-                ),
-              ),
-            ),
-            selectedColor: Color(0xFF2E968F),
           ),
-          SizedBox(height: 10),
         ],
       ),
     );
   }
 
-  // Widget _buildFlavorDropdown() {
-  //   return Container(
-  //     margin: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           'Flavors',
-  //           style: TextStyle(
-  //             color: Color(0xFF1F5F5B),
-  //             fontWeight: FontWeight.w500,
-  //             fontSize: 14,
-  //           ),
-  //         ),
-  //         MultiSelectDialogField(
-  //           items: flavors
-  //               .map((flavor) => MultiSelectItem<String>(flavor, flavor))
-  //               .toList(),
-  //           initialValue: selectedFlavors,
-  //           title: Text(
-  //             "Preferred Flavors",
-  //             style: TextStyle(color: Color(0xFF1F5F5B)),
-  //           ),
-  //           onConfirm: (selectedValues) {
-  //             setState(() {
-  //               selectedFlavors = selectedValues.cast<String>();
-  //             });
-  //           },
-  //           chipDisplay: MultiSelectChipDisplay(
-  //             chipColor: Color.fromARGB(255, 46, 150, 143),
-  //             textStyle: TextStyle(color: Colors.white),
-  //             onTap: (item) {
-  //               setState(() {
-  //                 selectedFlavors.remove(item);
-  //               });
-  //             },
-  //           ),
-  //           decoration: BoxDecoration(
-  //             borderRadius: BorderRadius.circular(12),
-  //           ),
-  //           selectedColor: Color.fromARGB(255, 46, 150, 143),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+  Widget _buildAllergyDropdown() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Allergy',
+            style: TextStyle(
+              color: Color(0xFF1F5F5B),
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+          MultiSelectDialogField(
+            items: allergies
+                .map((allergy) => MultiSelectItem<String>(allergy, allergy))
+                .toList(),
+            initialValue: selectedAllergies,
+            title: Text(
+              "Allergies",
+              style: TextStyle(color: Color(0xFF1F5F5B)),
+            ),
+            onConfirm: (selectedValues) {
+              setState(() {
+                selectedAllergies = selectedValues.cast<String>();
+              });
+            },
+            chipDisplay: MultiSelectChipDisplay(
+              chipColor: Color.fromARGB(255, 46, 150, 143),
+              textStyle: TextStyle(color: Colors.white),
+              onTap: (item) {
+                setState(() {
+                  selectedAllergies.remove(item);
+                });
+              },
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            selectedColor: Color.fromARGB(255, 46, 150, 143),
+          ),
+        ],
+      ),
+    );
+  }
 
-  // Widget _buildAllergyDropdown() {
-  //   return Container(
-  //     margin: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           'Allergy',
-  //           style: TextStyle(
-  //             color: Color(0xFF1F5F5B),
-  //             fontWeight: FontWeight.w500,
-  //             fontSize: 14,
-  //           ),
-  //         ),
-  //         MultiSelectDialogField(
-  //           items: allergies
-  //               .map((allergy) => MultiSelectItem<String>(allergy, allergy))
-  //               .toList(),
-  //           initialValue: selectedAllergies,
-  //           title: Text(
-  //             "Allergies",
-  //             style: TextStyle(color: Color(0xFF1F5F5B)),
-  //           ),
-  //           onConfirm: (selectedValues) {
-  //             setState(() {
-  //               selectedAllergies = selectedValues.cast<String>();
-  //             });
-  //           },
-  //           chipDisplay: MultiSelectChipDisplay(
-  //             chipColor: Color.fromARGB(255, 46, 150, 143),
-  //             textStyle: TextStyle(color: Colors.white),
-  //             onTap: (item) {
-  //               setState(() {
-  //                 selectedAllergies.remove(item);
-  //               });
-  //             },
-  //           ),
-  //           decoration: BoxDecoration(
-  //             borderRadius: BorderRadius.circular(12),
-  //           ),
-  //           selectedColor: Color.fromARGB(255, 46, 150, 143),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+  Widget _buildCuisineTypesDropdown() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Cuisine',
+            style: TextStyle(
+              color: Color(0xFF1F5F5B),
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+          MultiSelectDialogField(
+            items: cuisineTypes
+                .map((cuisineType) =>
+                    MultiSelectItem<String>(cuisineType, cuisineType))
+                .toList(),
+            initialValue: selectedCuisineTypes,
+            title: Text(
+              "Cuisine Type",
+              style: TextStyle(color: Color(0xFF1F5F5B)),
+            ),
+            onConfirm: (selectedValues) {
+              setState(() {
+                selectedCuisineTypes = selectedValues.cast<String>();
+              });
+            },
+            chipDisplay: MultiSelectChipDisplay(
+              chipColor: Color.fromARGB(255, 46, 150, 143),
+              textStyle: TextStyle(color: Colors.white),
+              onTap: (item) {
+                setState(() {
+                  selectedCuisineTypes.remove(item);
+                });
+              },
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            selectedColor: Color.fromARGB(255, 46, 150, 143),
+          ),
+        ],
+      ),
+    );
+  }
 
-  // Widget _buildCuisineTypesDropdown() {
-  //   return Container(
-  //     margin: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           'Cuisine',
-  //           style: TextStyle(
-  //             color: Color(0xFF1F5F5B),
-  //             fontWeight: FontWeight.w500,
-  //             fontSize: 14,
-  //           ),
-  //         ),
-  //         MultiSelectDialogField(
-  //           items: cuisineTypes
-  //               .map((cuisineType) =>
-  //                   MultiSelectItem<String>(cuisineType, cuisineType))
-  //               .toList(),
-  //           initialValue: selectedCuisineTypes,
-  //           title: Text(
-  //             "Cuisine Type",
-  //             style: TextStyle(color: Color(0xFF1F5F5B)),
-  //           ),
-  //           onConfirm: (selectedValues) {
-  //             setState(() {
-  //               selectedCuisineTypes = selectedValues.cast<String>();
-  //             });
-  //           },
-  //           chipDisplay: MultiSelectChipDisplay(
-  //             chipColor: Color.fromARGB(255, 46, 150, 143),
-  //             textStyle: TextStyle(color: Colors.white),
-  //             onTap: (item) {
-  //               setState(() {
-  //                 selectedCuisineTypes.remove(item);
-  //               });
-  //             },
-  //           ),
-  //           decoration: BoxDecoration(
-  //             borderRadius: BorderRadius.circular(12),
-  //           ),
-  //           selectedColor: Color.fromARGB(255, 46, 150, 143),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildIngredientsDropdown() {
-  //   return Container(
-  //     margin: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           'Ingredients',
-  //           style: TextStyle(
-  //             color: Color(0xFF1F5F5B),
-  //             fontWeight: FontWeight.w500,
-  //             fontSize: 14,
-  //           ),
-  //         ),
-  //         MultiSelectDialogField(
-  //           items: ingredients
-  //               .map((ingredient) =>
-  //                   MultiSelectItem<String>(ingredient, ingredient))
-  //               .toList(),
-  //           initialValue: selectedIngredients,
-  //           title: Text(
-  //             "Ingredients",
-  //             style: TextStyle(color: Color(0xFF1F5F5B)),
-  //           ),
-  //           onConfirm: (selectedValues) {
-  //             setState(() {
-  //               selectedIngredients = selectedValues.cast<String>();
-  //             });
-  //           },
-  //           chipDisplay: MultiSelectChipDisplay(
-  //             chipColor: Color.fromARGB(255, 46, 150, 143),
-  //             textStyle: TextStyle(color: Colors.white),
-  //             onTap: (item) {
-  //               setState(() {
-  //                 selectedIngredients.remove(item);
-  //               });
-  //             },
-  //           ),
-  //           decoration: BoxDecoration(
-  //             borderRadius: BorderRadius.circular(12),
-  //           ),
-  //           selectedColor: Color.fromARGB(255, 46, 150, 143),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+  Widget _buildIngredientsDropdown() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Ingredients',
+            style: TextStyle(
+              color: Color(0xFF1F5F5B),
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+          MultiSelectDialogField(
+            items: ingredients
+                .map((ingredient) =>
+                    MultiSelectItem<String>(ingredient, ingredient))
+                .toList(),
+            initialValue: selectedIngredients,
+            title: Text(
+              "Ingredients",
+              style: TextStyle(color: Color(0xFF1F5F5B)),
+            ),
+            onConfirm: (selectedValues) {
+              setState(() {
+                selectedIngredients = selectedValues.cast<String>();
+              });
+            },
+            chipDisplay: MultiSelectChipDisplay(
+              chipColor: Color.fromARGB(255, 46, 150, 143),
+              textStyle: TextStyle(color: Colors.white),
+              onTap: (item) {
+                setState(() {
+                  selectedIngredients.remove(item);
+                });
+              },
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            selectedColor: Color.fromARGB(255, 46, 150, 143),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildActivityLevelDropdown() {
     return Container(
@@ -646,9 +589,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
           ),
           DropdownButtonFormField<String>(
-            value: _selectedActivityLevel.text.isEmpty
-                ? null
-                : _selectedActivityLevel.text,
+            value: selectedActivityLevel.isNotEmpty &&
+                    activityLevels.contains(selectedActivityLevel)
+                ? selectedActivityLevel
+                : activityLevels
+                    .first, // Default to the first activity level if none selected
             decoration: InputDecoration(
               contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 5),
               hintText: 'Select activity level',
@@ -656,7 +601,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
             onChanged: (String? newValue) {
               setState(() {
-                _selectedActivityLevel.text = newValue ?? '';
+                selectedActivityLevel = newValue ??
+                    activityLevels.first; // Update selected activity level
               });
             },
             items: activityLevels.map((String level) {
@@ -741,11 +687,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 'height': _heightController.text,
                 'weightGoal': _weightGoalController.text,
                 'dob': _birthController.text,
-                'preferredFlavors': selectedFlavors,
                 'allergies': selectedAllergies,
                 'cuisineTypes': selectedCuisineTypes,
                 'ingredients': selectedIngredients,
-                'activityLevel': _selectedActivityLevel.text,
+                'activityLevel': selectedActivityLevel,
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Profile updated successfully!')),

@@ -22,7 +22,6 @@ class _MenuScreenState extends State<MenuScreen> {
   Map<String, dynamic>? selectedFilters;
   double? _selectedCalories;
   Set<String> selectedCategories = {};
-  Set<String> selectedTechniques = {};
   Set<String> selectedIngredients = {};
   Set<String> selectedAllergies = {};
 
@@ -40,6 +39,25 @@ class _MenuScreenState extends State<MenuScreen> {
   void initState() {
     super.initState();
     loadJsonData();
+    _loadUserFilters(); // Load filters from Firebase when screen starts
+  }
+
+  // Load user-selected filters from Firebase
+  Future<void> _loadUserFilters() async {
+    var user = _auth.currentUser;
+    if (user == null) return;
+
+    var userDoc = await _firestore.collection('users').doc(user.uid).get();
+
+    if (userDoc.exists) {
+      var data = userDoc.data();
+      setState(() {
+        selectedCategories = (data?['foodCategory'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toSet() ??
+            {};
+      });
+    }
   }
 
   // Load data from JSON file in assets/fetchMenu
@@ -90,7 +108,9 @@ class _MenuScreenState extends State<MenuScreen> {
                   recipe['label']
                       .toString()
                       .toLowerCase()
-                      .contains(cuisineType.toLowerCase())))
+                      .contains(cuisineType.toLowerCase())) &&
+              (selectedCategories.isEmpty ||
+                  selectedCategories.contains(recipe['cuisineType'])))
           .toList();
     });
   }
@@ -114,7 +134,6 @@ class _MenuScreenState extends State<MenuScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      isScrollControlled: true,
       builder: (context) {
         return CalorieFilterSheet(
           initialCalories: initialCalories,
@@ -128,16 +147,71 @@ class _MenuScreenState extends State<MenuScreen> {
 
   // Open Category Filter
   Future<Set<String>?> showCategoryFilterSheet(
-      BuildContext context, Set<String> selectedCategories) {
-    return showModalBottomSheet(
+      BuildContext context, Set<String> selectedCategories) async {
+    var user = _auth.currentUser;
+    if (user == null) return null;
+
+    // Fetch categories from Firebase
+    var userDoc = await _firestore.collection('users').doc(user.uid).get();
+    var data = userDoc.data();
+
+    Set<String> loadedCategories = {};
+    if (data != null && data['foodCategory'] != null) {
+      loadedCategories = Set<String>.from(data['foodCategory']);
+    }
+
+    return showModalBottomSheet<Set<String>>(
       context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return TechniqueFilter(
-          selectedTechniques: selectedTechniques,
-          onSelectionChanged: (Set<String> updatedTechniques) {
+      isScrollControlled: false, // Prevents full-screen height
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height *
+              0.5, // Set a reasonable height
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: CategoryFilter(
+            selectedCategories: loadedCategories,
+            onSelectionChanged: (updatedCategories) {
+              Navigator.pop(context, updatedCategories);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<Set<String>?> showIngredientFilterSheet(
+      BuildContext context, Set<String> selectedIngredients) async {
+    var user = _auth.currentUser;
+    if (user == null) return null;
+
+    var userDoc = await _firestore.collection('users').doc(user.uid).get();
+    var data = userDoc.data();
+
+    Set<String> loadedIngredients = {};
+    if (data != null && data['foodIngredient'] != null) {
+      loadedIngredients = Set<String>.from(data['foodIngredient']);
+    }
+
+    return await showModalBottomSheet<Set<String>>(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return IngredientFilter(
+          selectedIngredients: loadedIngredients,
+          onSelectionChanged: (selected) {
+            // Update selected ingredients
             setState(() {
-              selectedTechniques = updatedTechniques;
+              selectedIngredients = selected;
             });
           },
         );
@@ -145,155 +219,77 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
-  Future<Set<String>?> showTechniqueFilterSheet(
-      BuildContext context, Set<String> selectedTechniques) {
-    return showModalBottomSheet<Set<String>>(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      builder: (context) {
-        return TechniqueFilter(
-          selectedTechniques: selectedTechniques,
-          onSelectionChanged: (selected) {
-            Navigator.pop(context, selected);
-          },
-        );
-      },
-    );
-  }
-
-  Future<Set<String>?> showIngredientFilterSheet(
-      BuildContext context, Set<String> selectedIngredients) {
-    return showModalBottomSheet<Set<String>>(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      builder: (context) {
-        return IngredientFilter(
-          selectedIngredients: selectedIngredients,
-          onSelectionChanged: (selected) {
-            Navigator.pop(context, selected);
-          },
-        );
-      },
-    );
-  }
-
   Future<Set<String>?> showAllergyFilterSheet(
-      BuildContext context, Set<String> selectedAllergies) {
+      BuildContext context, Set<String> selectedAllergies) async {
+    var user = _auth.currentUser;
+    if (user == null) return null;
+
+    var userDoc = await _firestore.collection('users').doc(user.uid).get();
+    var data = userDoc.data();
+
+    Set<String> loadedAllergies = {};
+    if (data != null && data['foodAllergy'] != null) {
+      loadedAllergies = Set<String>.from(data['foodAllergy']);
+    }
+
     return showModalBottomSheet<Set<String>>(
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      isScrollControlled: true,
       builder: (context) {
         return AllergyFilter(
-          selectedAllergies: selectedAllergies,
+          selectedAllergies: loadedAllergies,
           onSelectionChanged: (selected) {
-            Navigator.pop(context, selected);
+            // Update selected ingredients
+            setState(() {
+              selectedAllergies = selected;
+            });
           },
         );
       },
     );
   }
 
-// // Open Technique Filter
-//   Future<String?> showTechniqueFilterSheet(BuildContext context) {
-//     return showModalBottomSheet<String>(
-//       context: context,
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-//       ),
-//       isScrollControlled: true,
-//       builder: (context) {
-//         return TechniqueFilterSheet(
-//           onTechniqueChanged: (technique) {
-//             Navigator.pop(context, technique);
-//           },
-//         );
-//       },
-//     );
-//   }
+  Future<void> logRecipeClick(String recipeLabel, String recipeShareAs) async {
+    try {
+      // Get the current user's ID (from FirebaseAuth)
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Get reference to the user's 'clicks' subcollection
+        CollectionReference clicks = FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('clicks');
 
-// // Open Ingredients Filter
-//   Future<String?> showIngredientsFilterSheet(BuildContext context) {
-//     return showModalBottomSheet<String>(
-//       context: context,
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-//       ),
-//       isScrollControlled: true,
-//       builder: (context) {
-//         return IngredientsFilterSheet(
-//           onIngredientsChanged: (ingredients) {
-//             Navigator.pop(context, ingredients);
-//           },
-//         );
-//       },
-//     );
-//   }
+        // Reference to the recipe document using the recipeLabel as document ID
+        DocumentReference recipeRef = clicks.doc(recipeLabel);
 
-// // Open Allergy Filter
-//   Future<String?> showAllergyFilterSheet(BuildContext context) {
-//     return showModalBottomSheet<String>(
-//       context: context,
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-//       ),
-//       isScrollControlled: true,
-//       builder: (context) {
-//         return AllergyFilterSheet(
-//           onAllergyChanged: (allergy) {
-//             Navigator.pop(context, allergy);
-//           },
-//         );
-//       },
-//     );
-//   }
+        // Get the document to check if it exists
+        DocumentSnapshot snapshot = await recipeRef.get();
 
-//   Future<void> _showCalorieBottomSheet(BuildContext context) async {
-//     double? selectedCalories =
-//         await showCalorieFilterSheet(context, _selectedCalories ?? 100);
-//     if (selectedCalories != null) {
-//       setState(() {
-//         _selectedCalories = selectedCalories; // Update the selected calories
-//         // Optionally, filter the recipes based on the selected calories here
-//       });
-//     }
-//   }
+        // If the document exists, increment the click count
+        if (snapshot.exists) {
+          // Update the existing click count
+          await recipeRef.update({
+            'clickCount': FieldValue.increment(1),
+          });
+        } else {
+          // If the document doesn't exist, create a new one with clickCount = 1
+          await recipeRef.set({
+            'clickCount': 1,
+            'shareAs': recipeShareAs,
+          });
+        }
 
-//   Future<void> _showCategoryFilter(BuildContext context) async {
-//     String? selectedCategory = await showCategoryFilterSheet(context);
-//     if (selectedCategory != null) {
-//       print("Selected Category: $selectedCategory");
-//     }
-//   }
-
-//   Future<void> _showTechniqueFilter(BuildContext context) async {
-//     String? selectedTechnique = await showTechniqueFilterSheet(context);
-//     if (selectedTechnique != null) {
-//       print("Selected Technique: $selectedTechnique");
-//     }
-//   }
-
-//   Future<void> _showIngredientsFilter(BuildContext context) async {
-//     String? selectedIngredients = await showIngredientsFilterSheet(context);
-//     if (selectedIngredients != null) {
-//       print("Selected Ingredients: $selectedIngredients");
-//     }
-//   }
-
-//   Future<void> _showAllergyFilter(BuildContext context) async {
-//     String? selectedAllergy = await showAllergyFilterSheet(context);
-//     if (selectedAllergy != null) {
-//       print("Selected Allergy: $selectedAllergy");
-//     }
-//   }
+        print('Click logged successfully for $recipeLabel!');
+      } else {
+        print('User is not logged in.');
+      }
+    } catch (e) {
+      print('Error logging click: $e');
+    }
+  }
 
   Future<void> _toggleFavorite(
       String recipeLabel, Map<String, dynamic> recipe) async {
@@ -353,41 +349,46 @@ class _MenuScreenState extends State<MenuScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                 child: Material(
                   borderRadius: BorderRadius.circular(15),
-                  elevation: 4,
-                  shadowColor: Colors.black,
+                  elevation: 3,
+                  shadowColor: Colors.black26,
                   child: TextFormField(
                     controller: searchController,
                     decoration: InputDecoration(
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 12), // Better spacing
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
                         borderSide: BorderSide(color: Colors.transparent),
                       ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide:
+                            BorderSide(color: Color(0xFF1F5F5B), width: 1.5),
+                      ),
                       filled: true,
-                      fillColor: Colors.grey[250],
+                      fillColor: Colors.grey[200],
                       prefixIcon: IconButton(
-                        icon: Icon(Icons.search),
+                        icon: Icon(Icons.search, color: Colors.grey[700]),
+                        splashRadius: 22, // Better touch feedback
                         onPressed: () {
                           filterRecipes(
                               searchController.text, selectedCuisineType);
                         },
                       ),
-                      suffixIcon: GestureDetector(
-                        onTap: () {
-                          // _showCalorieBottomSheet(context);
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.tune, color: Color(0xFF1F5F5B)),
+                        splashRadius: 22,
+                        onPressed: () {
                           openFilterSheet();
                         },
-                        child: Icon(Icons.tune),
                       ),
-                      hintText: 'Auto-Gen food name',
-                      hintStyle: TextStyle(
-                          color: const Color.fromARGB(255, 72, 72, 72)),
+                      hintText: 'Search food...',
+                      hintStyle: TextStyle(color: Colors.grey[600]),
                     ),
-                    // onChanged: (query) {
-                    //   filterRecipes(query, selectedCuisineType);
-                    // },
                     onFieldSubmitted: (query) {
                       filterRecipes(query, selectedCuisineType);
                     },
@@ -435,11 +436,10 @@ class _MenuScreenState extends State<MenuScreen> {
               child: Row(
                 children: [
                   Icons.tune,
+                  Icons.fastfood,
                   Icons.category,
-                  Icons.science,
                   Icons.kitchen,
                   Icons.warning,
-                  Icons.fastfood,
                 ].map((icon) {
                   return GestureDetector(
                     onTap: () async {
@@ -473,15 +473,6 @@ class _MenuScreenState extends State<MenuScreen> {
                           });
                           print("Selected Categories: $selectedCategories");
                         }
-                      } else if (icon == Icons.science) {
-                        Set<String>? result = await showTechniqueFilterSheet(
-                            context, selectedTechniques);
-                        if (result != null) {
-                          setState(() {
-                            selectedTechniques = result;
-                          });
-                          print("Selected Techniques: $selectedTechniques");
-                        }
                       } else if (icon == Icons.kitchen) {
                         // Open the category filter modal
                         Set<String>? result = await showIngredientFilterSheet(
@@ -503,45 +494,51 @@ class _MenuScreenState extends State<MenuScreen> {
                           print("Selected Allergies: $selectedAllergies");
                         }
                       }
-                      //  else if (icon == Icons.science) {
-                      //   // Open technique filter modal
-                      //   await _showTechniqueFilter(context);
-                      // } else if (icon == Icons.kitchen) {
-                      //   // Open ingredients filter modal
-                      //   await _showIngredientsFilter(context);
-                      // } else if (icon == Icons.warning) {
-                      //   // Open allergy filter modal
-                      //   await _showAllergyFilter(context);
-                      // }
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 7),
                       child: Column(
                         children: [
                           Container(
-                            width: 50,
-                            height: 50,
+                            width: 60,
+                            height: 60,
                             decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.2),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
                             ),
                             child: Center(
-                              child: Icon(icon, size: 30, color: Colors.black),
+                              child: Icon(
+                                icon,
+                                size: 30,
+                                color: Color(0xFF1F5F5B),
+                              ),
                             ),
                           ),
+                          SizedBox(height: 5), // Add spacing
                           Text(
                             icon == Icons.tune
                                 ? 'Edit'
                                 : icon == Icons.category
                                     ? 'Category'
-                                    : icon == Icons.science
-                                        ? 'Technique'
-                                        : icon == Icons.kitchen
-                                            ? 'Ingredients'
-                                            : icon == Icons.warning
-                                                ? 'Allergy'
-                                                : 'Calories',
-                            style: TextStyle(fontSize: 12),
+                                    : icon == Icons.kitchen
+                                        ? 'Ingredients'
+                                        : icon == Icons.warning
+                                            ? 'Allergy'
+                                            : 'Calories',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1F5F5B),
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
@@ -603,6 +600,8 @@ class _MenuScreenState extends State<MenuScreen> {
                           ],
                         ),
                         onTap: () {
+                          logRecipeClick(recipe['label'], recipe['shareAs']);
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(

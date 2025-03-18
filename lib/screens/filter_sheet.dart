@@ -26,21 +26,49 @@ class FilterSheet extends StatefulWidget {
 
 class _FilterSheetState extends State<FilterSheet> {
   double _selectedCalories = 100;
-  Set<String> selectedFoodCookingTechnique = {};
   Set<String> selectedFoodAllergy = {};
   Set<String> selectedFoodCategory = {};
-  Set<String> selectedFoodFlavor = {};
+  Set<String> selectedFoodIngredient = {};
 
-  final List<String> foodCookingTechnique = [
-    'Boiling',
-    'Frying',
-    'Baking',
-    'Grilling',
-    'Steaming'
+  final List<String> foodCategories = [
+    'Italian',
+    'Japanese',
+    'Chinese',
+    'Thai'
   ];
-  final List<String> foodAllergy = ['Egg', 'Milk', 'Fish', 'Nuts', 'Soybeans'];
-  final List<String> foodCategory = ['Italian', 'Japanese', 'Chinese', 'Thai'];
-  final List<String> foodFlavor = ['Sweet', 'Salty', 'Spicy', 'Sour', 'Bitter'];
+
+  List<String> foodIngredient = [
+    'Chicken',
+    'Beef',
+    'Pork',
+    'Fish',
+    'Tofu',
+    'Rice',
+    'Pasta',
+    'Tomato',
+    'Cheese',
+    'Milk',
+    'Egg',
+    'Garlic',
+    'Onion',
+    'Carrot',
+    'Potato',
+    'Mushroom',
+    'Broccoli',
+    'Spinach',
+    'Peanut',
+    'Soy Sauce',
+    'Olive Oil'
+  ];
+
+  List<String> foodAllergy = [
+    'Nuts',
+    'Dairy',
+    'Shellfish',
+    'Gluten',
+    'Eggs',
+    'Peanuts',
+  ];
 
   @override
   void initState() {
@@ -61,11 +89,10 @@ class _FilterSheetState extends State<FilterSheet> {
 
       setState(() {
         _selectedCalories = (data?['calories'] ?? 100).toDouble();
-        selectedFoodCookingTechnique =
-            Set<String>.from(data?['foodCookingTechnique'] ?? []);
         selectedFoodAllergy = Set<String>.from(data?['foodAllergy'] ?? []);
         selectedFoodCategory = Set<String>.from(data?['foodCategory'] ?? []);
-        selectedFoodFlavor = Set<String>.from(data?['foodFlavor'] ?? []);
+        selectedFoodIngredient =
+            Set<String>.from(data?['foodIngredient'] ?? []);
       });
     }
   }
@@ -75,56 +102,25 @@ class _FilterSheetState extends State<FilterSheet> {
 
     await _firestore.collection('users').doc(_user!.uid).set({
       'calories': _selectedCalories,
-      'foodCookingTechnique': selectedFoodCookingTechnique.toList(),
       'foodAllergy': selectedFoodAllergy.toList(),
       'foodCategory': selectedFoodCategory.toList(),
-      'foodFlavor': selectedFoodFlavor.toList(),
+      'foodIngredient': selectedFoodIngredient.toList(),
     }, SetOptions(merge: true));
   }
 
-  Widget _buildFilterChips(
-      List<String> options, Set<String> selected, String title) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        Wrap(
-          spacing: 8.0,
-          children: options.map((option) {
-            bool isSelected = selected.contains(option);
-            return ChoiceChip(
-              label: Text(option,
-                  style: TextStyle(
-                      color: isSelected ? Color(0xFF39C184) : Colors.black54)),
-              selected: isSelected,
-              onSelected: (bool selectedValue) {
-                setState(() {
-                  if (selectedValue) {
-                    selected.add(option);
-                  } else {
-                    selected.remove(option);
-                  }
-                });
-              },
-              selectedColor: Color(0xFF39C184).withOpacity(0.3),
-              side: BorderSide(
-                  color: isSelected ? Color(0xFF39C184) : Colors.grey,
-                  width: 1.4),
-              labelStyle:
-                  TextStyle(color: isSelected ? Colors.white : Colors.black),
-            );
-          }).toList(),
-        ),
-        SizedBox(height: 10),
-      ],
-    );
+  void _resetFilters() {
+    setState(() {
+      _selectedCalories = 100;
+      selectedFoodAllergy.clear();
+      selectedFoodCategory.clear();
+      selectedFoodIngredient.clear();
+    });
+    _saveFilters();
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: MediaQuery.of(context).size.width,
       padding: const EdgeInsets.all(20),
       child: SingleChildScrollView(
         child: Column(
@@ -156,61 +152,135 @@ class _FilterSheetState extends State<FilterSheet> {
               },
             ),
             SizedBox(height: 10),
-            CategoryFilter(
-              selectedCategories: selectedFoodCategory,
-              onSelectionChanged: (selected) {
-                setState(() {
-                  selectedFoodCategory = selected;
-                });
-              },
+
+            // Category Selection
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Food Categories",
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Wrap(
+                  spacing: 8.0,
+                  children: foodCategories.map((option) {
+                    bool isSelected = selectedFoodCategory.contains(option);
+                    return ChoiceChip(
+                      label: Text(option,
+                          style: TextStyle(
+                              color: isSelected
+                                  ? Color(0xFF39C184)
+                                  : Colors.black54)),
+                      selected: isSelected,
+                      onSelected: (bool selectedValue) {
+                        setState(() {
+                          if (selectedValue) {
+                            selectedFoodCategory.add(option);
+                          } else {
+                            selectedFoodCategory.remove(option);
+                          }
+                        });
+                      },
+                      selectedColor: Color(0xFF39C184).withOpacity(0.3),
+                      side: BorderSide(
+                          color: isSelected ? Color(0xFF39C184) : Colors.grey,
+                          width: 1.4),
+                      labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black),
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: 10),
+              ],
             ),
-            TechniqueFilter(
-              selectedTechniques: selectedFoodCookingTechnique,
-              onSelectionChanged: (selected) {
-                setState(() {
-                  selectedFoodCookingTechnique = selected;
-                });
-              },
+
+            // Ingredient Filter
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Food Ingredients",
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Wrap(
+                  spacing: 8.0,
+                  children: foodIngredient.map((option) {
+                    bool isSelected = selectedFoodIngredient.contains(option);
+                    return ChoiceChip(
+                      label: Text(option,
+                          style: TextStyle(
+                              color: isSelected
+                                  ? Color(0xFF39C184)
+                                  : Colors.black54)),
+                      selected: isSelected,
+                      onSelected: (bool selectedValue) {
+                        setState(() {
+                          if (selectedValue) {
+                            selectedFoodIngredient.add(option);
+                          } else {
+                            selectedFoodIngredient.remove(option);
+                          }
+                        });
+                      },
+                      selectedColor: Color(0xFF39C184).withOpacity(0.3),
+                      side: BorderSide(
+                          color: isSelected ? Color(0xFF39C184) : Colors.grey,
+                          width: 1.4),
+                      labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black),
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: 10),
+              ],
             ),
-            IngredientFilter(
-              selectedIngredients:
-                  selectedFoodCategory, // Example: using categories here, change as needed
-              onSelectionChanged: (selected) {
-                setState(() {
-                  selectedFoodCategory = selected;
-                });
-              },
+
+            // Allergy Filter
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Food Allergies",
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Wrap(
+                  spacing: 8.0,
+                  children: foodAllergy.map((option) {
+                    bool isSelected = selectedFoodAllergy.contains(option);
+                    return ChoiceChip(
+                      label: Text(option,
+                          style: TextStyle(
+                              color: isSelected
+                                  ? Color(0xFF39C184)
+                                  : Colors.black54)),
+                      selected: isSelected,
+                      onSelected: (bool selectedValue) {
+                        setState(() {
+                          if (selectedValue) {
+                            selectedFoodAllergy.add(option);
+                          } else {
+                            selectedFoodAllergy.remove(option);
+                          }
+                        });
+                      },
+                      selectedColor: Color(0xFF39C184).withOpacity(0.3),
+                      side: BorderSide(
+                          color: isSelected ? Color(0xFF39C184) : Colors.grey,
+                          width: 1.4),
+                      labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black),
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: 10),
+              ],
             ),
-            AllergyFilter(
-              selectedAllergies: selectedFoodAllergy,
-              onSelectionChanged: (selected) {
-                setState(() {
-                  selectedFoodAllergy = selected;
-                });
-              },
-            ),
-            // _buildFilterChips(foodCookingTechnique,
-            //     selectedFoodCookingTechnique, "Cooking Techniques"),
-            // _buildFilterChips(
-            //     foodAllergy, selectedFoodAllergy, "Food Allergies"),
-            // _buildFilterChips(
-            //     foodCategory, selectedFoodCategory, "Food Categories"),
-            // _buildFilterChips(foodFlavor, selectedFoodFlavor, "Food Flavors"),
+
             SizedBox(height: 20),
+
+            // Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedCalories = 100;
-                      selectedFoodCookingTechnique.clear();
-                      selectedFoodAllergy.clear();
-                      selectedFoodCategory.clear();
-                      selectedFoodFlavor.clear();
-                    });
-                    _saveFilters();
-                  },
+                  onPressed: _resetFilters,
                   child: Text('Reset',
                       style: TextStyle(
                           fontWeight: FontWeight.bold, color: Colors.black)),
@@ -226,11 +296,9 @@ class _FilterSheetState extends State<FilterSheet> {
                     _saveFilters();
                     Navigator.pop(context, {
                       'calories': _selectedCalories,
-                      'foodCookingTechnique':
-                          selectedFoodCookingTechnique.toList(),
                       'foodAllergy': selectedFoodAllergy.toList(),
                       'foodCategory': selectedFoodCategory.toList(),
-                      'foodFlavor': selectedFoodFlavor.toList(),
+                      'foodIngredient': selectedFoodIngredient.toList(),
                     });
                   },
                   child: Text('Apply',
@@ -269,17 +337,6 @@ class CalorieFilterSheet extends StatefulWidget {
 
 class _CalorieFilterSheetState extends State<CalorieFilterSheet> {
   late double _selectedCalories = 100;
-
-  final List<String> foodCookingTechnique = [
-    'Boiling',
-    'Frying',
-    'Baking',
-    'Grilling',
-    'Steaming'
-  ];
-  final List<String> foodAllergy = ['Egg', 'Milk', 'Fish', 'Nuts', 'Soybeans'];
-  final List<String> foodCategory = ['Italian', 'Japanese', 'Chinese', 'Thai'];
-  final List<String> foodFlavor = ['Sweet', 'Salty', 'Spicy', 'Sour', 'Bitter'];
 
   Future<void> _loadFilters() async {
     if (_user == null) return;
@@ -343,6 +400,7 @@ class _CalorieFilterSheetState extends State<CalorieFilterSheet> {
           ),
           SizedBox(height: 20),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               ElevatedButton(
                 onPressed: () {
@@ -401,124 +459,65 @@ class _CategoryFilterState extends State<CategoryFilter> {
     'Italian',
     'Japanese',
     'Chinese',
-    'Thai',
+    'Thai'
   ];
 
-  bool _isExpanded = false;
+  late Set<String> selectedCategories;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = _auth.currentUser;
+    selectedCategories = Set.from(widget.selectedCategories);
+    if (_user != null) {
+      _loadFilters();
+    }
+  }
+
+  // Load filters from Firebase when the widget is initialized
+  Future<void> _loadFilters() async {
+    DocumentSnapshot snapshot =
+        await _firestore.collection('users').doc(_user!.uid).get();
+    if (snapshot.exists) {
+      Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
+      setState(() {
+        selectedCategories = Set<String>.from(data?['foodCategory'] ?? []);
+      });
+    }
+  }
+
+  // Save the selected categories to Firebase
+  Future<void> _saveFilters() async {
+    if (_user == null) return;
+
+    await _firestore.collection('users').doc(_user!.uid).set({
+      'foodCategory': selectedCategories.toList(),
+    }, SetOptions(merge: true));
+    widget.onSelectionChanged(selectedCategories);
+  }
+
+  // Reset filters to the original categories from Firebase
+  void _resetFilters() {
+    setState(() {
+      selectedCategories = Set.from(widget.selectedCategories);
+    });
+    _saveFilters();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        InkWell(
-          onTap: () {
-            setState(() {
-              _isExpanded = !_isExpanded;
-            });
-          },
-          child: Row(
-            children: [
-              Text(
-                "Food Categories",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              Icon(
-                _isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                size: 20,
-                color: Color(0xFF39C184),
-              ),
-            ],
-          ),
-        ),
-        Align(
-          alignment: Alignment.bottomLeft, // Align content at the bottom
-          child: AnimatedContainer(
-            duration: Duration(milliseconds: 300),
-            height: _isExpanded ? 150 : 0, // Adjust height when expanded
-            curve: Curves.easeInOut,
-            child: SingleChildScrollView(
-              child: Wrap(
-                spacing: 8.0,
-                children: foodCategories.map((option) {
-                  bool isSelected = widget.selectedCategories.contains(option);
-                  return ChoiceChip(
-                    label: Text(option,
-                        style: TextStyle(
-                            color: isSelected
-                                ? Color(0xFF39C184)
-                                : Colors.black54)),
-                    selected: isSelected,
-                    onSelected: (bool selectedValue) {
-                      setState(() {
-                        if (selectedValue) {
-                          widget.selectedCategories.add(option);
-                        } else {
-                          widget.selectedCategories.remove(option);
-                        }
-                        widget.onSelectionChanged(widget.selectedCategories);
-                      });
-                    },
-                    selectedColor: Color(0xFF39C184).withOpacity(0.3),
-                    side: BorderSide(
-                        color: isSelected ? Color(0xFF39C184) : Colors.grey,
-                        width: 1.4),
-                    labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black),
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: 10),
-      ],
-    );
-  }
-}
-
-// Technique
-class TechniqueFilter extends StatefulWidget {
-  final Set<String> selectedTechniques;
-  final Function(Set<String>) onSelectionChanged;
-
-  TechniqueFilter({
-    required this.selectedTechniques,
-    required this.onSelectionChanged,
-  });
-
-  @override
-  _TechniqueFilterState createState() => _TechniqueFilterState();
-}
-
-class _TechniqueFilterState extends State<TechniqueFilter> {
-  final List<String> foodTechniques = [
-    'Boiling',
-    'Frying',
-    'Baking',
-    'Grilling',
-    'Steaming'
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return _buildFilterChips(
-        foodTechniques, widget.selectedTechniques, "Cooking Techniques");
-  }
-
-  Widget _buildFilterChips(
-      List<String> options, Set<String> selected, String title) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
+        Text("Food Categories",
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         Wrap(
           spacing: 8.0,
-          children: options.map((option) {
-            bool isSelected = selected.contains(option);
+          children: foodCategories.map((option) {
+            bool isSelected = selectedCategories.contains(option);
             return ChoiceChip(
               label: Text(option,
                   style: TextStyle(
@@ -527,11 +526,10 @@ class _TechniqueFilterState extends State<TechniqueFilter> {
               onSelected: (bool selectedValue) {
                 setState(() {
                   if (selectedValue) {
-                    selected.add(option);
+                    selectedCategories.add(option);
                   } else {
-                    selected.remove(option);
+                    selectedCategories.remove(option);
                   }
-                  widget.onSelectionChanged(selected);
                 });
               },
               selectedColor: Color(0xFF39C184).withOpacity(0.3),
@@ -544,12 +542,40 @@ class _TechniqueFilterState extends State<TechniqueFilter> {
           }).toList(),
         ),
         SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton(
+              onPressed: _resetFilters, // Reset the categories when clicked
+              child: Text('Reset',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[300],
+                minimumSize: Size(120, 40),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(7)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _saveFilters, // Save the selected categories
+              child: Text('Apply',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF39C184),
+                minimumSize: Size(120, 40),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(7)),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
 }
 
-// Ingredient
 class IngredientFilter extends StatefulWidget {
   final Set<String> selectedIngredients;
   final Function(Set<String>) onSelectionChanged;
@@ -564,31 +590,114 @@ class IngredientFilter extends StatefulWidget {
 }
 
 class _IngredientFilterState extends State<IngredientFilter> {
-  final List<String> ingredients = [
+  List<String> foodIngredient = [
+    'Chicken',
+    'Beef',
+    'Pork',
+    'Fish',
+    'Tofu',
+    'Rice',
+    'Pasta',
     'Tomato',
-    'Onion',
-    'Garlic',
     'Cheese',
-    'Chicken'
+    'Milk',
+    'Egg',
+    'Garlic',
+    'Onion',
+    'Carrot',
+    'Potato',
+    'Mushroom',
+    'Broccoli',
+    'Spinach',
+    'Peanut',
+    'Soy Sauce',
+    'Olive Oil'
   ];
+
+  late Set<String> selectedIngredients;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedIngredients = Set.from(widget.selectedIngredients);
+  }
+
+  // Reset filters to the original selected ingredients
+  void _resetFilters() {
+    setState(() {
+      selectedIngredients.clear(); // Clear all selected ingredients
+    });
+    widget.onSelectionChanged(
+        selectedIngredients); // Notify parent with empty set
+  }
+
+  // Save the selected filters to Firebase (or any other storage)
+  Future<void> _saveFilters() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'foodIngredient': selectedIngredients.toList(),
+    }, SetOptions(merge: true));
+  }
+
+  // Apply filters and save the selected ingredients (without popping the dialog)
+  void _applyFilters() {
+    widget.onSelectionChanged(
+        selectedIngredients); // Notify parent with selected ingredients
+    _saveFilters(); // Save the selected ingredients to Firebase
+    Navigator.pop(context); // Close the modal
+  }
 
   @override
   Widget build(BuildContext context) {
-    return _buildFilterChips(
-        ingredients, widget.selectedIngredients, "Ingredients");
+    return Column(
+      children: [
+        _buildFilterChips(foodIngredient, selectedIngredients, "Ingredients"),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton(
+              onPressed: _resetFilters,
+              child: Text('Reset',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[300],
+                minimumSize: Size(120, 40),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(7)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _applyFilters,
+              child: Text('Apply',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF39C184),
+                minimumSize: Size(120, 40),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(7)),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _buildFilterChips(
-      List<String> options, Set<String> selected, String title) {
+      List<String> options, Set<String> selectedOptions, String label) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
+        Text(label,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         Wrap(
           spacing: 8.0,
           children: options.map((option) {
-            bool isSelected = selected.contains(option);
+            bool isSelected = selectedOptions.contains(option);
             return ChoiceChip(
               label: Text(option,
                   style: TextStyle(
@@ -597,11 +706,10 @@ class _IngredientFilterState extends State<IngredientFilter> {
               onSelected: (bool selectedValue) {
                 setState(() {
                   if (selectedValue) {
-                    selected.add(option);
+                    selectedOptions.add(option);
                   } else {
-                    selected.remove(option);
+                    selectedOptions.remove(option);
                   }
-                  widget.onSelectionChanged(selected);
                 });
               },
               selectedColor: Color(0xFF39C184).withOpacity(0.3),
@@ -634,12 +742,88 @@ class AllergyFilter extends StatefulWidget {
 }
 
 class _AllergyFilterState extends State<AllergyFilter> {
-  final List<String> allergies = ['Egg', 'Milk', 'Fish', 'Nuts', 'Soybeans'];
+  List<String> foodAllergy = [
+    'Nuts',
+    'Dairy',
+    'Shellfish',
+    'Gluten',
+    'Eggs',
+    'Peanuts',
+  ];
+
+  late Set<String> selectedAllergies;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedAllergies = Set.from(widget.selectedAllergies);
+  }
+
+  // Save selected allergies to Firebase
+  Future<void> _saveAllergies() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'foodAllergy': selectedAllergies.toList(),
+    }, SetOptions(merge: true));
+  }
+
+  // Reset the selected allergies
+  void _resetFilters() {
+    setState(() {
+      selectedAllergies.clear(); // Clears all selected allergies
+    });
+    widget.onSelectionChanged(
+        Set.from(selectedAllergies)); // Notify parent with empty set
+  }
+
+  // Apply filters and save to Firebase
+  void _applyFilters() {
+    widget.onSelectionChanged(
+        selectedAllergies); // Notify parent with selected allergies
+    _saveAllergies(); // Save selected allergies to Firebase
+    Navigator.pop(context); // Close the modal
+  }
 
   @override
   Widget build(BuildContext context) {
-    return _buildFilterChips(
-        allergies, widget.selectedAllergies, "Food Allergies");
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildFilterChips(foodAllergy, selectedAllergies, "Food Allergies"),
+        SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton(
+              onPressed: _resetFilters,
+              child: Text('Reset',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[300],
+                minimumSize: Size(120, 40),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(7)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _applyFilters,
+              child: Text('Apply',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF39C184),
+                minimumSize: Size(120, 40),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(7)),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _buildFilterChips(

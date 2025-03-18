@@ -232,12 +232,34 @@ class SignUpFieldState extends State<SignUpField> {
   final _genderController = TextEditingController();
   final _weightGoalController = TextEditingController();
   final _allergiesController = TextEditingController();
-  final _preferredFlavorsController = TextEditingController();
   final _activityLevelController = TextEditingController();
 
   // final FirestoreService firestoreService = FirestoreService();
 
-  List<String> allergies = [
+  List<String> foodIngredient = [
+    'Chicken',
+    'Beef',
+    'Pork',
+    'Fish',
+    'Tofu',
+    'Rice',
+    'Pasta',
+    'Tomato',
+    'Cheese',
+    'Milk',
+    'Egg',
+    'Garlic',
+    'Onion',
+    'Carrot',
+    'Potato',
+    'Mushroom',
+    'Broccoli',
+    'Spinach',
+    'Peanut',
+    'Soy Sauce',
+    'Olive Oil'
+  ];
+  List<String> foodAllergy = [
     'Nuts',
     'Dairy',
     'Shellfish',
@@ -246,20 +268,12 @@ class SignUpFieldState extends State<SignUpField> {
     'Peanuts',
   ];
 
-  List<String> flavors = [
-    'Sweet',
-    'Salty',
-    'Spicy',
-    'Sour',
-    'Bitter',
-  ];
-
   String? selectedGender;
   String? _selectedActivityLevel;
   String? _activityDescription;
 
+  List<String> selectedIngredients = [];
   List<String> selectedAllergies = [];
-  List<String> selectedFlavors = [];
 
   List<String> genderOptions = ['Male', 'Female', 'Other'];
   Map<String, String> activityLevels = {
@@ -284,7 +298,6 @@ class SignUpFieldState extends State<SignUpField> {
     // _genderController.dispose();
     // _weightGoalController.dispose();
     // _allergiesController.dispose();
-    // _preferredFlavorsController.dispose();
     // _activityLevelController.dispose();
   }
 
@@ -317,17 +330,17 @@ class SignUpFieldState extends State<SignUpField> {
       // Save user details to Firestore
       await FirebaseFirestore.instance
           .collection('users')
-          .doc(userCredential.user!.uid) // Using the UID as document ID
+          .doc(userCredential.user!.uid)
           .set({
         'email': userCredential.user!.email,
-        'weight': weight, // Store as number
-        'height': height, // Store as number
+        'weight': weight,
+        'height': height,
         'dob': _dobController.text,
         'gender': selectedGender,
-        'weightGoal': weightGoal, // Store as number
+        'weightGoal': weightGoal,
         // 'allergies': _allergiesController.text,
-        'allergies': selectedAllergies,
-        'preferredFlavors': selectedFlavors,
+        'foodIngredient': selectedIngredients,
+        'foodAllergy': selectedAllergies,
         'activityLevel': _selectedActivityLevel,
       }).then((_) {
         log('User details saved to Firestore');
@@ -600,6 +613,20 @@ class SignUpFieldState extends State<SignUpField> {
             ),
             SizedBox(height: 10),
 
+            // Ingredients
+            TextFormField(
+              controller:
+                  TextEditingController(text: selectedIngredients.join(', ')),
+              readOnly: true, // Prevent manual input
+              decoration: InputDecoration(
+                labelText: 'Ingredients',
+                hintText: 'Select your ingredients',
+                suffixIcon: Icon(Icons.arrow_drop_down),
+              ),
+              onTap: _showIngredientSheet, // Opens the bottom sheet on tap
+            ),
+            SizedBox(height: 10),
+
             // Allergies
             TextFormField(
               controller:
@@ -611,20 +638,6 @@ class SignUpFieldState extends State<SignUpField> {
                 suffixIcon: Icon(Icons.arrow_drop_down),
               ),
               onTap: _showAllergySheet, // Opens the bottom sheet on tap
-            ),
-            SizedBox(height: 10),
-
-            // Preferred Flavors
-            TextFormField(
-              controller:
-                  TextEditingController(text: selectedFlavors.join(', ')),
-              readOnly: true, // Prevent manual input
-              decoration: InputDecoration(
-                labelText: 'Flavors',
-                hintText: 'Select your flavors',
-                suffixIcon: Icon(Icons.arrow_drop_down),
-              ),
-              onTap: _showFlavorSheet, // Opens the bottom sheet on tap
             ),
             SizedBox(height: 10),
 
@@ -727,6 +740,63 @@ class SignUpFieldState extends State<SignUpField> {
     );
   }
 
+  void _showIngredientSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: const EdgeInsets.all(16.0),
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select Ingredients',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(height: 10),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: foodIngredient.map((ingredient) {
+                          return CheckboxListTile(
+                            title: Text(ingredient),
+                            value: selectedIngredients.contains(ingredient),
+                            onChanged: (bool? value) {
+                              setSheetState(() {
+                                if (value == true) {
+                                  selectedIngredients.add(ingredient);
+                                } else {
+                                  selectedIngredients.remove(ingredient);
+                                }
+                              });
+                              setState(() {});
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Done'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity, 50),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showAllergySheet() {
     showModalBottomSheet(
       context: context,
@@ -748,7 +818,7 @@ class SignUpFieldState extends State<SignUpField> {
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
-                        children: allergies.map((allergy) {
+                        children: foodAllergy.map((allergy) {
                           return CheckboxListTile(
                             title: Text(allergy),
                             value: selectedAllergies.contains(allergy),
@@ -783,515 +853,4 @@ class SignUpFieldState extends State<SignUpField> {
       },
     );
   }
-
-  void _showFlavorSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Container(
-              padding: const EdgeInsets.all(16.0),
-              height: MediaQuery.of(context).size.height * 0.6,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Select Preferred Flavors',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(height: 10),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: flavors.map((flavor) {
-                          return CheckboxListTile(
-                            title: Text(flavor),
-                            value: selectedFlavors.contains(flavor),
-                            onChanged: (bool? value) {
-                              setSheetState(() {
-                                if (value == true) {
-                                  selectedFlavors.add(flavor);
-                                } else {
-                                  selectedFlavors.remove(flavor);
-                                }
-                              });
-                              setState(() {});
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Done'),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size(double.infinity, 50),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 }
-
-// class SignUpFieldState extends State<SignUpField> {
-//   final formKey = GlobalKey<FormState>();
-//   final _auth = AuthService();
-//   final _emailController = TextEditingController();
-//   final _passwordController = TextEditingController();
-//   final _weightController = TextEditingController();
-//   final _heightController = TextEditingController();
-//   final _dobController = TextEditingController();
-//   final _genderController = TextEditingController();
-//   final _weightGoalController = TextEditingController();
-//   final _allergiesController = TextEditingController();
-//   final _preferredFlavorsController = TextEditingController();
-//   final _activityLevelController = TextEditingController();
-//   String? emailError;
-
-//   bool _isPasswordState = false;
-
-//   void dispose() {
-//     super.dispose();
-//     _email.dispose();
-//     _password.dispose();
-//   }
-
-//   void _togglePasswordField() {
-//     setState(() {
-//       _isPasswordState = !_isPasswordState;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Form(
-//       key: formKey,
-//       child: Column(
-//         children: [
-//           // Email
-//           Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Text(
-//                 'Email',
-//                 style: TextStyle(
-//                   fontSize: 16,
-//                   fontWeight: FontWeight.w500,
-//                 ),
-//               ),
-//               TextFormField(
-//                 controller: _email,
-//                 validator: (value) {
-//                   if (value!.isEmpty) {
-//                     return 'Email is required';
-//                   }
-//                   return null;
-//                 },
-//                 decoration: InputDecoration(
-//                   prefixIcon: Row(
-//                     mainAxisSize: MainAxisSize.min,
-//                     children: [
-//                       SizedBox(width: 5),
-//                       Icon(
-//                         Icons.email_outlined,
-//                         size: 20,
-//                         color: Color.fromARGB(255, 124, 124, 124),
-//                       ),
-//                       SizedBox(width: 6),
-//                       Container(
-//                         width: 1.5,
-//                         height: 20,
-//                         color: Color.fromARGB(255, 124, 124, 124),
-//                       )
-//                     ],
-//                   ),
-//                   hintText: 'abc@email.com',
-//                   hintStyle: TextStyle(
-//                     color: Color.fromARGB(255, 124, 124, 124),
-//                   ),
-//                   contentPadding: EdgeInsets.symmetric(vertical: 10),
-//                 ),
-//               ),
-//             ],
-//           ),
-//           SizedBox(height: 10),
-
-//           // Password
-//           Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Text(
-//                 'Password',
-//                 style: TextStyle(
-//                   fontSize: 16,
-//                   fontWeight: FontWeight.w600,
-//                 ),
-//               ),
-//               TextFormField(
-//                 obscureText: !_isPasswordState,
-//                 controller: _password,
-//                 validator: (value) {
-//                   if (value!.isEmpty) {
-//                     return 'Password is required';
-//                   }
-//                   return null;
-//                 },
-//                 decoration: InputDecoration(
-//                   prefixIcon: Row(
-//                     mainAxisSize: MainAxisSize.min,
-//                     children: [
-//                       SizedBox(width: 5),
-//                       Icon(
-//                         Icons.lock_outline,
-//                         size: 20,
-//                         color: Color.fromARGB(255, 124, 124, 124),
-//                       ),
-//                       SizedBox(width: 6),
-//                       Container(
-//                         width: 1.5,
-//                         height: 20,
-//                         color: Color.fromARGB(255, 124, 124, 124),
-//                       ),
-//                     ],
-//                   ),
-//                   suffixIcon: IconButton(
-//                     onPressed: _togglePasswordField,
-//                     icon: Icon(
-//                       _isPasswordState
-//                           ? Icons.visibility
-//                           : Icons.visibility_off,
-//                     ),
-//                   ),
-//                   hintText: '********',
-//                   hintStyle: TextStyle(
-//                     color: Color.fromARGB(255, 124, 124, 124),
-//                   ),
-//                   contentPadding: EdgeInsets.symmetric(vertical: 12),
-//                 ),
-//               ),
-//             ],
-//           ),
-//           SizedBox(height: 10),
-
-//           // Confirm Password
-//           Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Text(
-//                 'Confirm Password',
-//                 style: TextStyle(
-//                   fontSize: 16,
-//                   fontWeight: FontWeight.w600,
-//                 ),
-//               ),
-//               TextFormField(
-//                 obscureText: !_isPasswordState,
-//                 controller: confirmPassword,
-//                 validator: (value) {
-//                   if (value!.isEmpty) {
-//                     return 'Password is required';
-//                   } else if (_password.text != confirmPassword.text) {
-//                     return 'Passwords do not match';
-//                   }
-//                   return null;
-//                 },
-//                 decoration: InputDecoration(
-//                   prefixIcon: Row(
-//                     mainAxisSize: MainAxisSize.min,
-//                     children: [
-//                       SizedBox(width: 5),
-//                       Icon(
-//                         Icons.lock_outline,
-//                         size: 20,
-//                         color: Color.fromARGB(255, 124, 124, 124),
-//                       ),
-//                       SizedBox(width: 6),
-//                       Container(
-//                         width: 1.5,
-//                         height: 20,
-//                         color: Color.fromARGB(255, 124, 124, 124),
-//                       ),
-//                     ],
-//                   ),
-//                   suffixIcon: IconButton(
-//                     onPressed: _togglePasswordField,
-//                     icon: Icon(
-//                       _isPasswordState
-//                           ? Icons.visibility
-//                           : Icons.visibility_off,
-//                     ),
-//                   ),
-//                   hintText: '********',
-//                   hintStyle: TextStyle(
-//                     color: Color.fromARGB(255, 124, 124, 124),
-//                   ),
-//                   contentPadding: EdgeInsets.symmetric(vertical: 12),
-//                 ),
-//               ),
-//             ],
-//           ),
-//           SizedBox(height: 20),
-
-//           // Create Account Button
-//           ElevatedButton(
-//             onPressed: _signup,
-//             // onPressed: () async {
-//             //   if (formKey.currentState!.validate()) {
-//             //     final db = DatabaseHelper();
-//             //     bool emailExists = await db.checkEmailExists(email.text);
-//             //     if (emailExists) {
-//             //       setState(() {
-//             //         emailError = 'Email is already in use';
-//             //       });
-//             //     } else {
-//             //       await db.signup(_email.text, _password.text);
-//             //       Navigator.pushReplacement(
-//             //         context,
-//             //         MaterialPageRoute(
-//             //             builder: (context) => Homepage(
-//             //                 user: Users(
-//             //                     usrEmail: email.text,
-//             //                     usrPassword: password.text))),
-//             //       );
-//             //     }
-//             //   }
-//             // },
-//             style: ElevatedButton.styleFrom(
-//               backgroundColor: Color(0xff1f5f5b),
-//               fixedSize: Size(350, 50),
-//               shape: RoundedRectangleBorder(
-//                 borderRadius: BorderRadius.circular(10),
-//               ),
-//             ),
-//             child: Text(
-//               'Create an Account',
-//               style: TextStyle(
-//                 color: Colors.white,
-//                 fontSize: 17,
-//               ),
-//             ),
-//           ),
-//           if (emailError != null)
-//             Text(
-//               emailError!,
-//               style: TextStyle(color: Colors.red),
-//             ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Future<void> _signUp() async {
-//     try {
-//       // Sign up the user
-//       UserCredential userCredential =
-//           await _auth.createUserWithEmailAndPassword(
-//         email: _emailController.text,
-//         password: _passwordController.text,
-//       );
-
-//       // Get the user from the userCredential
-//       User? user = userCredential.user;
-//       if (user != null) {
-//         log('User Created Successfully');
-
-//         // Saving the additional user details to Firestore
-//         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-//           'email': user.email,
-//           'weight': _weightController.text,
-//           'height': _heightController.text,
-//           'dob': _dobController.text,
-//           'gender': _genderController.text,
-//           'weightGoal': _weightGoalController.text,
-//           'allergies': _allergiesController.text,
-//           'preferredFlavors': _preferredFlavorsController.text,
-//           'activityLevel': _activityLevelController.text,
-//         });
-
-//         // Navigate to the next screen
-//         Navigator.pushReplacement(
-//           context,
-//           MaterialPageRoute(
-//             builder: (context) => UserDetailScreen(user: user),
-//           ),
-//         );
-//       }
-//     } catch (e) {
-//       log('Error: $e');
-//     }
-//   }
-// }
-
-// import 'package:flutter/material.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:flutter_application_1/screens/homepage.dart';
-
-// class SignUpScreen extends StatefulWidget {
-//   @override
-//   _SignUpScreenState createState() => _SignUpScreenState();
-// }
-
-// class _SignUpScreenState extends State<SignUpScreen> {
-//   final _emailController = TextEditingController();
-//   final _passwordController = TextEditingController();
-//   final _confirmPasswordController = TextEditingController();
-//   final _weightController = TextEditingController();
-//   final _heightController = TextEditingController();
-//   final _dobController = TextEditingController();
-//   final _genderController = TextEditingController();
-//   final _weightGoalController = TextEditingController();
-//   final _allergiesController = TextEditingController();
-//   final _preferredFlavorsController = TextEditingController();
-//   final _activityLevelController = TextEditingController();
-
-//   final SignUpService _signUpService = SignUpService();
-//   String? errorMessage;
-
-//   void _signUp() async {
-//     String? result = await _signUpService.signUp(
-//       email: _emailController.text,
-//       password: _passwordController.text,
-//       confirmPassword: _confirmPasswordController.text,
-//       weight: _weightController.text,
-//       height: _heightController.text,
-//       dob: _dobController.text,
-//       gender: _genderController.text,
-//       weightGoal: _weightGoalController.text,
-//       allergies: _allergiesController.text,
-//       preferredFlavors: _preferredFlavorsController.text,
-//       activityLevel: _activityLevelController.text,
-//     );
-
-//     if (result != null) {
-//       setState(() {
-//         errorMessage = result;
-//       });
-//     } else {
-//       // Handle successful sign up (navigate to the next screen or show success message)
-//       Navigator.push(
-//           context, MaterialPageRoute(builder: (context) => Homepage()));
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: Text("Sign Up")),
-//       body: Padding(
-//         padding: EdgeInsets.all(16.0),
-//         child: SingleChildScrollView(
-//           child: Column(
-//             children: [
-//               TextField(
-//                   controller: _emailController,
-//                   decoration: InputDecoration(labelText: "Email")),
-//               TextField(
-//                   controller: _passwordController,
-//                   obscureText: true,
-//                   decoration: InputDecoration(labelText: "Password")),
-//               TextField(
-//                   controller: _confirmPasswordController,
-//                   obscureText: true,
-//                   decoration: InputDecoration(labelText: "Confirm Password")),
-//               TextField(
-//                   controller: _weightController,
-//                   decoration: InputDecoration(labelText: "Weight")),
-//               TextField(
-//                   controller: _heightController,
-//                   decoration: InputDecoration(labelText: "Height")),
-//               TextField(
-//                   controller: _dobController,
-//                   decoration: InputDecoration(labelText: "Date of Birth")),
-//               TextField(
-//                   controller: _genderController,
-//                   decoration: InputDecoration(labelText: "Gender")),
-//               TextField(
-//                   controller: _weightGoalController,
-//                   decoration: InputDecoration(labelText: "Weight Goal")),
-//               TextField(
-//                   controller: _allergiesController,
-//                   decoration: InputDecoration(labelText: "Allergies")),
-//               TextField(
-//                   controller: _preferredFlavorsController,
-//                   decoration: InputDecoration(labelText: "Preferred Flavors")),
-//               TextField(
-//                   controller: _activityLevelController,
-//                   decoration: InputDecoration(labelText: "Activity Level")),
-//               SizedBox(height: 20),
-//               ElevatedButton(onPressed: _signUp, child: Text("Sign Up")),
-//               if (errorMessage != null) ...[
-//                 SizedBox(height: 10),
-//                 Text(errorMessage!, style: TextStyle(color: Colors.red)),
-//               ],
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// class SignUpService {
-//   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-//   // Function to sign up and store user data
-//   Future<String?> signUp({
-//     required String email,
-//     required String password,
-//     required String confirmPassword,
-//     required String weight,
-//     required String height,
-//     required String dob,
-//     required String gender,
-//     required String weightGoal,
-//     required String allergies,
-//     required String preferredFlavors,
-//     required String activityLevel,
-//   }) async {
-//     if (password != confirmPassword) {
-//       return 'Passwords do not match';
-//     }
-
-//     try {
-//       User? user = _auth.currentUser;
-
-//       // Create user if not authenticated
-//       if (user == null) {
-//         UserCredential userCredential =
-//             await _auth.createUserWithEmailAndPassword(
-//           email: email,
-//           password: password,
-//         );
-//         user = userCredential.user;
-//       }
-
-//       // Store user data in Firestore
-//       await FirebaseFirestore.instance.collection('users').doc(user!.uid).set({
-//         'email': user.email,
-//         'weight': weight,
-//         'height': height,
-//         'dob': dob,
-//         'gender': gender,
-//         'weightGoal': weightGoal,
-//         'allergies': allergies,
-//         'preferredFlavors': preferredFlavors,
-//         'activityLevel': activityLevel,
-//       });
-
-//       return null;
-//     } catch (e) {
-//       print('Error: $e'); // Print detailed error
-//       return 'Error: ${e.toString()}';
-//     }
-//   }
-// }

@@ -134,8 +134,8 @@ class _CalculateScreenState extends State<CalculateScreen> {
 
           String dobString = userData?["dob"] ?? '';
           // _genderController.text = userData?["gender"] ?? '';
-          _weightController.text = userData?["weight"] ?? '';
-          _heightController.text = userData?["height"] ?? '';
+          _weightController.text = userData?["weight"].toString() ?? '';
+          _heightController.text = userData?["height"].toString() ?? '';
 
           // #1
           // _selectedGender =

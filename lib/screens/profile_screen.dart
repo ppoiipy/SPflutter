@@ -547,36 +547,42 @@ class _ChartWidgetState extends State<ChartWidget> {
     // Sample data for the demonstration
     switch (track) {
       case 'Body Weight':
-        dataPoints = [60, 61, 62, 61.5, 62.3]; // Example values for testing
+        dataPoints = [
+          60,
+          61,
+          62,
+          61.5,
+          62.3,
+          63,
+          62.5
+        ]; // Updated to 7 data points
         break;
       case 'BMI':
-        dataPoints = [22.5, 22.6, 22.7, 22.65, 22.8];
+        dataPoints = [22.5, 22.6, 22.7, 22.65, 22.8, 23.0, 23.1];
         break;
       case 'BMR':
-        dataPoints = [1500, 1510, 1520, 1515, 1525];
+        dataPoints = [1500, 1510, 1520, 1515, 1525, 1530, 1540];
         break;
       case 'TDEE':
-        dataPoints = [2000, 2050, 2100, 2150, 2200];
+        dataPoints = [2000, 2050, 2100, 2150, 2200, 2250, 2300];
         break;
       case 'Calorie':
-        dataPoints = [1800, 1850, 1900, 1950, 2000];
+        dataPoints = [1800, 1850, 1900, 1950, 2000, 2050, 2100];
         break;
       default:
         dataPoints = [0.0];
     }
 
-    // Adjust the dateLabels to show the dates starting from today (on the left)
-    for (int i = 0; i < dataPoints.length; i++) {
-      DateTime date = DateTime.now().subtract(Duration(days: i));
+    // Adjust the dateLabels to show the dates starting from the previous 6 days up to today
+    for (int i = 0; i < 7; i++) {
+      DateTime date = DateTime.now()
+          .subtract(Duration(days: 6 - i)); // From 6 to 0 days ago
       dateLabels.add(getFormattedDate(date)); // Get formatted date for each day
     }
 
-    // Reverse the dateLabels to ensure today is on the leftmost side of the chart
-    dateLabels = dateLabels.reversed.toList();
-
     return List.generate(dataPoints.length, (index) {
       return BarChartGroupData(
-        x: index, // Ensuring that the chart starts from the left for today
+        x: index, // Ensuring that the chart starts from the left for the previous 7 days
         barRods: [
           BarChartRodData(
             toY: dataPoints[index],
@@ -663,31 +669,41 @@ class _ChartWidgetState extends State<ChartWidget> {
                   ],
                 ),
                 Container(
-                  height: 200,
-                  child: BarChart(
-                    BarChartData(
-                      barGroups:
-                          _getBarGroups(widget.selectedTrack, widget.dateRange),
-                      borderData: FlBorderData(show: false),
-                      titlesData: FlTitlesData(
-                        leftTitles: AxisTitles(
-                          sideTitles:
-                              SideTitles(showTitles: true, reservedSize: 40),
-                        ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) {
-                              String dateString = widget.dateRange == 'Day'
-                                  ? getFormattedDate(DateTime.now().subtract(
-                                      Duration(
-                                          days: (meta.max - value).toInt())))
-                                  : "Day ${value.toInt() + 1}";
+                  height: 230,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: BarChart(
+                      BarChartData(
+                        barGroups: _getBarGroups(
+                            widget.selectedTrack, widget.dateRange),
+                        borderData: FlBorderData(show: false),
+                        titlesData: FlTitlesData(
+                          leftTitles: AxisTitles(
+                            sideTitles:
+                                SideTitles(showTitles: true, reservedSize: 40),
+                          ),
+                          topTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          bottomTitles: AxisTitles(
+                            axisNameWidget: Text(
+                              'Date',
+                              style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                String dateString = getFormattedDate(
+                                    DateTime.now().subtract(Duration(
+                                        days: (meta.max - value + 5).toInt())));
 
-                              return Text(dateString,
-                                  style: TextStyle(fontSize: 12));
-                            },
-                            reservedSize: 32,
+                                return Text(dateString,
+                                    style: TextStyle(fontSize: 12));
+                              },
+                              reservedSize: 32,
+                            ),
                           ),
                         ),
                       ),
