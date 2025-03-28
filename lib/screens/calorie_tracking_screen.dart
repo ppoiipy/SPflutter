@@ -888,6 +888,10 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
     _loadUserData();
   }
 
+  String formatNumber(int number) {
+    return NumberFormat("#,###").format(number);
+  }
+
   // Generate last 7 days
   void _generateLast7Days() {
     last7Days = List.generate(7, (index) {
@@ -939,6 +943,10 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
       if (userDoc.exists) {
         setState(() {
           userData = userDoc.data() as Map<String, dynamic>;
+          _selectedActivityLevel =
+              userData?["activityLevel"] ?? "Moderately active (3-5 days/week)";
+          _weightController.text = userData?["weight"].toString() ?? '';
+          _heightController.text = userData?["height"].toString() ?? '';
         });
       }
     } catch (e) {
@@ -1023,7 +1031,107 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
       });
     }
   }
+
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+
   //
+  double? _calculatedBMI() {
+    final height = double.tryParse(_heightController.text);
+    final weight = double.tryParse(_weightController.text);
+
+    if (height != null && weight != null && height > 0) {
+      return weight / ((height / 100) * (height / 100)); // BMI formula
+    }
+    return null; // Return null if the input values are invalid
+  }
+
+  String _bmiCategory(double? bmi) {
+    if (bmi == null) return "N/A";
+
+    if (bmi < 18.5) {
+      return "Underweight";
+    } else if (bmi < 24.9) {
+      return "Normal weight";
+    } else if (bmi < 29.9) {
+      return "Overweight";
+    } else {
+      return "Obese";
+    }
+  }
+
+  final List<String> activityLevels = [
+    "Sedentary (little to no exercise)",
+    "Lightly active (1-3 days/week)",
+    "Moderately active (3-5 days/week)",
+    "Very active (6-7 days/week)",
+    "Super active (very hard exercise, physical job)"
+  ];
+
+  String _selectedActivityLevel = "Moderately active (3-5 days/week)";
+
+  double? _calculateTDEE() {
+    final weight = double.tryParse(_weightController.text);
+    final height = double.tryParse(_heightController.text);
+    final dobString = userData?["dob"] ?? '';
+    final gender = userData?["gender"] ?? "Male";
+
+    if (weight == null || height == null || dobString.isEmpty) {
+      return null;
+    }
+
+    // Convert dob string to DateTime with error handling
+    DateTime dob;
+    try {
+      dob = DateTime.parse(dobString);
+    } catch (e) {
+      return null; // Return null if DOB is invalid
+    }
+
+    int age = _calculateAge(dob);
+
+    // Calculate BMR using the Mifflin-St Jeor Equation
+    double bmr;
+    if (gender == "Male") {
+      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) + 5;
+    } else {
+      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) - 161;
+    }
+
+    // Assign activity factor based on the activity level
+    double activityFactor;
+    switch (_selectedActivityLevel) {
+      case "Sedentary (little to no exercise)":
+        activityFactor = 1.2;
+        break;
+      case "Lightly active (1-3 days/week)":
+        activityFactor = 1.375;
+        break;
+      case "Moderately active (3-5 days/week)":
+        activityFactor = 1.55;
+        break;
+      case "Very active (6-7 days/week)":
+        activityFactor = 1.725;
+        break;
+      case "Super active (very hard exercise, physical job)":
+        activityFactor = 1.9;
+        break;
+      default:
+        activityFactor = 1.55; // Default to "Moderately active"
+    }
+
+    return bmr * activityFactor;
+  }
+
+  int _calculateAge(DateTime dob) {
+    DateTime today = DateTime.now();
+    int age = today.year - dob.year;
+    if (today.month < dob.month ||
+        (today.month == dob.month && today.day < dob.day)) {
+      age--; // Adjust age if the birthday hasn't occurred yet this year
+    }
+    return age;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1033,7 +1141,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
     double circleSize = screenWidth * 0.38;
     double buttonSize = screenWidth * 0.44;
 
-    int totalCalorieLimit = 2000;
+    int totalCalorieLimit = (_calculateTDEE() ?? 2000).toInt();
 
     // Calculate total calories consumed based on the updated barGroups
     int totalCaloriesConsumed =
@@ -1233,7 +1341,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
                           ),
                           SizedBox(height: 8),
                           Text(
-                            remainingCalories.toStringAsFixed(0),
+                            formatNumber(remainingCalories),
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -1321,7 +1429,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
                                   color: Colors.red,
                                 ),
                                 Text(
-                                  ' ${totalCaloriesConsumed.toString()} ',
+                                  ' ${formatNumber(totalCaloriesConsumed)} ',
                                   style: TextStyle(
                                     color: Colors.green,
                                     fontWeight: FontWeight.w600,
@@ -1402,14 +1510,14 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
                     Column(
                       children: [
                         Text(
-                          'BMI 26.2',
+                          'BMI ${_calculatedBMI()?.toStringAsFixed(1) ?? 'N/A'}',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         Text(
-                          'Overweight',
+                          _bmiCategory(_calculatedBMI()),
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -1417,7 +1525,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
                     Column(
                       children: [
                         Text(
-                          totalCalorieLimit.toString(),
+                          formatNumber(_calculateTDEE()?.toInt() ?? 2000),
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,

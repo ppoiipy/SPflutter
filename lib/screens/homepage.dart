@@ -51,6 +51,10 @@ class _HomepageState extends State<Homepage> {
     loadJsonData();
   }
 
+  String formatNumber(int number) {
+    return NumberFormat("#,###").format(number);
+  }
+
   void loadJsonData() async {
     String jsonData =
         await rootBundle.loadString('assets/fetchMenu/recipe_output.json');
@@ -614,7 +618,7 @@ class _HomepageState extends State<Homepage> {
                                         color: Colors.red,
                                       ),
                                       Text(
-                                        "${recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt()} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
+                                        "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
                                       ),
                                     ],
                                   ),

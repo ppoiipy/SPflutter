@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For rootBundle
+import 'package:intl/intl.dart';
 
 import 'package:flutter_application_1/screens/food_detail_screen.dart';
 import 'package:flutter_application_1/api/fetch_recipe_api.dart'; // Ensure this is correctly set up
@@ -35,6 +36,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     super.initState();
     _loadFavorites();
     loadJsonData();
+  }
+
+  String formatNumber(int number) {
+    return NumberFormat("#,###").format(number);
   }
 
   // Load favorite recipes from Firestore
@@ -200,7 +205,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                                   color: Colors.red,
                                 ),
                                 Text(
-                                  "${recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt()} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
+                                  "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
                                 ),
                               ],
                             ),

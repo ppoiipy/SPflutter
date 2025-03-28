@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart'; // For rootBundle
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
 import 'food_detail_screen.dart';
 import 'filter_sheet.dart';
 import 'homepage.dart';
@@ -35,11 +37,17 @@ class _MenuScreenState extends State<MenuScreen> {
 
   Map<String, bool> favoriteRecipes = {};
 
+  List<Map<String, dynamic>> allRecipes = []; // Store all recipes
+
   @override
   void initState() {
     super.initState();
     loadJsonData();
     _loadUserFilters(); // Load filters from Firebase when screen starts
+  }
+
+  String formatNumber(int number) {
+    return NumberFormat("#,###").format(number);
   }
 
   // Load user-selected filters from Firebase
@@ -71,6 +79,7 @@ class _MenuScreenState extends State<MenuScreen> {
 
     setState(() {
       filteredRecipes = List.from(recipes);
+      allRecipes = List.from(recipes);
     });
   }
 
@@ -115,15 +124,51 @@ class _MenuScreenState extends State<MenuScreen> {
     });
   }
 
+  // Filter recipes based on _selectedCalories
+  void _filterRecipesByCalories() {
+    setState(() {
+      filteredRecipes = allRecipes.where((recipe) {
+        if (_selectedCalories == null) return true; // No calorie filter applied
+
+        double calories = recipe['calories'] ?? 0.0;
+        return calories <= _selectedCalories!;
+      }).toList();
+    });
+
+    print(
+        "Filtered Recipes by Calories: ${filteredRecipes.map((r) => r['label']).toList()}");
+  }
+
   // Call Filter Sheet Function
   void openFilterSheet() async {
     final filters = await showFilterSheet(context);
     if (filters != null) {
       setState(() {
-        selectedFilters = filters; // Store the complete filter data
+        selectedFilters = filters;
+        _selectedCalories = filters['calories']; // Get calories filter
+        _filterRecipesByCalories(); // Apply filter
+        _filterRecipesByIngredients();
       });
       print("Selected Filters: $selectedFilters");
     }
+  }
+
+  Future<Map<String, dynamic>?> showFilterSheet(BuildContext context) {
+    return showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        return FilterSheet(
+          initialCalories: _selectedCalories, // Pass the current value
+          onFiltersApplied: (filters) {
+            Navigator.pop(context, filters);
+          },
+        );
+      },
+    );
   }
 
   // Open Calorie Filter
@@ -169,8 +214,7 @@ class _MenuScreenState extends State<MenuScreen> {
       builder: (context) {
         return Container(
           width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height *
-              0.5, // Set a reasonable height
+          height: MediaQuery.of(context).size.height * 0.5,
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -185,6 +229,45 @@ class _MenuScreenState extends State<MenuScreen> {
         );
       },
     );
+  }
+
+  void _filterRecipesByCategories({bool startFromAllRecipes = false}) {
+    setState(() {
+      print("All cuisine types:");
+      for (var recipe in allRecipes) {
+        print(recipe['cuisineType']);
+      }
+
+      filteredRecipes =
+          (startFromAllRecipes ? allRecipes : filteredRecipes).where((recipe) {
+        if (selectedCategories.isEmpty)
+          return true; // No category filter applied
+
+        // Check if recipe's cuisineType matches any selected category
+        bool containsSelectedCategories = selectedCategories.any((category) {
+          var cuisineType = recipe['cuisineType'];
+
+          // Ensure cuisineType is a list and check if any element matches
+          if (cuisineType is List) {
+            return cuisineType.any((cuisine) {
+              if (cuisine is String) {
+                return cuisine.toLowerCase().contains(category.toLowerCase());
+              }
+              return false;
+            });
+          } else if (cuisineType is String) {
+            return cuisineType.toLowerCase().contains(category.toLowerCase());
+          }
+
+          return false;
+        });
+
+        return containsSelectedCategories; // Include recipes that match any of the selected categories
+      }).toList();
+    });
+
+    print(
+        "Filtered Recipes by Categories: ${filteredRecipes.map((r) => r['label']).toList()}");
   }
 
   Future<Set<String>?> showIngredientFilterSheet(
@@ -209,14 +292,35 @@ class _MenuScreenState extends State<MenuScreen> {
         return IngredientFilter(
           selectedIngredients: loadedIngredients,
           onSelectionChanged: (selected) {
-            // Update selected ingredients
-            setState(() {
-              selectedIngredients = selected;
-            });
+            print("Ingredient Selection Updated: $selected"); // Debugging
+            Navigator.pop(context, selected);
           },
         );
       },
     );
+  }
+
+  void _filterRecipesByIngredients({bool startFromAllRecipes = false}) {
+    setState(() {
+      filteredRecipes =
+          (startFromAllRecipes ? allRecipes : filteredRecipes).where((recipe) {
+        if (selectedIngredients.isEmpty)
+          return true; // No ingredient filter applied
+
+        // Check if recipe contains any selected ingredients
+        bool containsSelectedIngredients =
+            recipe['ingredients'].any((ingredient) {
+          String food = ingredient['food'].toLowerCase();
+          return selectedIngredients
+              .any((selected) => food.contains(selected.toLowerCase()));
+        });
+
+        return containsSelectedIngredients; // Include recipes that contain at least one of the selected ingredients
+      }).toList();
+    });
+
+    print(
+        "Filtered Recipes by Ingredients: ${filteredRecipes.map((r) => r['label']).toList()}");
   }
 
   Future<Set<String>?> showAllergyFilterSheet(
@@ -232,7 +336,7 @@ class _MenuScreenState extends State<MenuScreen> {
       loadedAllergies = Set<String>.from(data['foodAllergy']);
     }
 
-    return showModalBottomSheet<Set<String>>(
+    return await showModalBottomSheet<Set<String>>(
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -241,14 +345,54 @@ class _MenuScreenState extends State<MenuScreen> {
         return AllergyFilter(
           selectedAllergies: loadedAllergies,
           onSelectionChanged: (selected) {
-            // Update selected ingredients
-            setState(() {
-              selectedAllergies = selected;
-            });
+            // Navigator.pop(context, selected);
           },
         );
       },
     );
+  }
+
+  void _filterRecipesByAllergies({bool startFromAllRecipes = false}) {
+    setState(() {
+      print("All Cautions in Recipes:");
+      for (var recipe in allRecipes) {
+        print("${recipe['label']}: ${recipe['cautions']}");
+      }
+
+      print("All cuisine types:");
+      for (var recipe in allRecipes) {
+        print(recipe['cuisineType']);
+      }
+
+      print(
+          "Allergy Filtering Started. Selected Allergies: $selectedAllergies");
+
+      filteredRecipes =
+          (startFromAllRecipes ? allRecipes : filteredRecipes).where((recipe) {
+        if (selectedAllergies.isEmpty) return true; // No allergy filter applied
+
+        var cautions = recipe['cautions'];
+
+        // Ensure cautions is a list before processing
+        if (cautions is List) {
+          bool containsAllergy = selectedAllergies.any((allergy) {
+            return cautions.any((caution) {
+              if (caution is String) {
+                return caution.toLowerCase().contains(allergy.toLowerCase());
+              }
+              return false;
+            });
+          });
+
+          return !containsAllergy; // Exclude recipes that match any selected allergy
+        }
+
+        return true; // If no cautions, include the recipe
+      }).toList();
+    });
+
+    print(
+        "Filtered Recipes by Allergies: ${filteredRecipes.map((r) => r['label']).toList()}");
   }
 
   Future<void> logRecipeClick(String recipeLabel, String recipeShareAs) async {
@@ -358,8 +502,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   child: TextFormField(
                     controller: searchController,
                     decoration: InputDecoration(
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 12), // Better spacing
+                      contentPadding: EdgeInsets.symmetric(vertical: 12),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
                         borderSide: BorderSide(color: Colors.transparent),
@@ -398,36 +541,6 @@ class _MenuScreenState extends State<MenuScreen> {
             ],
           ),
 
-          // Cuisine Type Filter Dropdown
-          // Padding(
-          //   padding: EdgeInsets.all(10),
-          //   child: DropdownButton<String>(
-          //     value: selectedCuisineType,
-          //     onChanged: (String? newValue) {
-          //       setState(() {
-          //         selectedCuisineType = newValue!;
-          //       });
-          //       filterRecipes(searchController.text, selectedCuisineType);
-          //     },
-          //     items: <String>[
-          //       'All',
-          //       'Italian',
-          //       'Chinese',
-          //       'Indian',
-          //       'Mexican',
-          //       'American',
-          //       'Japanese',
-          //       'Asian',
-          //       'Thai'
-          //     ].map<DropdownMenuItem<String>>((String value) {
-          //       return DropdownMenuItem<String>(
-          //         value: value,
-          //         child: Text(value),
-          //       );
-          //     }).toList(),
-          //   ),
-          // ),
-
           // Scroll List
           Padding(
             padding: const EdgeInsets.only(top: 15),
@@ -448,8 +561,14 @@ class _MenuScreenState extends State<MenuScreen> {
                         Map<String, dynamic>? result =
                             await showFilterSheet(context);
                         if (result != null) {
-                          print("Updated Calories: ${result['calories']}");
-                          // TODO: Update UI with selected filters
+                          setState(() {
+                            _selectedCalories = result['calories'];
+                            _filterRecipesByCalories();
+                            _filterRecipesByIngredients();
+                            _filterRecipesByCategories();
+                            _filterRecipesByAllergies();
+                          });
+                          print("Updated Calories: $_selectedCalories");
                         }
                       } else if (icon == Icons.fastfood) {
                         double? result = await showCalorieFilterSheet(
@@ -457,32 +576,31 @@ class _MenuScreenState extends State<MenuScreen> {
                         if (result != null) {
                           print("Updated Calories: $result");
                           setState(() {
-                            _selectedCalories =
-                                result; // Update the calorie filter value
-                            // Optionally, you can filter recipes based on the selected calories here
+                            _selectedCalories = result;
+                            _filterRecipesByCalories();
                           });
                         }
                       } else if (icon == Icons.category) {
-                        // Open the category filter modal
                         Set<String>? result = await showCategoryFilterSheet(
                             context, selectedCategories);
                         if (result != null) {
                           setState(() {
-                            // Update the selected categories
                             selectedCategories = result;
+                            _filterRecipesByCategories(
+                                startFromAllRecipes: true);
                           });
                           print("Selected Categories: $selectedCategories");
                         }
                       } else if (icon == Icons.kitchen) {
-                        // Open the category filter modal
                         Set<String>? result = await showIngredientFilterSheet(
                             context, selectedIngredients);
                         if (result != null) {
                           setState(() {
-                            // Update the selected categories
                             selectedIngredients = result;
+                            _filterRecipesByIngredients(
+                                startFromAllRecipes: true);
                           });
-                          print("Selected Categories: $selectedIngredients");
+                          print("Selected Ingredients: $selectedIngredients");
                         }
                       } else if (icon == Icons.warning) {
                         Set<String>? result = await showAllergyFilterSheet(
@@ -490,6 +608,8 @@ class _MenuScreenState extends State<MenuScreen> {
                         if (result != null) {
                           setState(() {
                             selectedAllergies = result;
+                            _filterRecipesByAllergies(
+                                startFromAllRecipes: true);
                           });
                           print("Selected Allergies: $selectedAllergies");
                         }
@@ -522,7 +642,7 @@ class _MenuScreenState extends State<MenuScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(height: 5), // Add spacing
+                          SizedBox(height: 5),
                           Text(
                             icon == Icons.tune
                                 ? 'Edit'
@@ -592,7 +712,7 @@ class _MenuScreenState extends State<MenuScreen> {
                                   color: Colors.red,
                                 ),
                                 Text(
-                                  "${recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt()} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
+                                  "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
                                 ),
                               ],
                             ),

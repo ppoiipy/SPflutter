@@ -6,20 +6,12 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 final FirebaseAuth _auth = FirebaseAuth.instance;
 User? _user;
 
-Future<Map<String, dynamic>?> showFilterSheet(BuildContext context) {
-  return showModalBottomSheet<Map<String, dynamic>>(
-    context: context,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    isScrollControlled: true,
-    builder: (context) {
-      return FilterSheet();
-    },
-  );
-}
-
 class FilterSheet extends StatefulWidget {
+  final double? initialCalories;
+  final Function(Map<String, dynamic>) onFiltersApplied;
+
+  const FilterSheet({this.initialCalories, required this.onFiltersApplied});
+
   @override
   _FilterSheetState createState() => _FilterSheetState();
 }
@@ -31,10 +23,12 @@ class _FilterSheetState extends State<FilterSheet> {
   Set<String> selectedFoodIngredient = {};
 
   final List<String> foodCategories = [
+    'American',
     'Italian',
     'Japanese',
     'Chinese',
-    'Thai'
+    'Thai',
+    'South East Asia'
   ];
 
   List<String> foodIngredient = [
@@ -66,8 +60,12 @@ class _FilterSheetState extends State<FilterSheet> {
     'Dairy',
     'Shellfish',
     'Gluten',
+    'Wheat',
+    'Sulfites',
     'Eggs',
     'Peanuts',
+    'Tree-Nuts',
+    'FODMAP'
   ];
 
   @override
@@ -124,6 +122,7 @@ class _FilterSheetState extends State<FilterSheet> {
       padding: const EdgeInsets.all(20),
       child: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Align(
               alignment: Alignment.centerLeft,
@@ -131,6 +130,8 @@ class _FilterSheetState extends State<FilterSheet> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             ),
             SizedBox(height: 10),
+            Text("Calories",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -456,10 +457,16 @@ class CategoryFilter extends StatefulWidget {
 
 class _CategoryFilterState extends State<CategoryFilter> {
   final List<String> foodCategories = [
+    'American',
     'Italian',
     'Japanese',
     'Chinese',
-    'Thai'
+    'Thai',
+    'South East Asia',
+    'Mexican',
+    'British',
+    'Central Europe',
+    'Asian'
   ];
 
   late Set<String> selectedCategories;
@@ -605,6 +612,7 @@ class _IngredientFilterState extends State<IngredientFilter> {
     'Garlic',
     'Onion',
     'Carrot',
+    'Coconut',
     'Potato',
     'Mushroom',
     'Broccoli',
@@ -646,44 +654,50 @@ class _IngredientFilterState extends State<IngredientFilter> {
     widget.onSelectionChanged(
         selectedIngredients); // Notify parent with selected ingredients
     _saveFilters(); // Save the selected ingredients to Firebase
-    Navigator.pop(context); // Close the modal
+    // Navigator.pop(context); // Close the modal
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildFilterChips(foodIngredient, selectedIngredients, "Ingredients"),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton(
-              onPressed: _resetFilters,
-              child: Text('Reset',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.black)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[300],
-                minimumSize: Size(120, 40),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7)),
+    return Container(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        children: [
+          _buildFilterChips(foodIngredient, selectedIngredients, "Ingredients"),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: _resetFilters,
+                child: Text('Reset',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.black)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[300],
+                  minimumSize: Size(120, 40),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(7)),
+                ),
               ),
-            ),
-            ElevatedButton(
-              onPressed: _applyFilters,
-              child: Text('Apply',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF39C184),
-                minimumSize: Size(120, 40),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7)),
+              ElevatedButton(
+                onPressed: () {
+                  _applyFilters();
+                  _saveFilters();
+                },
+                child: Text('Apply',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF39C184),
+                  minimumSize: Size(120, 40),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(7)),
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -747,8 +761,12 @@ class _AllergyFilterState extends State<AllergyFilter> {
     'Dairy',
     'Shellfish',
     'Gluten',
+    'Wheat',
+    'Sulfites',
     'Eggs',
     'Peanuts',
+    'Tree-Nuts',
+    'FODMAP'
   ];
 
   late Set<String> selectedAllergies;
@@ -783,60 +801,64 @@ class _AllergyFilterState extends State<AllergyFilter> {
     widget.onSelectionChanged(
         selectedAllergies); // Notify parent with selected allergies
     _saveAllergies(); // Save selected allergies to Firebase
-    Navigator.pop(context); // Close the modal
+    Navigator.pop(context, selectedAllergies);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildFilterChips(foodAllergy, selectedAllergies, "Food Allergies"),
-        SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton(
-              onPressed: _resetFilters,
-              child: Text('Reset',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.black)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[300],
-                minimumSize: Size(120, 40),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7)),
+    return Container(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        children: [
+          _buildFilterChips(foodAllergy, selectedAllergies, "Allergies"),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: _resetFilters,
+                child: Text('Reset',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.black)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[300],
+                  minimumSize: Size(120, 40),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(7)),
+                ),
               ),
-            ),
-            ElevatedButton(
-              onPressed: _applyFilters,
-              child: Text('Apply',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF39C184),
-                minimumSize: Size(120, 40),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7)),
+              ElevatedButton(
+                onPressed: () {
+                  _applyFilters();
+                  _saveAllergies();
+                },
+                child: Text('Apply',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF39C184),
+                  minimumSize: Size(120, 40),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(7)),
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildFilterChips(
-      List<String> options, Set<String> selected, String title) {
+      List<String> options, Set<String> selectedOptions, String label) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
+        Text(label,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         Wrap(
           spacing: 8.0,
           children: options.map((option) {
-            bool isSelected = selected.contains(option);
+            bool isSelected = selectedOptions.contains(option);
             return ChoiceChip(
               label: Text(option,
                   style: TextStyle(
@@ -845,11 +867,10 @@ class _AllergyFilterState extends State<AllergyFilter> {
               onSelected: (bool selectedValue) {
                 setState(() {
                   if (selectedValue) {
-                    selected.add(option);
+                    selectedOptions.add(option);
                   } else {
-                    selected.remove(option);
+                    selectedOptions.remove(option);
                   }
-                  widget.onSelectionChanged(selected);
                 });
               },
               selectedColor: Color(0xFF39C184).withOpacity(0.3),

@@ -3,6 +3,8 @@ import 'package:flutter_application_1/SQLite/sqlite.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+import 'package:intl/intl.dart';
+
 import 'homepage.dart';
 import 'menu_screen.dart';
 import 'favorite_screen.dart';
@@ -213,6 +215,10 @@ class _CalculateScreenState extends State<CalculateScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+  }
+
+  String formatNumber(int number) {
+    return NumberFormat("#,###").format(number);
   }
 
   @override
@@ -592,7 +598,7 @@ class _CalculateScreenState extends State<CalculateScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                '${_bmr!.toStringAsFixed(2)} ',
+                                '${formatNumber(_bmr!.toInt())} ',
                                 style: TextStyle(
                                   color: Color(0xFF1F5F5B),
                                   fontSize: 32,

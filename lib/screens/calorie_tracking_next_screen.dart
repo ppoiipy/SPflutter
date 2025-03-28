@@ -36,6 +36,10 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
     loadJsonData();
   }
 
+  String formatNumber(int number) {
+    return NumberFormat("#,###").format(number);
+  }
+
   void _fetchFoodData([String ingredient = ""]) {
     print("Fetching data for: $ingredient");
     setState(() {
@@ -306,7 +310,7 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                       ),
                       title: Text(recipe['label'] ?? 'Unknown Recipe'),
                       subtitle: Text(
-                          "${recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt()} kcal"),
+                          "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal"),
                       trailing: IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),
                         onPressed: () => _removeMeal(meal),
@@ -602,7 +606,7 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                                         color: Colors.red,
                                       ),
                                       Text(
-                                        "${recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt()} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
+                                        "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
                                       ),
                                     ],
                                   ),
@@ -715,7 +719,7 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                                                 color: Colors.red,
                                               ),
                                               Text(
-                                                "${recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt()} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
+                                                "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
                                               ),
                                             ],
                                           ),

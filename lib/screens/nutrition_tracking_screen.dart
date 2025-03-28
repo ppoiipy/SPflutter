@@ -24,6 +24,34 @@ class _NutritionScreenState extends State<NutritionScreen> {
   void initState() {
     super.initState();
     _loadFoodLogData();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    if (user == null) return;
+
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userData = userDoc.data() as Map<String, dynamic>;
+          _selectedActivityLevel =
+              userData?["activityLevel"] ?? "Moderately active (3-5 days/week)";
+          _weightController.text = userData?["weight"].toString() ?? '';
+          _heightController.text = userData?["height"].toString() ?? '';
+        });
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
+  }
+
+  String formatNumber(int number) {
+    return NumberFormat("#,###").format(number);
   }
 
   /// Fetch food logs and store them in foodLogData
@@ -80,6 +108,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
     double totalProtein = 0;
     double totalFat = 0;
     double totalFiber = 0;
+    double totalSugar = 0;
     double totalCarbs = 0;
 
     for (var food in logs) {
@@ -90,6 +119,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
       totalProtein += (nutrients['PROCNT']?['quantity'] ?? 0).toDouble();
       totalFat += (nutrients['FAT']?['quantity'] ?? 0).toDouble();
       totalFiber += (nutrients['FIBTG']?['quantity'] ?? 0).toDouble();
+      totalSugar += (nutrients['SUGAR']?['quantity'] ?? 0).toDouble();
       totalCarbs += (nutrients['CHOCDF']?['quantity'] ?? 0).toDouble();
     }
 
@@ -98,6 +128,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
       'protein': totalProtein,
       'fat': totalFat,
       'fiber': totalFiber,
+      'sugar': totalSugar,
       'carbs': totalCarbs,
     };
   }
@@ -123,6 +154,84 @@ class _NutritionScreenState extends State<NutritionScreen> {
         selectedDate = pickedDate;
       });
     }
+  }
+
+  Map<String, dynamic>? userData;
+
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+
+  final List<String> activityLevels = [
+    "Sedentary (little to no exercise)",
+    "Lightly active (1-3 days/week)",
+    "Moderately active (3-5 days/week)",
+    "Very active (6-7 days/week)",
+    "Super active (very hard exercise, physical job)"
+  ];
+
+  String _selectedActivityLevel = "Moderately active (3-5 days/week)";
+
+  int _calculateAge(DateTime dob) {
+    DateTime today = DateTime.now();
+    int age = today.year - dob.year;
+    if (today.month < dob.month ||
+        (today.month == dob.month && today.day < dob.day)) {
+      age--; // Adjust age if the birthday hasn't occurred yet this year
+    }
+    return age;
+  }
+
+  double? _calculateTDEE() {
+    final weight = double.tryParse(_weightController.text);
+    final height = double.tryParse(_heightController.text);
+    final dobString = userData?["dob"] ?? '';
+    final gender = userData?["gender"] ?? "Male";
+
+    if (weight == null || height == null || dobString.isEmpty) {
+      return null;
+    }
+
+    // Convert dob string to DateTime with error handling
+    DateTime dob;
+    try {
+      dob = DateTime.parse(dobString);
+    } catch (e) {
+      return null; // Return null if DOB is invalid
+    }
+
+    int age = _calculateAge(dob);
+
+    // Calculate BMR using the Mifflin-St Jeor Equation
+    double bmr;
+    if (gender == "Male") {
+      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) + 5;
+    } else {
+      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) - 161;
+    }
+
+    // Assign activity factor based on the activity level
+    double activityFactor;
+    switch (_selectedActivityLevel) {
+      case "Sedentary (little to no exercise)":
+        activityFactor = 1.2;
+        break;
+      case "Lightly active (1-3 days/week)":
+        activityFactor = 1.375;
+        break;
+      case "Moderately active (3-5 days/week)":
+        activityFactor = 1.55;
+        break;
+      case "Very active (6-7 days/week)":
+        activityFactor = 1.725;
+        break;
+      case "Super active (very hard exercise, physical job)":
+        activityFactor = 1.9;
+        break;
+      default:
+        activityFactor = 1.55; // Default to "Moderately active"
+    }
+
+    return bmr * activityFactor;
   }
 
   @override
@@ -171,37 +280,61 @@ class _NutritionScreenState extends State<NutritionScreen> {
               children: [
                 SizedBox(height: 1),
                 _buildNutritionCard(
-                    'Calories',
-                    totalNutrients['calories']?.toInt() ?? 0,
-                    2000,
-                    Icons.local_fire_department,
-                    Colors.orange),
+                  'Calories',
+                  totalNutrients['calories']?.toInt() ?? 0,
+                  _calculateTDEE()?.toInt() ?? 2000,
+                  Icons.local_fire_department,
+                  Colors.orange,
+                  'kcal',
+                ),
                 _buildNutritionCard(
-                    'Protein',
-                    totalNutrients['protein']?.toInt() ?? 0,
-                    100,
-                    Icons.fitness_center,
-                    Colors.blue),
+                  'Protein',
+                  totalNutrients['protein']?.toInt() ?? 0,
+                  100,
+                  Icons.fitness_center,
+                  Colors.blue,
+                  'g',
+                ),
                 _buildNutritionCard(
-                    'Carbs',
-                    totalNutrients['carbs']?.toInt() ?? 0,
-                    250,
-                    Icons.fastfood,
-                    Colors.green),
-                _buildNutritionCard('Fats', totalNutrients['fat']?.toInt() ?? 0,
-                    70, Icons.opacity, Colors.red),
+                  'Carbs',
+                  totalNutrients['carbs']?.toInt() ?? 0,
+                  250,
+                  Icons.fastfood,
+                  Colors.green,
+                  'g',
+                ),
                 _buildNutritionCard(
-                    'Fiber',
-                    totalNutrients['fiber']?.toInt() ?? 0,
-                    40,
-                    Icons.eco,
-                    Colors.brown),
+                  'Fats',
+                  totalNutrients['fat']?.toInt() ?? 0,
+                  70,
+                  Icons.opacity,
+                  Colors.red,
+                  'g',
+                ),
+                _buildNutritionCard(
+                  'Fiber',
+                  totalNutrients['fiber']?.toInt() ?? 0,
+                  40,
+                  Icons.eco,
+                  Colors.brown,
+                  'g',
+                ),
+                _buildNutritionCard(
+                  'Sugar',
+                  totalNutrients['sugar']?.toInt() ?? 0,
+                  30,
+                  Icons.icecream,
+                  Colors.pink,
+                  'g',
+                ),
                 _buildNutritionCardWithImage(
-                    'Sodium',
-                    totalNutrients['sodium']?.toInt() ?? 0,
-                    2300,
-                    'assets/images/salt.png',
-                    Colors.purple),
+                  'Sodium',
+                  totalNutrients['sodium']?.toInt() ?? 0,
+                  2000,
+                  'assets/images/salt.png',
+                  Colors.purple,
+                  'mg',
+                ),
               ],
             ),
           ),
@@ -241,8 +374,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
-  Widget _buildNutritionCard(
-      String title, int value, int maxValue, IconData icon, Color color) {
+  Widget _buildNutritionCard(String title, int value, int maxValue,
+      IconData icon, Color color, String unit) {
     bool isExceeding = value > maxValue;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -273,7 +406,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                   fontSize: 22, fontWeight: FontWeight.bold, color: color),
             ),
             subtitle: Text(
-              'Max: $maxValue',
+              'Max: ${formatNumber(maxValue)}',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             trailing: Column(
@@ -281,7 +414,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '$value',
+                  '${formatNumber(value)} $unit',
                   style: TextStyle(
                       fontSize: 22, fontWeight: FontWeight.bold, color: color),
                 ),
@@ -304,8 +437,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
-  Widget _buildNutritionCardWithImage(
-      String title, int value, int maxValue, String imagePath, Color color) {
+  Widget _buildNutritionCardWithImage(String title, int value, int maxValue,
+      String imagePath, Color color, String unit) {
     bool isExceeding = value > maxValue;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -337,7 +470,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                   fontSize: 22, fontWeight: FontWeight.bold, color: color),
             ),
             subtitle: Text(
-              'Max: $maxValue',
+              'Max: ${formatNumber(maxValue)}',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             trailing: Column(
@@ -345,7 +478,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '$value',
+                  '${formatNumber(value)} $unit',
                   style: TextStyle(
                       fontSize: 22, fontWeight: FontWeight.bold, color: color),
                 ),
