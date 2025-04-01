@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:developer';
-import 'package:flutter_application_1/auth/auth_service.dart';
-import 'package:flutter_application_1/screens/homepage.dart';
-import 'package:flutter_application_1/screens/login_screen.dart';
-import 'package:flutter_application_1/JsonModels/users.dart';
-import 'package:flutter_application_1/screens/wrapper.dart';
-import 'package:flutter_application_1/screens/add_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/intl.dart';
-// import 'package:flutter_application_1/SQLite/sqlite.dart';
+
+import 'package:ginraidee/auth/auth_service.dart';
+import 'package:ginraidee/screens/login_screen.dart';
+import 'package:ginraidee/screens/wrapper.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});

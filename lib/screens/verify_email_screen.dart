@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/JsonModels/users.dart';
-import 'package:flutter_application_1/auth/auth_service.dart';
-import 'package:flutter_application_1/screens/homepage.dart';
-import 'package:flutter_application_1/screens/wrapper.dart';
+
+import 'package:ginraidee/auth/auth_service.dart';
+import 'package:ginraidee/screens/homepage.dart';
+import 'package:ginraidee/screens/wrapper.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   const VerifyEmailScreen({super.key});

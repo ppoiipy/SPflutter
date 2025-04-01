@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For rootBundle
 import 'package:intl/intl.dart';
 
-import 'package:flutter_application_1/screens/food_detail_screen.dart';
-import 'package:flutter_application_1/api/fetch_recipe_api.dart'; // Ensure this is correctly set up
+import 'package:ginraidee/screens/food_detail_screen.dart';
 import 'homepage.dart';
 import 'menu_screen.dart';
 import 'calculate_screen.dart';

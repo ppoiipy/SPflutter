@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/api/fetch_recipe_api.dart';
+import 'package:ginraidee/api/fetch_recipe_api.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final RecipeItem recipe;

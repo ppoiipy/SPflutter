@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/forget_pass_screen.dart';
+
 import 'dart:developer';
-import 'package:flutter_application_1/screens/homepage.dart';
-import 'package:flutter_application_1/screens/sign_up_screen.dart';
+
 // import 'package:flutter_application_1/SQLite/sqlite.dart';
-import 'package:flutter_application_1/JsonModels/users.dart';
-import 'package:flutter_application_1/auth/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_application_1/screens/wrapper.dart';
+
+import 'package:ginraidee/screens/wrapper.dart';
+import 'package:ginraidee/screens/forget_pass_screen.dart';
+import 'package:ginraidee/screens/sign_up_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -114,7 +114,7 @@ class TopBarWidgetState extends State<TopBarWidget> {
     return Stack(
       children: [
         Transform.translate(
-          offset: Offset(-40, -10),
+          offset: Offset(MediaQuery.of(context).size.width * -0.1, -10),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.transparent,
@@ -137,32 +137,29 @@ class TopBarWidgetState extends State<TopBarWidget> {
             ),
           ),
         ),
+
+        // Green Rounded Rectangle (Middle)
         Transform.rotate(
           angle: 0.2,
           child: Transform.translate(
-            offset: Offset(-20, -40),
+            offset: Offset(MediaQuery.of(context).size.width * -0.05, -40),
             child: Container(
+              height: 160,
+              width: MediaQuery.of(context).size.width * 0.9,
               decoration: BoxDecoration(
-                color: Colors.transparent,
                 shape: BoxShape.rectangle,
                 borderRadius: BorderRadius.circular(80),
-              ),
-              child: Container(
-                height: 160,
-                width: 370,
-                decoration: BoxDecoration(
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(80),
-                  color: Color(0xff1f5f5b),
-                ),
+                color: Color(0xff1f5f5b),
               ),
             ),
           ),
         ),
+
+        // White Rounded Rectangle (Right)
         Transform.rotate(
           angle: 0.2,
           child: Transform.translate(
-            offset: Offset(35, -40),
+            offset: Offset(MediaQuery.of(context).size.width * 0.1, -40),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.transparent,
@@ -178,7 +175,7 @@ class TopBarWidgetState extends State<TopBarWidget> {
               ),
               child: Container(
                 height: 160,
-                width: 370,
+                width: MediaQuery.of(context).size.width * 0.9,
                 decoration: BoxDecoration(
                   shape: BoxShape.rectangle,
                   borderRadius: BorderRadius.circular(80),
@@ -188,6 +185,7 @@ class TopBarWidgetState extends State<TopBarWidget> {
             ),
           ),
         ),
+
         Padding(
           padding: EdgeInsets.only(top: 15),
           child: AppBar(
@@ -240,7 +238,7 @@ class LoginFieldState extends State<LoginField> {
     return Form(
       key: formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Email Field
           Column(

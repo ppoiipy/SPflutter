@@ -1,19 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
-import 'package:flutter_application_1/SQLite/sqlite.dart';
-import 'package:flutter_application_1/screens/food_search_screen.dart';
-import 'package:flutter_application_1/screens/homepage.dart';
-import 'package:flutter_application_1/screens/login_screen.dart';
-import 'package:flutter_application_1/screens/profile_edit_screen.dart';
-import 'package:flutter_application_1/auth/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/screens/profile_screen.dart';
-import 'package:flutter_application_1/widgets/chart_widget.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
+
+import 'package:ginraidee/screens/profile_screen.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
@@ -127,6 +123,44 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   List<String> genderOptions = ['Male', 'Female', 'Other'];
   String? selectedGender;
 
+  String _profileImageUrl = 'assets/images/default.png';
+  final ImagePicker _picker = ImagePicker();
+  Future<void> _selectProfileImage() async {
+    // Let the user pick an image from their gallery
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      setState(() {
+        // Set the selected image as profile picture
+        _profileImageUrl = image.path;
+      });
+    }
+  }
+
+  Future<void> _uploadProfileImage(File imageFile) async {
+    try {
+      // Create a reference to Firebase Storage
+      String fileName = 'profile_pics/${user!.uid}.jpg';
+      Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
+
+      // Upload the image to Firebase Storage
+      await storageRef.putFile(imageFile);
+
+      // Get the download URL
+      String downloadUrl = await storageRef.getDownloadURL();
+
+      // Update the profile picture URL in Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .update({
+        'profilePicture': downloadUrl,
+      });
+    } catch (e) {
+      print("Error uploading image: $e");
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -175,6 +209,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               Set<String>.from(userData?['foodAllergy'] ?? []);
           selectedFoodCategory =
               Set<String>.from(userData?['foodCategory'] ?? []);
+
+          _profileImageUrl =
+              userData?["profilePicture"] ?? 'assets/images/default.png';
         });
       }
     } catch (e) {
@@ -189,10 +226,89 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _buildHeader(),
               SizedBox(height: 20),
+              GestureDetector(
+                onTap: _selectProfileImage,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 60,
+                      backgroundImage: _profileImageUrl.startsWith('assets')
+                          ? AssetImage(_profileImageUrl) as ImageProvider
+                          : NetworkImage(_profileImageUrl),
+                    ),
+                    Positioned(
+                      right: 4,
+                      bottom: 0,
+                      child: Icon(
+                        Icons.camera_alt,
+                        size: 30,
+                        color: Color(0xFF1F5F5B),
+                        // backgroundColor: Colors.black.withOpacity(0.5),
+                        // padding: EdgeInsets.all(6),
+                        // shape: CircleBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
+                child: TextFormField(
+                  controller: _weightController,
+                  decoration: InputDecoration(
+                    labelText: 'Weight',
+                    labelStyle: TextStyle(
+                        color: Color(0xFF1F5F5B),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
+                child: TextFormField(
+                  controller: _heightController,
+                  decoration: InputDecoration(
+                    labelText: 'Height',
+                    labelStyle: TextStyle(
+                        color: Color(0xFF1F5F5B),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
+                child: TextFormField(
+                  controller: _weightGoalController,
+                  decoration: InputDecoration(
+                    labelText: 'Weight Goal',
+                    labelStyle: TextStyle(
+                        color: Color(0xFF1F5F5B),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
+                child: TextFormField(
+                  controller: _birthController,
+                  decoration: InputDecoration(
+                    labelText: 'Date of Birth',
+                    labelStyle: TextStyle(
+                        color: Color(0xFF1F5F5B),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18),
+                  ),
+                ),
+              ),
+
               // _buildInputRow(label: 'Gender', controller: _genderController),
               _buildGenderDropdown(),
               _buildInputRow(
@@ -692,9 +808,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 'ingredients': selectedIngredients,
                 'activityLevel': selectedActivityLevel,
               });
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Profile updated successfully!')),
               );
+
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => ProfileScreen()),
@@ -704,6 +822,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 SnackBar(content: Text('Error updating profile')),
               );
             }
+          } else {
+            print("Form is not valid.");
           }
         },
         child: Text(

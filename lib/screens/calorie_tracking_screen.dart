@@ -829,14 +829,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_application_1/screens/calculate_screen.dart';
-import 'package:flutter_application_1/screens/favorite_screen.dart';
-import 'package:flutter_application_1/screens/menu_screen.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'dart:math';
+
+import 'package:ginraidee/screens/calculate_screen.dart';
+import 'package:ginraidee/screens/favorite_screen.dart';
+import 'package:ginraidee/screens/menu_screen.dart';
 import 'calorie_tracking_next_screen.dart';
-import 'botton_nav_bar.dart';
 import 'homepage.dart';
 import 'profile_screen.dart';
 

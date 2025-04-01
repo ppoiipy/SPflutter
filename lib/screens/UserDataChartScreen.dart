@@ -2,9 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/calorie_tracking_screen.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_application_1/screens/calorie_tracking_next_screen.dart';
+
+import 'package:ginraidee/screens/calorie_tracking_screen.dart';
+import 'package:ginraidee/screens/calorie_tracking_next_screen.dart';
 
 class UserDataChartScreen extends StatefulWidget {
   @override

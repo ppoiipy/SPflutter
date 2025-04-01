@@ -3,14 +3,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/UserDataChartScreen.dart';
-import 'package:flutter_application_1/screens/botton_nav_bar.dart';
-import 'package:flutter_application_1/screens/food_detail_screen.dart';
-import 'package:flutter_application_1/screens/nutrition_tracking_screen.dart';
+import 'package:ginraidee/screens/UserDataChartScreen.dart';
+import 'package:ginraidee/screens/food_detail_screen.dart';
+import 'package:ginraidee/screens/nutrition_tracking_screen.dart';
 import 'package:flutter/services.dart'; // For rootBundle
 import 'package:intl/intl.dart';
 
-import 'package:flutter_application_1/screens/menu_screen.dart';
+import 'package:ginraidee/screens/menu_screen.dart';
 import 'favorite_screen.dart';
 import 'calculate_screen.dart';
 import 'profile_screen.dart';
@@ -470,116 +469,98 @@ class _HomepageState extends State<Homepage> {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          // SizedBox(height: 30),
-          // Search Field
-          Padding(
-            padding: const EdgeInsets.only(left: 20, bottom: 5),
-            child: Align(
-              alignment: Alignment.centerLeft,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 20, bottom: 5),
               child: Text(
                 'Search',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+              child: Material(
+                borderRadius: BorderRadius.circular(15),
+                elevation: 3,
+                shadowColor: Colors.black26,
+                child: TextFormField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide(color: Colors.transparent),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide:
+                          BorderSide(color: Color(0xFF1F5F5B), width: 1.5),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                    prefixIcon: IconButton(
+                      icon: Icon(Icons.search, color: Colors.grey[700]),
+                      splashRadius: 22,
+                      onPressed: () {
+                        filterRecipes(
+                            searchController.text, selectedCuisineType);
+                      },
+                    ),
+                    hintText: 'Search food...',
+                    hintStyle: TextStyle(color: Colors.grey[600]),
+                  ),
+                  onFieldSubmitted: (query) {
+                    filterRecipes(query, selectedCuisineType);
+                  },
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-            child: Material(
-              borderRadius: BorderRadius.circular(15),
-              elevation: 3,
-              shadowColor: Colors.black26,
-              child: TextFormField(
-                controller: searchController,
-                decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(vertical: 12),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide(color: Colors.transparent),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide:
-                        BorderSide(color: Color(0xFF1F5F5B), width: 1.5),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  prefixIcon: IconButton(
-                    icon: Icon(Icons.search, color: Colors.grey[700]),
-                    splashRadius: 22, // Better touch feedback
-                    onPressed: () {
-                      filterRecipes(searchController.text, selectedCuisineType);
-                    },
-                  ),
-                  hintText: 'Search food...',
-                  hintStyle: TextStyle(color: Colors.grey[600]),
-                ),
-                onFieldSubmitted: (query) {
-                  filterRecipes(query, selectedCuisineType);
-                },
-              ),
-            ),
-          ),
-
-          // Function List
-          SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.only(left: 20, bottom: 5),
-            child: Align(
-              alignment: Alignment.centerLeft,
+            Padding(
+              padding: const EdgeInsets.only(left: 20, bottom: 5),
               child: Text(
                 'Function List',
                 style: TextStyleBold.boldTextStyle(),
               ),
             ),
-          ),
-          SizedBox(height: 5),
-          // Scroll Lists
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                FunctionCard(
-                  imagePath: 'assets/images/calorieTracking.png',
-                  functionName: 'Calorie Tracking',
-                  // destinationScreen: CalorieTrackingScreen(),
-                  destinationScreen: CalorieTrackingScreen(),
-                ),
-                FunctionCard(
-                  imagePath: 'assets/images/calorieTracking.png',
-                  functionName: 'Nutrition Tracking',
-                  destinationScreen: NutritionScreen(),
-                ),
-                FunctionCard(
-                  imagePath: 'assets/images/mealPlanning.png',
-                  functionName: 'Meal Planning',
-                  destinationScreen: MealPlanningScreen(),
-                ),
-              ],
+            SizedBox(height: 5),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  FunctionCard(
+                    imagePath: 'assets/images/calorieTracking.png',
+                    functionName: 'Calorie Tracking',
+                    destinationScreen: CalorieTrackingScreen(),
+                  ),
+                  FunctionCard(
+                    imagePath: 'assets/images/calorieTracking.png',
+                    functionName: 'Nutrition Tracking',
+                    destinationScreen: NutritionScreen(),
+                  ),
+                  FunctionCard(
+                    imagePath: 'assets/images/mealPlanning.png',
+                    functionName: 'Meal Planning',
+                    destinationScreen: MealPlanningScreen(),
+                  ),
+                ],
+              ),
             ),
-          ),
-
-          // Recommended Menu
-          SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Align(
-              alignment: Alignment.centerLeft,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Text(
                 'Recommended Menu🔥',
                 style: TextStyleBold.boldTextStyle(),
               ),
             ),
-          ),
-
-          isLoading
-              ? CircularProgressIndicator()
-              : Expanded(
-                  child: ListView.builder(
+            isLoading
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics:
+                        NeverScrollableScrollPhysics(), // Prevent nested scrolling
                     itemCount: filteredRecipes.length,
                     itemBuilder: (context, index) {
                       var recipe = filteredRecipes[index];
@@ -597,8 +578,7 @@ class _HomepageState extends State<Homepage> {
                                 width: 50,
                                 height: 50,
                                 fit: BoxFit.cover,
-                                errorBuilder: (BuildContext context,
-                                    Object error, StackTrace? stackTrace) {
+                                errorBuilder: (context, error, stackTrace) {
                                   return Image.asset(
                                     'assets/images/default.png',
                                     width: 50,
@@ -613,10 +593,8 @@ class _HomepageState extends State<Homepage> {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(
-                                        Icons.local_fire_department_outlined,
-                                        color: Colors.red,
-                                      ),
+                                      Icon(Icons.local_fire_department_outlined,
+                                          color: Colors.red),
                                       Text(
                                         "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
                                       ),
@@ -628,7 +606,6 @@ class _HomepageState extends State<Homepage> {
                               onTap: () {
                                 logRecipeClick(
                                     recipe['label'], recipe['shareAs']);
-
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -639,10 +616,9 @@ class _HomepageState extends State<Homepage> {
                               },
                             ),
                           ),
-                          // Favorite Icon on Top-Right
                           Positioned(
-                            top: 5, // Adjust top position
-                            right: 5, // Adjust right position
+                            top: 5,
+                            right: 5,
                             child: IconButton(
                               icon: Icon(
                                 favoriteRecipes[recipe['label']] == true
@@ -662,8 +638,8 @@ class _HomepageState extends State<Homepage> {
                       );
                     },
                   ),
-                ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,

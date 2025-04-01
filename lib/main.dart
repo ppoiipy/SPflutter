@@ -2,14 +2,9 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/botton_nav_bar.dart';
-import 'package:flutter_application_1/screens/favorite_screen.dart';
-import 'package:flutter_application_1/screens/menu_screen.dart';
-import 'package:flutter_application_1/screens/screen_selector.dart';
-import 'package:flutter_application_1/screens/startup_screen.dart';
-import 'package:flutter_application_1/screens/homepage.dart';
-import 'package:flutter_application_1/screens/calculate_screen.dart';
-import 'package:flutter_application_1/screens/profile_screen.dart';
+
+import 'package:ginraidee/screens/startup_screen.dart';
+import 'package:ginraidee/screens/homepage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

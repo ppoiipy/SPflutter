@@ -1,23 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:flutter_application_1/SQLite/sqlite.dart';
-import 'package:flutter_application_1/screens/calculate_test.dart';
-import 'package:flutter_application_1/screens/food_filter_screen.dart';
-import 'package:flutter_application_1/screens/food_search_screen.dart';
-import 'package:flutter_application_1/screens/homepage.dart';
-import 'package:flutter_application_1/screens/login_screen.dart';
-import 'package:flutter_application_1/screens/profile_edit_screen.dart';
-import 'package:flutter_application_1/auth/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/screens/user_calculation.dart';
-import 'package:flutter_application_1/widgets/chart_widget.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import 'menu_screen.dart';
 import 'favorite_screen.dart';
 import 'calculate_screen.dart';
+import 'package:ginraidee/SQLite/sqlite.dart';
+import 'package:ginraidee/screens/homepage.dart';
+import 'package:ginraidee/screens/login_screen.dart';
+import 'package:ginraidee/screens/profile_edit_screen.dart';
+import 'package:ginraidee/auth/auth_service.dart';
 
 // import 'package:provider/provider.dart';
 
@@ -33,6 +30,37 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final int _currentIndex = 4;
 
+  File? _image;
+  String? _profileImageUrl;
+
+  Future<void> _pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> _getProfilePicture() async {
+    try {
+      String userId = FirebaseAuth.instance.currentUser!.uid;
+      // Reference the user's profile picture in Firebase Storage
+      Reference storageRef =
+          FirebaseStorage.instance.ref().child('profile_pictures/$userId.jpg');
+
+      // Get the download URL of the profile picture
+      String downloadUrl = await storageRef.getDownloadURL();
+
+      setState(() {
+        _profileImageUrl = downloadUrl; // Store the download URL
+      });
+    } catch (e) {
+      print('Error fetching profile image: $e');
+    }
+  }
+
   String _email = "Loading...";
   String _selected = 'D';
   String _selectedTrack = 'Body Weight';
@@ -44,6 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+    _getProfilePicture();
   }
 
   void _onSelect(String period) {
@@ -172,10 +201,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // Profile Picture
                       Stack(children: [
                         Center(
-                          child: CircleAvatar(
-                            radius: 60,
-                            backgroundImage:
-                                const AssetImage('assets/images/default.png'),
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Stack(
+                              alignment: Alignment.topRight,
+                              children: [
+                                CircleAvatar(
+                                  radius: 60,
+                                  backgroundImage: _profileImageUrl != null
+                                      ? NetworkImage(
+                                          _profileImageUrl!) // Use the Firebase URL
+                                      : const AssetImage(
+                                              'assets/images/default.png')
+                                          as ImageProvider,
+                                ),
+                                Positioned(
+                                  right: 4,
+                                  bottom: 0,
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    size: 30,
+                                    color: Color(0xFF1F5F5B),
+                                    // backgroundColor:
+                                    //     Colors.black.withOpacity(0.5),
+                                    // padding: EdgeInsets.all(6),
+                                    // shape: CircleBorder(),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         // Positioned(
@@ -251,23 +305,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ],
                                     ),
                                   ),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Birth Date: ',
-                                        style: TextStyle(
-                                          color: Colors.grey[500],
-                                          fontWeight: FontWeight.w500,
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          'Birth Date: ',
+                                          style: TextStyle(
+                                            color: Colors.grey[500],
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
-                                      ),
-                                      Text(
-                                        userData?["dob"] ?? 'N/A',
-                                        style: TextStyle(
-                                          color: Color(0xff4D7881),
-                                          fontWeight: FontWeight.w500,
+                                        Text(
+                                          userData?["dob"] ?? 'N/A',
+                                          style: TextStyle(
+                                            color: Color(0xff4D7881),
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                   SizedBox(width: 10),
                                   GestureDetector(
@@ -295,6 +351,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               SizedBox(height: 8),
                               Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Row(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/auth/auth_service.dart';
-import 'package:flutter_application_1/screens/login_screen.dart';
+import 'package:ginraidee/auth/auth_service.dart';
 
 class ForgetPassScreen extends StatefulWidget {
   const ForgetPassScreen({super.key});

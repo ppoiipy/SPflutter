@@ -3,11 +3,12 @@ import 'dart:ffi';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_application_1/screens/calorie_tracking_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/api/fetch_food_api.dart';
-import 'package:flutter_application_1/screens/food_detail_screen.dart';
+
+import 'package:ginraidee/screens/calorie_tracking_screen.dart';
+import 'package:ginraidee/api/fetch_food_api.dart';
+import 'package:ginraidee/screens/food_detail_screen.dart';
 
 class CalorieTrackingNextScreen extends StatefulWidget {
   final String mealType;

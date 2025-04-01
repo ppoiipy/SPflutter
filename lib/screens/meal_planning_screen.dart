@@ -1,17 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/food_detail_screen.dart';
 import 'dart:math';
 import 'package:intl/intl.dart';
 
-import 'package:flutter_application_1/api/fetch_food_api.dart';
-import 'package:flutter_application_1/api/fetch_recipe_api.dart';
-import 'package:flutter_application_1/screens/homepage.dart';
-import 'package:flutter_application_1/screens/menu_screen.dart';
-import 'package:flutter_application_1/screens/favorite_screen.dart';
-import 'package:flutter_application_1/screens/calculate_screen.dart';
-import 'package:flutter_application_1/screens/profile_screen.dart';
+import 'package:ginraidee/api/fetch_food_api.dart';
+import 'package:ginraidee/screens/homepage.dart';
+import 'package:ginraidee/screens/menu_screen.dart';
+import 'package:ginraidee/screens/favorite_screen.dart';
+import 'package:ginraidee/screens/calculate_screen.dart';
+import 'package:ginraidee/screens/profile_screen.dart';
+import 'package:ginraidee/screens/food_detail_screen.dart';
 
 class MealPlanningScreen extends StatefulWidget {
   @override
