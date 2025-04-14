@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:ginraidee/screens/food_detail_screen.dart';
 import 'package:intl/intl.dart';
 
 import 'package:ginraidee/screens/calculate_screen.dart';
 import 'package:ginraidee/screens/favorite_screen.dart';
 import 'package:ginraidee/screens/homepage.dart';
-import 'package:ginraidee/screens/menu_screen.dart';
+import 'package:ginraidee/screens/history_screen.dart';
 import 'package:ginraidee/screens/profile_screen.dart';
 
 class NutritionScreen extends StatefulWidget {
@@ -16,6 +17,7 @@ class NutritionScreen extends StatefulWidget {
 
 class _NutritionScreenState extends State<NutritionScreen> {
   int _currentIndex = 0;
+  String selectedTab = 'Summary';
   User? user = FirebaseAuth.instance.currentUser;
 
   List<Map<String, dynamic>> foodLogData = [];
@@ -24,8 +26,9 @@ class _NutritionScreenState extends State<NutritionScreen> {
   @override
   void initState() {
     super.initState();
-    _loadFoodLogData();
+    _loadFoodLog();
     _loadUserData();
+    _loadFoodLogData();
   }
 
   Future<void> _loadUserData() async {
@@ -82,6 +85,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
     }
   }
 
+  List<Map<String, dynamic>> _loggedMeals = [];
+
   /// Format numbers to remove extra decimal places
   String _formatNumber(dynamic value) {
     if (value == null) return '0';
@@ -134,14 +139,12 @@ class _NutritionScreenState extends State<NutritionScreen> {
     };
   }
 
-  /// Change the date by adding or subtracting days
   void _changeDate(int delta) {
     setState(() {
       selectedDate = selectedDate.add(Duration(days: delta));
     });
   }
 
-  /// Open date picker
   void _pickDate() async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -254,91 +257,106 @@ class _NutritionScreenState extends State<NutritionScreen> {
       ),
       body: ListView(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Stack(
+            alignment: Alignment.center,
             children: [
-              IconButton(
-                icon: Icon(Icons.arrow_left, size: 32),
-                onPressed: () => _changeDate(-1),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_left, size: 32),
+                    onPressed: () => _changeDate(-1),
+                  ),
+                  GestureDetector(
+                    onTap: _pickDate,
+                    child: Text(
+                      DateFormat('dd MMM yyyy').format(selectedDate),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.arrow_right, size: 32),
+                    onPressed: () => _changeDate(1),
+                  ),
+                ],
               ),
-              GestureDetector(
-                onTap: _pickDate,
-                child: Text(
-                  DateFormat('dd MMM yyyy').format(selectedDate),
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              Positioned(
+                right: 30,
+                child: IconButton(
+                  icon: Icon(Icons.calendar_month),
+                  onPressed: _pickDate,
                 ),
-              ),
-              IconButton(
-                icon: Icon(Icons.arrow_right, size: 32),
-                onPressed: () => _changeDate(1),
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(height: 1),
-                _buildNutritionCard(
-                  'Calories',
-                  totalNutrients['calories']?.toInt() ?? 0,
-                  _calculateTDEE()?.toInt() ?? 2000,
-                  Icons.local_fire_department,
-                  Colors.orange,
-                  'kcal',
-                ),
-                _buildNutritionCard(
-                  'Protein',
-                  totalNutrients['protein']?.toInt() ?? 0,
-                  100,
-                  Icons.fitness_center,
-                  Colors.blue,
-                  'g',
-                ),
-                _buildNutritionCard(
-                  'Carbs',
-                  totalNutrients['carbs']?.toInt() ?? 0,
-                  250,
-                  Icons.fastfood,
-                  Colors.green,
-                  'g',
-                ),
-                _buildNutritionCard(
-                  'Fats',
-                  totalNutrients['fat']?.toInt() ?? 0,
-                  70,
-                  Icons.opacity,
-                  Colors.red,
-                  'g',
-                ),
-                _buildNutritionCard(
-                  'Fiber',
-                  totalNutrients['fiber']?.toInt() ?? 0,
-                  40,
-                  Icons.eco,
-                  Colors.brown,
-                  'g',
-                ),
-                _buildNutritionCard(
-                  'Sugar',
-                  totalNutrients['sugar']?.toInt() ?? 0,
-                  30,
-                  Icons.icecream,
-                  Colors.pink,
-                  'g',
-                ),
-                _buildNutritionCardWithImage(
-                  'Sodium',
-                  totalNutrients['sodium']?.toInt() ?? 0,
-                  2000,
-                  'assets/images/salt.png',
-                  Colors.purple,
-                  'mg',
-                ),
-              ],
-            ),
-          ),
+          selectedTab == 'Summary'
+              ? Padding(
+                  padding: const EdgeInsets.all(0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(height: 1),
+                      _buildNutritionCard(
+                        'Calories',
+                        totalNutrients['calories']?.toInt() ?? 0,
+                        _calculateTDEE()?.toInt() ?? 2000,
+                        Icons.local_fire_department,
+                        Colors.orange,
+                        'kcal',
+                      ),
+                      _buildNutritionCard(
+                        'Protein',
+                        totalNutrients['protein']?.toInt() ?? 0,
+                        100,
+                        Icons.fitness_center,
+                        Colors.blue,
+                        'g',
+                      ),
+                      _buildNutritionCard(
+                        'Carbs',
+                        totalNutrients['carbs']?.toInt() ?? 0,
+                        250,
+                        Icons.fastfood,
+                        Colors.green,
+                        'g',
+                      ),
+                      _buildNutritionCard(
+                        'Fats',
+                        totalNutrients['fat']?.toInt() ?? 0,
+                        70,
+                        Icons.opacity,
+                        Colors.red,
+                        'g',
+                      ),
+                      _buildNutritionCard(
+                        'Fiber',
+                        totalNutrients['fiber']?.toInt() ?? 0,
+                        40,
+                        Icons.eco,
+                        Colors.brown,
+                        'g',
+                      ),
+                      _buildNutritionCard(
+                        'Sugar',
+                        totalNutrients['sugar']?.toInt() ?? 0,
+                        30,
+                        Icons.icecream,
+                        Colors.pink,
+                        'g',
+                      ),
+                      _buildNutritionCardWithImage(
+                        'Sodium',
+                        totalNutrients['sodium']?.toInt() ?? 0,
+                        2000,
+                        'assets/images/salt.png',
+                        Colors.purple,
+                        'mg',
+                      ),
+                    ],
+                  ),
+                )
+              : _buildMealPlans()
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -349,7 +367,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
         onTap: (index) {
           List<Widget> screens = [
             Homepage(),
-            MenuScreen(),
+            HistoryScreen(),
             FavoriteScreen(),
             CalculateScreen(),
             ProfileScreen(),
@@ -361,15 +379,27 @@ class _NutritionScreenState extends State<NutritionScreen> {
         },
         items: [
           BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined), label: 'Home'),
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.food_bank_outlined), label: 'Search'),
+            icon: Icon(
+              Icons.history,
+            ),
+            label: 'History',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_border_outlined), label: 'Favorites'),
+            icon: Icon(Icons.favorite_border_outlined),
+            label: 'Favorites',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.calculate_outlined), label: 'Calculate'),
+            icon: Icon(Icons.calculate_outlined),
+            label: 'Calculate',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline), label: 'Profile'),
+            icon: Icon(Icons.person_outline),
+            label: 'Profile',
+          ),
         ],
       ),
     );
@@ -497,5 +527,183 @@ class _NutritionScreenState extends State<NutritionScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildMealPlans() {
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildMealCategory('Breakfast'),
+            _buildMealCategory('Lunch'),
+            _buildMealCategory('Dinner'),
+            _buildMealCategory('Snack'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMealCategory(String category) {
+    // Filter meals by selected date and category
+    List<Map<String, dynamic>> meals =
+        _loggedMeals.where((meal) => meal['mealType'] == category).toList();
+
+    return Container(
+      padding: EdgeInsets.all(8),
+      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      width: MediaQuery.sizeOf(context).width,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            category,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          meals.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("No meals logged"),
+                )
+              : Column(
+                  children: meals.map((meal) {
+                    var recipe = meal['recipe'];
+                    return ListTile(
+                      leading: Image.asset(
+                        'assets/fetchMenu/' +
+                            recipe['label'].replaceAll(' ', '_') +
+                            '.jpg',
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/images/default.png', // Fallback image
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      ),
+                      title: Text(recipe['label'] ?? 'Unknown Recipe'),
+                      subtitle: Text(
+                          "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal"),
+                      trailing: IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _removeMeal(meal),
+                      ),
+                      onTap: () {
+                        logRecipeClick(recipe['label'], recipe['shareAs']);
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FoodDetailScreen(
+                              recipe: recipe,
+                              selectedDate: selectedDate,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }).toList(),
+                ),
+        ],
+      ),
+    );
+  }
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<void> _loadFoodLog() async {
+    var user = _auth.currentUser;
+    if (user == null) return;
+
+    // Format the date range based on the selected date (start of day to end of day)
+    DateTime startOfDay =
+        DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    DateTime endOfDay =
+        DateTime(selectedDate.year, selectedDate.month, selectedDate.day + 1);
+
+    // Convert to Firestore-compatible DateTime objects
+    var startTimestamp = Timestamp.fromDate(startOfDay);
+    var endTimestamp = Timestamp.fromDate(endOfDay);
+
+    var snapshot = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('food_log')
+        .where('date', isGreaterThanOrEqualTo: startTimestamp)
+        .where('date', isLessThan: endTimestamp)
+        .get();
+
+    setState(() {
+      _loggedMeals = snapshot.docs.map((doc) => doc.data()).toList();
+      print("Loaded meals: $_loggedMeals");
+    });
+  }
+
+  Future<void> _removeMeal(Map<String, dynamic> meal) async {
+    var user = _auth.currentUser;
+    if (user == null) return;
+
+    var query = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('food_log')
+        .where('recipe.label', isEqualTo: meal['recipe']['label'])
+        .where('mealType', isEqualTo: meal['mealType'])
+        .get();
+
+    for (var doc in query.docs) {
+      await doc.reference.delete();
+    }
+
+    _loadFoodLog();
+  }
+
+  Future<void> logRecipeClick(String recipeLabel, String recipeShareAs) async {
+    try {
+      // Get the current user's ID (from FirebaseAuth)
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Get reference to the user's 'clicks' subcollection
+        CollectionReference clicks = FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('clicks');
+
+        // Reference to the recipe document using the recipeLabel as document ID
+        DocumentReference recipeRef = clicks.doc(recipeLabel);
+
+        // Get the document to check if it exists
+        DocumentSnapshot snapshot = await recipeRef.get();
+
+        // If the document exists, increment the click count
+        if (snapshot.exists) {
+          // Update the existing click count
+          await recipeRef.update({
+            'clickCount': FieldValue.increment(1),
+          });
+        } else {
+          // If the document doesn't exist, create a new one with clickCount = 1
+          await recipeRef.set({
+            'clickCount': 1,
+            'shareAs': recipeShareAs,
+          });
+        }
+
+        print('Click logged successfully for $recipeLabel!');
+      } else {
+        print('User is not logged in.');
+      }
+    } catch (e) {
+      print('Error logging click: $e');
+    }
   }
 }

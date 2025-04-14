@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 
 import 'package:ginraidee/screens/food_detail_screen.dart';
 import 'homepage.dart';
-import 'menu_screen.dart';
+import 'history_screen.dart';
 import 'calculate_screen.dart';
 import 'profile_screen.dart';
 
@@ -170,8 +170,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                 String recipeName = recipe['label']; // Recipe name
                 String imageName = formatRecipeName(
                     recipeName); // Format it to match image name
-                String imagePath =
-                    'assets/fetchMenu/$imageName.jpg'; // Image path
+                String imagePath = 'assets/fetchMenu/' +
+                    recipe['label']?.toLowerCase().replaceAll(' ', '_') +
+                    '.jpg';
 
                 return Stack(
                   children: [
@@ -260,7 +261,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           } else if (index == 1) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => MenuScreen()),
+              MaterialPageRoute(builder: (context) => HistoryScreen()),
             );
           } else if (index == 2) {
             Navigator.pushReplacement(
@@ -288,9 +289,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.food_bank_outlined,
+              Icons.history,
             ),
-            label: 'Search',
+            label: 'History',
           ),
           BottomNavigationBarItem(
             icon: Icon(

@@ -56,16 +56,19 @@ class _FilterSheetState extends State<FilterSheet> {
   ];
 
   List<String> foodAllergy = [
+    'None',
     'Nuts',
-    'Dairy',
+    'Milk',
+    'Celery',
+    'Fish',
     'Shellfish',
+    'Mustard',
     'Gluten',
-    'Wheat',
-    'Sulfites',
+    'Soy',
     'Eggs',
-    'Peanuts',
-    'Tree-Nuts',
-    'FODMAP'
+    'Sesame',
+    'Wheat',
+    'Alcohol',
   ];
 
   @override
@@ -119,15 +122,17 @@ class _FilterSheetState extends State<FilterSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: MediaQuery.of(context).size.width,
       padding: const EdgeInsets.all(20),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            AppBar(),
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: Alignment.center,
               child: Text('Filter',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             ),
             SizedBox(height: 10),
             Text("Calories",
@@ -457,16 +462,23 @@ class CategoryFilter extends StatefulWidget {
 
 class _CategoryFilterState extends State<CategoryFilter> {
   final List<String> foodCategories = [
+    //   'American',
+    //   'Italian',
+    //   'Japanese',
+    //   'Chinese',
+    //   'Thai',
+    //   'South East Asia',
+    //   'Mexican',
+    //   'British',
+    //   'Central Europe',
+    //   'Asian'
+    // ];
     'American',
     'Italian',
     'Japanese',
     'Chinese',
     'Thai',
-    'South East Asia',
-    'Mexican',
-    'British',
-    'Central Europe',
-    'Asian'
+    'South East Asia'
   ];
 
   late Set<String> selectedCategories;
@@ -757,16 +769,19 @@ class AllergyFilter extends StatefulWidget {
 
 class _AllergyFilterState extends State<AllergyFilter> {
   List<String> foodAllergy = [
+    'None',
     'Nuts',
-    'Dairy',
+    'Milk',
+    'Celery',
+    'Fish',
     'Shellfish',
+    'Mustard',
     'Gluten',
-    'Wheat',
-    'Sulfites',
+    'Soy',
     'Eggs',
-    'Peanuts',
-    'Tree-Nuts',
-    'FODMAP'
+    'Sesame',
+    'Wheat',
+    'Alcohol',
   ];
 
   late Set<String> selectedAllergies;

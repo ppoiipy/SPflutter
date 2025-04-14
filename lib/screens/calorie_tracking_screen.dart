@@ -1,830 +1,3 @@
-// // import 'package:flutter/material.dart';
-// // import 'package:fl_chart/fl_chart.dart';
-// // import 'package:flutter_application_1/screens/calculate_screen.dart';
-// // import 'package:flutter_application_1/screens/favorite_screen.dart';
-// // import 'package:flutter_application_1/screens/menu_screen.dart';
-// // import 'dart:math';
-// // import 'calorie_tracking_next_screen.dart';
-// // import 'botton_nav_bar.dart';
-// // import 'homepage.dart';
-// // import 'profile_screen.dart';
-
-// // class CalorieTrackingScreen extends StatefulWidget {
-// //   const CalorieTrackingScreen({super.key});
-
-// //   @override
-// //   State<CalorieTrackingScreen> createState() => _CalorieTrackingScreenState();
-// // }
-
-// // class _CalorieTrackingScreenState extends State<CalorieTrackingScreen> {
-// //   // int _currentIndex = 5+;
-
-// //   List<BarChartGroupData> _getBarGroups() {
-// //     return [
-// //       BarChartGroupData(
-// //           x: 0, barRods: [BarChartRodData(toY: 40, color: Color(0xff4D7881))]),
-// //       BarChartGroupData(
-// //           x: 1, barRods: [BarChartRodData(toY: 20, color: Color(0xff4D7881))]),
-// //       BarChartGroupData(
-// //           x: 2, barRods: [BarChartRodData(toY: 50, color: Colors.red)]),
-// //       BarChartGroupData(
-// //           x: 3, barRods: [BarChartRodData(toY: 60, color: Colors.red)]),
-// //       BarChartGroupData(
-// //           x: 4, barRods: [BarChartRodData(toY: 24, color: Color(0xff4D7881))]),
-// //       BarChartGroupData(
-// //           x: 5, barRods: [BarChartRodData(toY: 54, color: Colors.red)]),
-// //       BarChartGroupData(
-// //           x: 6, barRods: [BarChartRodData(toY: 48, color: Color(0xff4D7881))]),
-// //     ];
-// //   }
-
-// //   final int _currentIndex = 0;
-
-// //   @override
-// //   Widget build(BuildContext context) {
-// //     return Scaffold(
-// //       body: SingleChildScrollView(
-// //         child: Container(
-// //           decoration: BoxDecoration(
-// //             image: DecorationImage(
-// //               image: AssetImage(
-// //                   'assets/images/0c42e0e25128dfaf306ab0ac15f14d9a.jfif'),
-// //               fit: BoxFit.cover,
-// //               colorFilter: ColorFilter.mode(
-// //                 Colors.black.withOpacity(0.7),
-// //                 BlendMode.darken,
-// //               ),
-// //             ),
-// //           ),
-// //           child: Column(
-// //             children: [
-// //               Container(
-// //                 width: MediaQuery.sizeOf(context).width,
-// //                 height: 100,
-// //                 decoration: BoxDecoration(
-// //                   gradient: LinearGradient(
-// //                     colors: [const Color(0xFF1F5F5B), Color(0xFF40C5BD)],
-// //                     begin: Alignment.topCenter,
-// //                     end: Alignment.bottomCenter,
-// //                   ),
-// //                 ),
-// //                 child: Padding(
-// //                   padding: EdgeInsets.all(8),
-// //                   child: AppBar(
-// //                     backgroundColor: Colors.transparent,
-// //                     centerTitle: true,
-// //                     title: Text(
-// //                       'Calorie Tracking',
-// //                       style: TextStyle(
-// //                           color: Colors.white,
-// //                           fontWeight: FontWeight.w600,
-// //                           fontFamily: 'Inter',
-// //                           letterSpacing: 1),
-// //                     ),
-// //                     leading: IconButton(
-// //                       icon: Icon(
-// //                         Icons.arrow_back_ios,
-// //                         color: Colors.white,
-// //                       ),
-// //                       onPressed: () {
-// //                         Navigator.pop(context);
-// //                       },
-// //                     ),
-// //                     actions: [
-// //                       IconButton(
-// //                         icon: Icon(
-// //                           Icons.calendar_today,
-// //                           color: Colors.white,
-// //                         ),
-// //                         onPressed: () {
-// //                           // Action for calendar icon
-// //                         },
-// //                       ),
-// //                     ],
-// //                   ),
-// //                 ),
-// //               ),
-
-// //               SizedBox(height: 30),
-
-// //               // Circle
-// //               Center(
-// //                 child: SquareClickableSections(),
-// //               ),
-
-// //               SizedBox(height: 30),
-
-// //               // Info
-// //               Container(
-// //                 decoration: BoxDecoration(
-// //                     color: Colors.white,
-// //                     borderRadius: BorderRadius.only(
-// //                         topLeft: Radius.circular(40),
-// //                         topRight: Radius.circular(40))),
-// //                 width: 300,
-// //                 padding: EdgeInsets.all(15),
-// //                 child: Column(
-// //                   children: [
-// //                     Row(
-// //                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-// //                       children: [
-// //                         Column(
-// //                           children: [
-// //                             Row(
-// //                               children: [
-// //                                 Icon(Icons.calendar_month_outlined),
-// //                                 Text(
-// //                                   'See more',
-// //                                   style: TextStyle(
-// //                                     fontWeight: FontWeight.w600,
-// //                                   ),
-// //                                 ),
-// //                               ],
-// //                             ),
-// //                             Row(
-// //                               children: [
-// //                                 Text(
-// //                                   '85',
-// //                                   style: TextStyle(
-// //                                     fontWeight: FontWeight.bold,
-// //                                     fontSize: 24,
-// //                                   ),
-// //                                 ),
-// //                                 Text(
-// //                                   ' / 50 kg.',
-// //                                   style: TextStyle(
-// //                                     color: Colors.grey,
-// //                                     fontWeight: FontWeight.w600,
-// //                                   ),
-// //                                 ),
-// //                               ],
-// //                             ),
-// //                           ],
-// //                         ),
-// //                         Container(
-// //                           color: Colors.grey[600],
-// //                           width: 1,
-// //                           height: 80,
-// //                         ),
-// //                         Column(
-// //                           children: [
-// //                             Text(
-// //                               'Energy Intake',
-// //                               style: TextStyle(fontWeight: FontWeight.w600),
-// //                             ),
-// //                             Row(
-// //                               children: [
-// //                                 Icon(
-// //                                   Icons.energy_savings_leaf_outlined,
-// //                                   size: 20,
-// //                                   color: Colors.red,
-// //                                 ),
-// //                                 Text(
-// //                                   ' +590 ',
-// //                                   style: TextStyle(
-// //                                     color: Colors.green,
-// //                                     fontWeight: FontWeight.w600,
-// //                                   ),
-// //                                 ),
-// //                                 Text(
-// //                                   'kcal',
-// //                                   style: TextStyle(
-// //                                     color: Colors.grey[500],
-// //                                     fontWeight: FontWeight.w600,
-// //                                   ),
-// //                                 )
-// //                               ],
-// //                             ),
-// //                             SizedBox(height: 10),
-// //                             Text(
-// //                               'TDEE vs. intake',
-// //                               style: TextStyle(fontWeight: FontWeight.w600),
-// //                             ),
-// //                             Row(
-// //                               children: [
-// //                                 Icon(
-// //                                   Icons.energy_savings_leaf_outlined,
-// //                                   size: 20,
-// //                                   color: Colors.red,
-// //                                 ),
-// //                                 Text(
-// //                                   ' 1770 ',
-// //                                   style: TextStyle(
-// //                                     color: Colors.green,
-// //                                     fontWeight: FontWeight.w600,
-// //                                   ),
-// //                                 ),
-// //                                 Text(
-// //                                   'kcal',
-// //                                   style: TextStyle(
-// //                                     color: Colors.grey[500],
-// //                                     fontWeight: FontWeight.w600,
-// //                                   ),
-// //                                 )
-// //                               ],
-// //                             )
-// //                           ],
-// //                         ),
-// //                       ],
-// //                     ),
-// //                   ],
-// //                 ),
-// //               ),
-// //               Container(
-// //                 padding: EdgeInsets.only(top: 5),
-// //                 width: 300,
-// //                 height: 60,
-// //                 decoration: BoxDecoration(
-// //                   borderRadius: BorderRadius.only(
-// //                       bottomLeft: Radius.circular(20),
-// //                       bottomRight: Radius.circular(20)),
-// //                   color: Colors.grey,
-// //                 ),
-// //                 child: Row(
-// //                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-// //                   children: [
-// //                     Column(
-// //                       children: [
-// //                         Text(
-// //                           '0%',
-// //                           style: TextStyle(
-// //                             color: Colors.white,
-// //                             fontWeight: FontWeight.w600,
-// //                           ),
-// //                         ),
-// //                         Text(
-// //                           'Progress',
-// //                           style: TextStyle(fontWeight: FontWeight.w600),
-// //                         ),
-// //                       ],
-// //                     ),
-// //                     Column(
-// //                       children: [
-// //                         Text(
-// //                           'BMI 26.2',
-// //                           style: TextStyle(
-// //                             color: Colors.white,
-// //                             fontWeight: FontWeight.w600,
-// //                           ),
-// //                         ),
-// //                         Text(
-// //                           'Overweight',
-// //                           style: TextStyle(fontWeight: FontWeight.w600),
-// //                         ),
-// //                       ],
-// //                     ),
-// //                     Column(
-// //                       children: [
-// //                         Text(
-// //                           '2360',
-// //                           style: TextStyle(
-// //                             color: Colors.white,
-// //                             fontWeight: FontWeight.w600,
-// //                           ),
-// //                         ),
-// //                         Text(
-// //                           'TDEE',
-// //                           style: TextStyle(
-// //                             fontWeight: FontWeight.w600,
-// //                           ),
-// //                         ),
-// //                       ],
-// //                     )
-// //                   ],
-// //                 ),
-// //               ),
-
-// //               // Graph
-// //               // Calorie Tracker
-// //               Padding(
-// //                 padding: const EdgeInsets.all(10),
-// //                 child: Container(
-// //                   decoration: BoxDecoration(
-// //                     color: Colors.white,
-// //                     borderRadius: BorderRadius.circular(10),
-// //                     boxShadow: [
-// //                       BoxShadow(
-// //                         color: Colors.black.withOpacity(0.2),
-// //                         spreadRadius: 0,
-// //                         blurRadius: 4,
-// //                         offset: const Offset(0, 6),
-// //                       ),
-// //                     ],
-// //                   ),
-// //                   child: Column(
-// //                     children: [
-// //                       Container(
-// //                         padding: EdgeInsets.all(5),
-// //                         decoration: BoxDecoration(
-// //                             color: Colors.grey,
-// //                             borderRadius: BorderRadius.only(
-// //                                 topLeft: Radius.circular(10),
-// //                                 topRight: Radius.circular(10))),
-// //                         child: Row(
-// //                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-// //                           children: [
-// //                             // GestureDetector(
-// //                             //   onTap: () {},
-// //                             //   child: Icon(
-// //                             //     Icons.arrow_back_ios,
-// //                             //     color: Colors.white,
-// //                             //   ),
-// //                             // ),
-// //                             Text(
-// //                               'Calorie Tracker',
-// //                               style: TextStyle(
-// //                                 fontSize: 16,
-// //                                 color: Colors.white,
-// //                                 fontWeight: FontWeight.w500,
-// //                               ),
-// //                             ),
-// //                             // GestureDetector(
-// //                             //   onTap: () {},
-// //                             //   child: Icon(
-// //                             //     Icons.arrow_forward_ios,
-// //                             //     color: Colors.white,
-// //                             //   ),
-// //                             // ),
-// //                           ],
-// //                         ),
-// //                       ),
-// //                       Container(
-// //                         padding: EdgeInsets.all(5),
-// //                         height: 200,
-// //                         child: BarChart(
-// //                           BarChartData(
-// //                             barGroups: _getBarGroups(),
-// //                             borderData: FlBorderData(show: false),
-// //                             titlesData: FlTitlesData(
-// //                               leftTitles: AxisTitles(
-// //                                 sideTitles: SideTitles(
-// //                                   showTitles: true,
-// //                                   reservedSize: 40,
-// //                                 ),
-// //                               ),
-// //                               bottomTitles: AxisTitles(
-// //                                 sideTitles: SideTitles(
-// //                                   showTitles: true,
-// //                                   getTitlesWidget: (value, meta) {
-// //                                     switch (value.toInt()) {
-// //                                       case 0:
-// //                                         return Text('Mon');
-// //                                       case 1:
-// //                                         return Text('Tue');
-// //                                       case 2:
-// //                                         return Text('Wed');
-// //                                       case 3:
-// //                                         return Text('Thu');
-// //                                       case 4:
-// //                                         return Text('Fri');
-// //                                       case 5:
-// //                                         return Text('Sat');
-// //                                       case 6:
-// //                                         return Text('Sun');
-// //                                       default:
-// //                                         return Text('');
-// //                                     }
-// //                                   },
-// //                                   reservedSize: 32,
-// //                                 ),
-// //                               ),
-// //                             ),
-// //                           ),
-// //                         ),
-// //                       ),
-// //                     ],
-// //                   ),
-// //                 ),
-// //               ),
-// //             ],
-// //           ),
-// //         ),
-// //       ),
-// //       bottomNavigationBar: BottomNavigationBar(
-// //         type: BottomNavigationBarType.fixed,
-// //         selectedItemColor: Colors.black,
-// //         unselectedItemColor: Colors.black,
-// //         selectedLabelStyle: TextStyle(color: Colors.black),
-// //         unselectedLabelStyle: TextStyle(color: Colors.black),
-// //         currentIndex: _currentIndex,
-// //         onTap: (index) {
-// //           if (index == 0) {
-// //             Navigator.pushReplacement(
-// //               context,
-// //               MaterialPageRoute(builder: (context) => Homepage()),
-// //             );
-// //           } else if (index == 1) {
-// //             Navigator.pushReplacement(
-// //               context,
-// //               MaterialPageRoute(builder: (context) => MenuScreen()),
-// //             );
-// //           } else if (index == 2) {
-// //             Navigator.pushReplacement(
-// //               context,
-// //               MaterialPageRoute(builder: (context) => FavoriteScreen()),
-// //             );
-// //           } else if (index == 3) {
-// //             Navigator.pushReplacement(
-// //               context,
-// //               MaterialPageRoute(builder: (context) => CalculateScreen()),
-// //             );
-// //           } else if (index == 4) {
-// //             Navigator.pushReplacement(
-// //               context,
-// //               MaterialPageRoute(builder: (context) => ProfileScreen()),
-// //             );
-// //           } else {
-// //             Navigator.pushReplacement(
-// //               context,
-// //               MaterialPageRoute(builder: (context) => CalorieTrackingScreen()),
-// //             );
-// //           }
-// //         },
-// //         items: [
-// //           BottomNavigationBarItem(
-// //             icon: Icon(
-// //               Icons.home_outlined,
-// //             ),
-// //             label: 'Home',
-// //           ),
-// //           BottomNavigationBarItem(
-// //             icon: Icon(
-// //               Icons.food_bank_outlined,
-// //             ),
-// //             label: 'Search',
-// //           ),
-// //           BottomNavigationBarItem(
-// //             icon: Icon(
-// //               Icons.favorite_border_outlined,
-// //             ),
-// //             label: 'Favorites',
-// //           ),
-// //           BottomNavigationBarItem(
-// //             icon: Icon(
-// //               Icons.calculate_outlined,
-// //             ),
-// //             label: 'Calculate',
-// //           ),
-// //           BottomNavigationBarItem(
-// //             icon: Icon(
-// //               Icons.person_outline,
-// //             ),
-// //             label: 'Profile',
-// //           ),
-// //         ],
-// //       ),
-// //     );
-// //   }
-// // }
-
-// // class SquareClickableSections extends StatelessWidget {
-// //   void navigateToPage(BuildContext context, String pageName) {
-// //     Navigator.push(
-// //       context,
-// //       MaterialPageRoute(
-// //           builder: (context) => MealPlanningNextScreen(pageName: pageName)),
-// //     );
-// //   }
-
-// //   @override
-// //   Widget build(BuildContext context) {
-// //     return Center(
-// //       child: Stack(
-// //         alignment: Alignment.center,
-// //         children: [
-// //           // Square sections
-// //           CustomPaint(
-// //             size: Size(350, 350),
-// //             painter: SquareSectionsPainter(),
-// //           ),
-
-// //           // Centered summary box
-// //           Container(
-// //             width: 150,
-// //             height: 150,
-// //             decoration: BoxDecoration(
-// //               shape: BoxShape.circle,
-// //               color: Colors.black.withOpacity(0.6),
-// //             ),
-// //             child: Center(
-// //               child: Text(
-// //                 'Calorie Sum: 590 kcal',
-// //                 textAlign: TextAlign.center,
-// //                 style: TextStyle(
-// //                   fontSize: 14,
-// //                   fontWeight: FontWeight.bold,
-// //                   color: Colors.white,
-// //                 ),
-// //               ),
-// //             ),
-// //           ),
-
-// //           // Clickable sections
-// //           Positioned(
-// //             top: 0,
-// //             left: 0,
-// //             child: buildClickableSection('Snacks', Icons.fastfood, context),
-// //           ),
-// //           Positioned(
-// //             top: 0,
-// //             right: 0,
-// //             child: buildClickableSection(
-// //                 'Breakfast', Icons.breakfast_dining, context),
-// //           ),
-// //           Positioned(
-// //             bottom: 0,
-// //             left: 0,
-// //             child: buildClickableSection('Lunch', Icons.lunch_dining, context),
-// //           ),
-// //           Positioned(
-// //             bottom: 0,
-// //             right: 0,
-// //             child:
-// //                 buildClickableSection('Dinner', Icons.dinner_dining, context),
-// //           ),
-// //         ],
-// //       ),
-// //     );
-// //   }
-
-// //   Widget buildClickableSection(
-// //       String label, IconData icon, BuildContext context) {
-// //     return GestureDetector(
-// //       onTap: () => navigateToPage(context, label),
-// //       child: Container(
-// //         width: 175,
-// //         height: 175,
-// //         color: Colors.transparent,
-// //         child: Column(
-// //           mainAxisAlignment: MainAxisAlignment.center,
-// //           children: [
-// //             Icon(icon, color: Colors.white),
-// //             Text(label, style: TextStyle(color: Colors.white)),
-// //           ],
-// //         ),
-// //       ),
-// //     );
-// //   }
-// // }
-
-// // class SquareSectionsPainter extends CustomPainter {
-// //   @override
-// //   void paint(Canvas canvas, Size size) {
-// //     final Paint paint = Paint()..style = PaintingStyle.fill;
-
-// //     final List<Color> colors = [
-// //       Colors.blueAccent,
-// //       Colors.greenAccent,
-// //       Colors.orangeAccent,
-// //       Colors.purpleAccent,
-// //     ];
-
-// //     final double halfWidth = size.width / 2;
-// //     final double halfHeight = size.height / 2;
-
-// //     final List<Rect> sections = [
-// //       Rect.fromLTWH(0, 0, halfWidth, halfHeight), // Top-left
-// //       Rect.fromLTWH(halfWidth, 0, halfWidth, halfHeight), // Top-right
-// //       Rect.fromLTWH(0, halfHeight, halfWidth, halfHeight), // Bottom-left
-// //       Rect.fromLTWH(
-// //           halfWidth, halfHeight, halfWidth, halfHeight), // Bottom-right
-// //     ];
-
-// //     for (int i = 0; i < 4; i++) {
-// //       paint.color = colors[i];
-// //       canvas.drawRect(sections[i], paint);
-// //     }
-// //   }
-
-// //   @override
-// //   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-// //     return false;
-// //   }
-// // }
-
-// // // class RadialClickableSections extends StatelessWidget {
-// // //   void navigateToPage(BuildContext context, String pageName) {
-// // //     Navigator.push(
-// // //       context,
-// // //       MaterialPageRoute(
-// // //           builder: (context) => MealPlanningNextScreen(pageName: pageName)),
-// // //     );
-// // //   }
-
-// // //   @override
-// // //   Widget build(BuildContext context) {
-// // //     return Center(
-// // //       child: Stack(
-// // //         alignment: Alignment.center,
-// // //         children: [
-// // //           // Radial sections
-// // //           CustomPaint(
-// // //             size: Size(350, 350),
-// // //             painter: RadialSectionsPainter(),
-// // //           ),
-
-// // //           Container(
-// // //             width: 150,
-// // //             height: 150,
-// // //             decoration: BoxDecoration(
-// // //               shape: BoxShape.circle,
-// // //               color: Colors.black.withOpacity(0.6),
-// // //             ),
-// // //             child: Center(
-// // //               child: Text(
-// // //                 'Calorie Sum: 590 kcal',
-// // //                 style: TextStyle(
-// // //                   fontSize: 14,
-// // //                   fontWeight: FontWeight.bold,
-// // //                   color: Colors.white,
-// // //                 ),
-// // //               ),
-// // //             ),
-// // //           ),
-// // //           // Make each section clickable
-// // //           Positioned(
-// // //             top: 0,
-// // //             left: 0,
-// // //             child: GestureDetector(
-// // //               onTap: () => navigateToPage(context, 'Snacks'),
-// // //               child: Container(
-// // //                 width: 175,
-// // //                 height: 175,
-// // //                 color: Colors.transparent,
-// // //                 child: Column(
-// // //                   mainAxisAlignment: MainAxisAlignment.center,
-// // //                   children: [
-// // //                     Icon(Icons.fastfood, color: Colors.white),
-// // //                     Text('Snacks', style: TextStyle(color: Colors.white)),
-// // //                   ],
-// // //                 ),
-// // //               ),
-// // //             ),
-// // //           ),
-// // //           Positioned(
-// // //             top: 0,
-// // //             right: 0,
-// // //             child: GestureDetector(
-// // //               onTap: () => navigateToPage(context, 'Breakfast'),
-// // //               child: Container(
-// // //                 width: 175,
-// // //                 height: 175,
-// // //                 color: Colors.transparent,
-// // //                 child: Column(
-// // //                   mainAxisAlignment: MainAxisAlignment.center,
-// // //                   children: [
-// // //                     Icon(Icons.breakfast_dining, color: Colors.white),
-// // //                     Text('Breakfast', style: TextStyle(color: Colors.white)),
-// // //                   ],
-// // //                 ),
-// // //               ),
-// // //             ),
-// // //           ),
-// // //           Positioned(
-// // //             bottom: 0,
-// // //             left: 0,
-// // //             child: GestureDetector(
-// // //               onTap: () => navigateToPage(context, 'Lunch'),
-// // //               child: Container(
-// // //                 width: 175,
-// // //                 height: 175,
-// // //                 color: Colors.transparent,
-// // //                 child: Column(
-// // //                   mainAxisAlignment: MainAxisAlignment.center,
-// // //                   children: [
-// // //                     Icon(Icons.lunch_dining, color: Colors.white),
-// // //                     Text('Lunch', style: TextStyle(color: Colors.white)),
-// // //                   ],
-// // //                 ),
-// // //               ),
-// // //             ),
-// // //           ),
-// // //           Positioned(
-// // //             bottom: 0,
-// // //             right: 0,
-// // //             child: GestureDetector(
-// // //               onTap: () => navigateToPage(context, 'Dinner'),
-// // //               child: Container(
-// // //                 width: 175,
-// // //                 height: 175,
-// // //                 color: Colors.transparent,
-// // //                 child: Column(
-// // //                   mainAxisAlignment: MainAxisAlignment.center,
-// // //                   children: [
-// // //                     Icon(Icons.dinner_dining, color: Colors.white),
-// // //                     Text('Dinner', style: TextStyle(color: Colors.white)),
-// // //                   ],
-// // //                 ),
-// // //               ),
-// // //             ),
-// // //           ),
-// // //           // Text following circular path
-// // //           CustomPaint(
-// // //             size: Size(250, 250),
-// // //             painter: CircularTextPainter(),
-// // //           ),
-// // //         ],
-// // //       ),
-// // //     );
-// // //   }
-// // // }
-
-// // class RadialSectionsPainter extends CustomPainter {
-// //   @override
-// //   void paint(Canvas canvas, Size size) {
-// //     final Paint paint = Paint()
-// //       ..style = PaintingStyle.fill
-// //       ..strokeWidth = 2;
-
-// //     // Define the radius for the circle
-// //     final double radius = size.width / 2;
-// //     final center = Offset(size.width / 2, size.height / 2);
-
-// //     // Colors for each section (room)
-// //     final List<Color> colors = [
-// //       Colors.blueAccent,
-// //       Colors.greenAccent,
-// //       Colors.orangeAccent,
-// //       Colors.purpleAccent
-
-// //       // Color(0xFF1F5F5B),
-// //       // Color(0xFF40C5BD),
-// //       // Color(0xFF1F5F5B),
-// //       // Color(0xFF40C5BD)
-// //     ];
-
-// //     // Draw each quarter (90 degrees each)
-// //     for (int i = 0; i < 4; i++) {
-// //       paint.color = colors[i];
-
-// //       double startAngle = (i * 90) * 3.1416 / 180; // Start angle (in radians)
-// //       double sweepAngle = 90 * 3.1416 / 180; // Sweep angle (in radians)
-
-// //       canvas.drawArc(
-// //         Rect.fromCircle(center: center, radius: radius),
-// //         startAngle,
-// //         sweepAngle,
-// //         true,
-// //         paint,
-// //       );
-// //     }
-// //   }
-
-// //   @override
-// //   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-// //     return false;
-// //   }
-// // }
-
-// // // class CircularTextPainter extends CustomPainter {
-// // //   @override
-// // //   void paint(Canvas canvas, Size size) {
-// // //     final TextPainter textPainter = TextPainter(
-// // //       textAlign: TextAlign.center,
-// // //       textDirection: TextDirection.ltr,
-// // //     );
-
-// // //     final double radius = size.width / 2;
-// // //     final center = Offset(size.width / 2, size.height / 2);
-// // //     final List<String> sectionLabels = [
-// // //       'Dinner',
-// // //       'Lunch',
-// // //       'Snacks',
-// // //       'Breakfast'
-// // //     ];
-// // //     final double angleStep = 90 * pi / 180; // 90 degrees per section
-
-// // //     for (int i = 0; i < sectionLabels.length; i++) {
-// // //       final label = sectionLabels[i];
-// // //       final angle =
-// // //           angleStep * (i + 0.5); // Position text in the middle of each section
-
-// // //       final textSpan = TextSpan(
-// // //         text: label,
-// // //         style: TextStyle(
-// // //           color: Colors.white,
-// // //           fontSize: 14,
-// // //           fontWeight: FontWeight.bold,
-// // //         ),
-// // //       );
-// // //       textPainter.text = textSpan;
-// // //       textPainter.layout();
-
-// // //       final x =
-// // //           center.dx + (radius + 60) * cos(angle) - (textPainter.width / 2);
-// // //       final y =
-// // //           center.dy + (radius + 60) * sin(angle) - (textPainter.height / 2);
-
-// // //       textPainter.paint(canvas, Offset(x, y));
-// // //     }
-// // //   }
-
-// // //   @override
-// // //   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-// // //     return false;
-// // //   }
-// // // }
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -835,8 +8,8 @@ import 'dart:math';
 
 import 'package:ginraidee/screens/calculate_screen.dart';
 import 'package:ginraidee/screens/favorite_screen.dart';
-import 'package:ginraidee/screens/menu_screen.dart';
-import 'calorie_tracking_next_screen.dart';
+import 'package:ginraidee/screens/history_screen.dart';
+// import 'calorie_tracking_next_screen.dart';
 import 'homepage.dart';
 import 'profile_screen.dart';
 
@@ -866,17 +39,18 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
 
   final int _currentIndex = 0;
 
-  void navigateToMealScreen(String mealType) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-          builder: (context) => CalorieTrackingNextScreen(mealType: mealType)),
-    );
-  }
+  // void navigateToMealScreen(String mealType) {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //         builder: (context) => CalorieTrackingNextScreen(mealType: mealType)),
+  //   );
+  // }
 
   late List<BarChartGroupData> barGroups;
   late List<String> days;
 
+  // MARK: initState
   @override
   void initState() {
     super.initState();
@@ -886,6 +60,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
     days = [];
     fetchUserData();
     _loadUserData();
+    checkLoggedMealTypes();
   }
 
   String formatNumber(int number) {
@@ -901,6 +76,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
     });
   }
 
+  // MARK: Date
   void _changeDate(int delta) {
     setState(() {
       selectedDate = selectedDate.add(Duration(days: delta));
@@ -928,6 +104,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
     }
   }
 
+  // MARK: User Firebase
   User? user = FirebaseAuth.instance.currentUser;
   Map<String, dynamic>? userData;
 
@@ -1032,10 +209,53 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
     }
   }
 
+  Set<String> loggedMealTypes = {};
+
+  Future<void> checkLoggedMealTypes() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      DateTime startOfDay = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+      );
+      DateTime endOfDay =
+          startOfDay.add(Duration(days: 1)).subtract(Duration(milliseconds: 1));
+
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('food_log')
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+          .get();
+
+      Set<String> meals = {};
+
+      for (var doc in snapshot.docs) {
+        final mealType = doc['mealType'];
+        if (mealType != null) {
+          meals.add(mealType);
+        }
+      }
+
+      setState(() {
+        loggedMealTypes = meals;
+      });
+    }
+  }
+
+  Color getMealButtonColor(String mealType, Color defaultColor) {
+    return loggedMealTypes.contains(mealType)
+        ? defaultColor // e.g., green/orange/blue
+        : Colors.grey; // faded color for not-logged
+  }
+
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
 
-  //
+  // MARK: BMI
   double? _calculatedBMI() {
     final height = double.tryParse(_heightController.text);
     final weight = double.tryParse(_weightController.text);
@@ -1070,6 +290,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
 
   String _selectedActivityLevel = "Moderately active (3-5 days/week)";
 
+  // MARK: TDEE & BMR
   double? _calculateTDEE() {
     final weight = double.tryParse(_weightController.text);
     final height = double.tryParse(_heightController.text);
@@ -1123,6 +344,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
     return bmr * activityFactor;
   }
 
+  // MARK: Age
   int _calculateAge(DateTime dob) {
     DateTime today = DateTime.now();
     int age = today.year - dob.year;
@@ -1133,6 +355,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
     return age;
   }
 
+  // MARK: Widget
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -1214,34 +437,49 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
                   ),
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              Stack(
+                alignment: Alignment.center,
                 children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_left,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                    onPressed: () => _changeDate(-1),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.arrow_left,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                        onPressed: () => _changeDate(-1),
+                      ),
+                      GestureDetector(
+                        onTap: _pickDate,
+                        child: Text(
+                          DateFormat('dd MMM yyyy').format(selectedDate),
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.arrow_right,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                        onPressed: () => _changeDate(1),
+                      ),
+                    ],
                   ),
-                  GestureDetector(
-                    onTap: _pickDate,
-                    child: Text(
-                      DateFormat('dd MMM yyyy').format(selectedDate),
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white),
+                  Positioned(
+                    right: 30,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.calendar_month,
+                        color: Colors.white,
+                      ),
+                      onPressed: _pickDate,
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_right,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                    onPressed: () => _changeDate(1),
                   ),
                 ],
               ),
@@ -1265,8 +503,11 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
                           Positioned(
                             top: screenHeight * 0.025,
                             left: screenWidth * 0.05,
-                            child: mealTypeButton("Snacks", Icons.fastfood,
-                                Colors.blue, buttonSize),
+                            child: mealTypeButton(
+                                "Snack",
+                                Icons.fastfood,
+                                getMealButtonColor("Snack", Colors.blue),
+                                buttonSize),
                           ),
                           // Breakfast (Top Right)
                           Positioned(
@@ -1275,22 +516,28 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
                             child: mealTypeButton(
                                 "Breakfast",
                                 Icons.breakfast_dining,
-                                Colors.green,
+                                getMealButtonColor("Breakfast", Colors.green),
                                 buttonSize),
                           ),
                           // Lunch (Bottom Left)
                           Positioned(
                             bottom: screenHeight * 0.025,
                             left: screenWidth * 0.05,
-                            child: mealTypeButton("Lunch", Icons.lunch_dining,
-                                Colors.orange, buttonSize),
+                            child: mealTypeButton(
+                                "Lunch",
+                                Icons.lunch_dining,
+                                getMealButtonColor("Lunch", Colors.orange),
+                                buttonSize),
                           ),
                           // Dinner (Bottom Right)
                           Positioned(
                             bottom: screenHeight * 0.025,
                             right: screenWidth * 0.05,
-                            child: mealTypeButton("Dinner", Icons.dinner_dining,
-                                Colors.purple, buttonSize),
+                            child: mealTypeButton(
+                                "Dinner",
+                                Icons.dinner_dining,
+                                getMealButtonColor("Dinner", Colors.purple),
+                                buttonSize),
                           ),
                         ],
                       ),
@@ -1326,7 +573,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: Text(
-                              remainingCalories < 0
+                              (_calculateTDEE()?.toInt() ?? 2000) < 0
                                   ? 'Exceeded Calorie Limit!'
                                   : 'Calories you can still consume',
                               textAlign: TextAlign.center,
@@ -1341,7 +588,8 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
                           ),
                           SizedBox(height: 8),
                           Text(
-                            formatNumber(remainingCalories),
+                            formatNumber((_calculateTDEE()?.toInt() ?? 2000) -
+                                totalCaloriesConsumed),
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -1675,6 +923,8 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
           ),
         ),
       ),
+
+      // MARK: bottomNav
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.black,
@@ -1691,7 +941,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
           } else if (index == 1) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => MenuScreen()),
+              MaterialPageRoute(builder: (context) => HistoryScreen()),
             );
           } else if (index == 2) {
             Navigator.pushReplacement(
@@ -1724,9 +974,9 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.food_bank_outlined,
+              Icons.history,
             ),
-            label: 'Search',
+            label: 'History',
           ),
           BottomNavigationBarItem(
             icon: Icon(
@@ -1765,7 +1015,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
   Widget mealTypeButton(
       String mealType, IconData icon, Color color, double size) {
     return GestureDetector(
-      onTap: () => navigateToMealScreen(mealType),
+      // onTap: () => navigateToMealScreen(mealType),
       child: Container(
         width: size,
         height: size,
@@ -1792,137 +1042,5 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
         ),
       ),
     );
-  }
-
-  // List<Map<String, dynamic>> recipesForToday = [];
-
-  // Future<void> fetchRecipesForToday() async {
-  //   User? user = FirebaseAuth.instance.currentUser;
-  //   if (user != null) {
-  //     try {
-  //       DateTime now = DateTime.now();
-  //       DateTime startOfDay = DateTime(now.year, now.month, now.day);
-  //       DateTime endOfDay = startOfDay.add(Duration(days: 1));
-
-  //       QuerySnapshot snapshot = await FirebaseFirestore.instance
-  //           .collection('users')
-  //           .doc(user.uid)
-  //           .collection('food_log')
-  //           .where('date',
-  //               isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-  //           .where('date', isLessThan: Timestamp.fromDate(endOfDay))
-  //           .get();
-
-  //       int todayCalories = 0;
-
-  //       if (snapshot.docs.isEmpty) {
-  //         print("❌ No recipes found for today.");
-  //       } else {
-  //         for (var doc in snapshot.docs) {
-  //           var recipe = doc['recipe'];
-  //           if (recipe == null) continue;
-
-  //           num calories =
-  //               recipe['totalNutrients']['ENERC_KCAL']['quantity'] ?? 0;
-  //           todayCalories += calories.toInt();
-  //         }
-  //       }
-
-  //       // Set today's calorie value once, preventing duplicates
-  //       setState(() {
-  //         calorieData[6] = todayCalories;
-  //       });
-  //     } catch (e) {
-  //       print("❌ Error fetching recipes for today: $e");
-  //     }
-  //   }
-  // }
-
-  // void _fetchCalorieData() async {
-  //   User? user = FirebaseAuth.instance.currentUser;
-  //   if (user != null) {
-  //     try {
-  //       DateTime now = DateTime.now();
-  //       DateTime startOfDay = DateTime(now.year, now.month, now.day);
-  //       DateTime sevenDaysAgo = startOfDay.subtract(Duration(days: 6));
-
-  //       List<int> caloriesPerDay = List.filled(7, 0);
-
-  //       // Preserve today's data before fetching historical data
-  //       int todayCalories = calorieData[6];
-
-  //       QuerySnapshot snapshot = await FirebaseFirestore.instance
-  //           .collection('users')
-  //           .doc(user.uid)
-  //           .collection('food_log')
-  //           .where('date',
-  //               isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
-  //           .where('date', isLessThanOrEqualTo: Timestamp.fromDate(startOfDay))
-  //           .get();
-
-  //       for (var doc in snapshot.docs) {
-  //         var recipe = doc['recipe'];
-  //         if (recipe != null &&
-  //             recipe['totalNutrients'] != null &&
-  //             recipe['totalNutrients']['ENERC_KCAL'] != null) {
-  //           num calorie =
-  //               recipe['totalNutrients']['ENERC_KCAL']['quantity'] ?? 0;
-
-  //           var dateField = doc['date'];
-  //           DateTime date;
-  //           if (dateField is Timestamp) {
-  //             date = dateField.toDate();
-  //           } else if (dateField is String) {
-  //             date = DateTime.parse(dateField);
-  //           } else {
-  //             print("❌ Unexpected date format: $dateField");
-  //             continue;
-  //           }
-
-  //           for (int i = 0; i < 6; i++) {
-  //             DateTime targetDate = startOfDay.subtract(Duration(days: 6 - i));
-  //             if (date.day == targetDate.day &&
-  //                 date.month == targetDate.month) {
-  //               caloriesPerDay[i] += calorie.toInt();
-  //               break;
-  //             }
-  //           }
-  //         }
-  //       }
-
-  //       setState(() {
-  //         calorieData = caloriesPerDay;
-  //         calorieData[6] = todayCalories; // Restore today's calories
-  //         isLoading = false;
-  //       });
-
-  //       print('Calories per day: $calorieData');
-  //     } catch (e) {
-  //       print("❌ Error fetching calorie data: $e");
-  //       setState(() {
-  //         isLoading = false;
-  //       });
-  //     }
-  //   }
-  // }
-
-  List<BarChartGroupData> _getBarGroups(List<int> calorieData) {
-    // Ensure there are at least 7 data points
-    List<int> paddedData = List<int>.from(calorieData);
-    while (paddedData.length < 7) {
-      paddedData.add(0); // Add 0 for missing data
-    }
-
-    return List.generate(7, (index) {
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(
-            toY: paddedData[index].toDouble(),
-            color: Colors.white,
-          ),
-        ],
-      );
-    });
   }
 }

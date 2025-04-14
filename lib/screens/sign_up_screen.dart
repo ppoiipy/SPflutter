@@ -257,28 +257,35 @@ class SignUpFieldState extends State<SignUpField> {
     'Olive Oil'
   ];
   List<String> foodAllergy = [
+    'None',
     'Nuts',
-    'Dairy',
+    'Milk',
+    'Celery',
+    'Fish',
     'Shellfish',
+    'Mustard',
     'Gluten',
+    'Soy',
     'Eggs',
-    'Peanuts',
+    'Sesame',
+    'Wheat',
+    'Alcohol',
   ];
 
   String? selectedGender;
   String? _selectedActivityLevel;
-  String? _activityDescription;
+  // String? _activityDescription;
 
   List<String> selectedIngredients = [];
   List<String> selectedAllergies = [];
 
   List<String> genderOptions = ['Male', 'Female', 'Other'];
-  Map<String, String> activityLevels = {
-    "Sedentary": "Little or no exercise, desk job.",
-    "Lightly Active": "Light exercise or sports 1-3 days per week.",
-    "Moderately Active": "Moderate exercise or sports 3-5 days per week.",
-    "Very Active": "Hard exercise or sports 6-7 days per week.",
-    "Super Active": "Very hard exercise or physical job, training twice a day.",
+  Set<String> activityLevels = {
+    "Sedentary (little to no exercise)",
+    "Lightly active (1-3 days/week)",
+    "Moderately active (3-5 days/week)",
+    "Very active (6-7 days/week)",
+    "Super active (very hard exercise, physical job)"
   };
 
   String? emailError;
@@ -510,6 +517,12 @@ class SignUpFieldState extends State<SignUpField> {
             // Weight
             TextFormField(
               controller: _weightController,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Weight is required';
+                }
+                return null;
+              },
               decoration: InputDecoration(
                 labelText: 'Weight (kg)',
                 hintText: 'Enter your weight',
@@ -520,6 +533,12 @@ class SignUpFieldState extends State<SignUpField> {
             // Weight Goal
             TextFormField(
               controller: _weightGoalController,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Weight Goal is required';
+                }
+                return null;
+              },
               decoration: InputDecoration(
                 labelText: 'Weight Goal (kg)',
                 hintText: 'Enter your weight goal',
@@ -530,6 +549,12 @@ class SignUpFieldState extends State<SignUpField> {
             // Height
             TextFormField(
               controller: _heightController,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Height is required';
+                }
+                return null;
+              },
               decoration: InputDecoration(
                 labelText: 'Height (cm)',
                 hintText: 'Enter your height',
@@ -540,6 +565,12 @@ class SignUpFieldState extends State<SignUpField> {
             // Date of Birth
             TextFormField(
               controller: _dobController,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Birth Date is required';
+                }
+                return null;
+              },
               decoration: InputDecoration(
                 labelText: 'Date of Birth',
                 hintText: 'Select your date of birth',
@@ -590,8 +621,8 @@ class SignUpFieldState extends State<SignUpField> {
                     });
                   },
                   validator: (value) {
-                    if (value == null) {
-                      return 'Please select a gender';
+                    if (value == null || value.isEmpty) {
+                      return 'Please select gender';
                     }
                     return null;
                   },
@@ -615,6 +646,12 @@ class SignUpFieldState extends State<SignUpField> {
               controller:
                   TextEditingController(text: selectedIngredients.join(', ')),
               readOnly: true, // Prevent manual input
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please select ingredients';
+                }
+                return null;
+              },
               decoration: InputDecoration(
                 labelText: 'Ingredients',
                 hintText: 'Select your ingredients',
@@ -629,12 +666,18 @@ class SignUpFieldState extends State<SignUpField> {
               controller:
                   TextEditingController(text: selectedAllergies.join(', ')),
               readOnly: true, // Prevent manual input
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please select allergies';
+                }
+                return null;
+              },
               decoration: InputDecoration(
                 labelText: 'Allergies',
                 hintText: 'Select your allergies',
                 suffixIcon: Icon(Icons.arrow_drop_down),
               ),
-              onTap: _showAllergySheet, // Opens the bottom sheet on tap
+              onTap: _showAllergySheet,
             ),
             SizedBox(height: 10),
 
@@ -653,24 +696,25 @@ class SignUpFieldState extends State<SignUpField> {
                   margin: EdgeInsets.only(bottom: 10.0), // Prevent overflow
                   child: DropdownButtonFormField<String>(
                     value: _selectedActivityLevel,
-                    items: activityLevels.entries.map((entry) {
+                    items: activityLevels.map((entry) {
                       return DropdownMenuItem<String>(
-                        value: entry.key,
+                        value: entry,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              entry.key,
-                              style: TextStyle(fontWeight: FontWeight.w500),
+                              entry,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w500, fontSize: 15),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4.0),
-                              child: Text(
-                                entry.value,
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey[600]),
-                              ),
-                            ),
+                            // Padding(
+                            //   padding: const EdgeInsets.only(top: 4.0),
+                            //   child: Text(
+                            //     entry.value,
+                            //     style: TextStyle(
+                            //         fontSize: 12, color: Colors.grey[600]),
+                            //   ),
+                            // ),
                           ],
                         ),
                       );
@@ -678,7 +722,7 @@ class SignUpFieldState extends State<SignUpField> {
                     onChanged: (value) {
                       setState(() {
                         _selectedActivityLevel = value;
-                        _activityDescription = activityLevels[value];
+                        // _activityDescription = activityLevels[value];
                       });
                     },
                     decoration: InputDecoration(
@@ -714,7 +758,11 @@ class SignUpFieldState extends State<SignUpField> {
 
             // Create Account Button
             ElevatedButton(
-              onPressed: _signUp,
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  _signUp();
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xff1f5f5b),
                 fixedSize: Size(350, 50),

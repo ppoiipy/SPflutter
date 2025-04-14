@@ -146,8 +146,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
   Widget build(BuildContext context) {
     var recipe = widget.recipe;
 
-    String imagePath =
-        'assets/fetchMenu/' + recipe['label'].replaceAll(' ', '_') + '.jpg';
+    String imagePath = 'assets/fetchMenu/' +
+        recipe['label']?.toLowerCase().replaceAll(' ', '_') +
+        '.jpg';
 
     return Scaffold(
       appBar: AppBar(
@@ -231,15 +232,15 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                     ),
                   ),
                 ),
-                Expanded(
-                  flex: 1,
-                  child: Center(
-                    child: Text(
-                      'Daily %',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
+                // Expanded(
+                //   flex: 1,
+                //   child: Center(
+                //     child: Text(
+                //       'Daily %',
+                //       style: TextStyle(fontWeight: FontWeight.bold),
+                //     ),
+                //   ),
+                // ),
               ],
             ),
             const SizedBox(height: 10),
@@ -254,7 +255,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                 columnWidths: {
                   0: FlexColumnWidth(2), // Nutrient Name
                   1: FlexColumnWidth(1), // Amount
-                  2: FlexColumnWidth(1), // Daily %
+                  // 2: FlexColumnWidth(1), // Daily %
                 },
                 border: TableBorder.symmetric(
                     inside: BorderSide(width: 0.3, color: Colors.grey[300]!)),
@@ -263,9 +264,10 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                     _buildNutrientRow(
                       entry.value['label'] ?? 'Unknown',
                       '${entry.value['quantity']?.toStringAsFixed(2) ?? '0'} ${entry.value['unit'] ?? ''}',
-                      recipe['totalDaily']?[entry.key] != null
-                          ? '${recipe['totalDaily']![entry.key]['quantity']?.toStringAsFixed(2) ?? '0'}%'
-                          : 'N/A',
+                      // recipe['totalDaily'] != null &&
+                      //         recipe['totalDaily']?[entry.key] != null
+                      //     ? '${recipe['totalDaily']?[entry.key]['quantity']?.toStringAsFixed(2) ?? '0'}%'
+                      //     : 'N/A',
                     ),
                 ],
               ),
@@ -303,43 +305,65 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
 }
 
 // TableRow _buildNutrientRow(String name, String amount, String daily) {
+//   const importantNutrients = {
+//     'Energy',
+//     'Protein',
+//     'Fat',
+//     'Carbs',
+//     'Sodium',
+//     'Fiber',
+//     'Sugars'
+//   };
+
+//   final isImportant = importantNutrients.contains(name);
+//   final textColor = isImportant ? Colors.black : Colors.grey;
+
 //   return TableRow(
 //     children: [
 //       Padding(
-//         padding: const EdgeInsets.symmetric(vertical: 6),
+//         padding: const EdgeInsets.symmetric(vertical: 5),
 //         child: Text(name,
-//             style: TextStyle(fontSize: 14),
-//             maxLines: 1,
-//             overflow: TextOverflow.ellipsis),
-//       ),
-//       Padding(
-//         padding: const EdgeInsets.symmetric(vertical: 6),
-//         child: Text(amount,
-//             textAlign: TextAlign.center,
-//             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-//       ),
-//       Padding(
-//         padding: const EdgeInsets.symmetric(vertical: 6),
-//         child: Text(daily,
-//             textAlign: TextAlign.center,
 //             style: TextStyle(
-//                 fontSize: 14,
-//                 fontWeight: FontWeight.w500,
-//                 color: Colors.green[700])),
+//                 fontSize: 14, fontWeight: FontWeight.w500, color: textColor)),
+//       ),
+//       Padding(
+//         padding: const EdgeInsets.symmetric(vertical: 5),
+//         child: Text(
+//           amount,
+//           style: TextStyle(
+//               fontSize: 14, fontWeight: FontWeight.w500, color: textColor),
+//           textAlign: TextAlign.center,
+//         ),
+//       ),
+//       Padding(
+//         padding: const EdgeInsets.symmetric(vertical: 5),
+//         child: Text(
+//           daily,
+//           style: TextStyle(
+//               fontSize: 14, fontWeight: FontWeight.w500, color: textColor),
+//           textAlign: TextAlign.center,
+//         ),
 //       ),
 //     ],
 //   );
 // }
 
-TableRow _buildNutrientRow(String name, String amount, String daily) {
+TableRow _buildNutrientRow(
+  String name,
+  String amount,
+) {
   const importantNutrients = {
     'Energy',
     'Protein',
     'Fat',
+    'Total Fat',
     'Carbs',
+    'Carbohydrates',
     'Sodium',
     'Fiber',
-    'Sugars'
+    'Dietary Fiber',
+    'Sugars',
+    'Sugar',
   };
 
   final isImportant = importantNutrients.contains(name);
@@ -362,15 +386,15 @@ TableRow _buildNutrientRow(String name, String amount, String daily) {
           textAlign: TextAlign.center,
         ),
       ),
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Text(
-          daily,
-          style: TextStyle(
-              fontSize: 14, fontWeight: FontWeight.w500, color: textColor),
-          textAlign: TextAlign.center,
-        ),
-      ),
+      // Padding(
+      //   padding: const EdgeInsets.symmetric(vertical: 5),
+      //   child: Text(
+      //     daily,
+      //     style: TextStyle(
+      //         fontSize: 14, fontWeight: FontWeight.w500, color: textColor),
+      //     textAlign: TextAlign.center,
+      //   ),
+      // ),
     ],
   );
 }

@@ -1,23 +1,36 @@
+import 'dart:convert';
+import 'dart:ffi';
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'package:ginraidee/api/fetch_food_api.dart';
 import 'package:ginraidee/screens/homepage.dart';
-import 'package:ginraidee/screens/menu_screen.dart';
+import 'package:ginraidee/screens/history_screen.dart';
 import 'package:ginraidee/screens/favorite_screen.dart';
 import 'package:ginraidee/screens/calculate_screen.dart';
 import 'package:ginraidee/screens/profile_screen.dart';
 import 'package:ginraidee/screens/food_detail_screen.dart';
 
 class MealPlanningScreen extends StatefulWidget {
+  const MealPlanningScreen({super.key});
+
   @override
   _MealPlanningScreenState createState() => _MealPlanningScreenState();
 }
 
 class _MealPlanningScreenState extends State<MealPlanningScreen> {
+  int _selectedDuration = 1;
+  void _updateMealPlan(int duration) {
+    setState(() {
+      _selectedDuration = duration;
+    });
+  }
+
   String selectedTab = 'Search';
   DateTime selectedDate = DateTime.now();
   late Future<List<FoodItem>?> _foodFuture;
@@ -32,6 +45,81 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
   List<dynamic> filteredRecipes = [];
   TextEditingController searchController = TextEditingController();
 
+  List<Map<String, dynamic>> allRecipes = [];
+  Random _random = Random();
+
+  // MARK: initState
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    // trackData();
+    _loadFoodLog();
+    _loadRecipes();
+    _loadWeightGoal();
+    _controller.text = userData?['weightGoal']?.toString() ?? '';
+  }
+
+  User? user = FirebaseAuth.instance.currentUser;
+  Map<String, dynamic>? userData;
+
+  Future<void> _loadUserData() async {
+    if (user == null) return;
+
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userData = userDoc.data() as Map<String, dynamic>;
+          _selectedActivityLevel =
+              userData?["activityLevel"] ?? "Moderately active (3-5 days/week)";
+          _weightController.text = userData?["weight"].toString() ?? '';
+          _heightController.text = userData?["height"].toString() ?? '';
+        });
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
+  }
+
+  Future<void> _loadRecipes() async {
+    try {
+      // Load the JSON file from assets
+      String jsonString =
+          await rootBundle.loadString('assets/recipe_output.json');
+
+      // Decode the JSON string into a List of Maps
+      List<dynamic> jsonResponse = json.decode(jsonString);
+
+      // Cast the dynamic list to a List<Map<String, dynamic>>
+      setState(() {
+        allRecipes = List<Map<String, dynamic>>.from(jsonResponse);
+      });
+    } catch (e) {
+      print('Error loading recipes: $e');
+    }
+  }
+
+  Map<String, dynamic>? _getRandomRecipeForCategory(String category) {
+    // Filter recipes based on the meal category
+    List<Map<String, dynamic>> categoryRecipes = allRecipes.where((recipe) {
+      return recipe['mealType'] == category;
+    }).toList();
+
+    // If there are recipes for this category, return a random one
+    if (categoryRecipes.isNotEmpty) {
+      Random random = Random();
+      return categoryRecipes[random.nextInt(categoryRecipes.length)];
+    }
+
+    return null; // If no recipes for the category
+  }
+
+  // MARK: Click
   Future<void> logRecipeClick(String recipeLabel, String recipeShareAs) async {
     try {
       // Get the current user's ID (from FirebaseAuth)
@@ -72,17 +160,19 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     }
   }
 
+  // MARK: Format Num
   String formatNumber(int number) {
     return NumberFormat("#,###").format(number);
   }
 
-  void _fetchFoodData([String ingredient = ""]) {
-    print("Fetching data for: $ingredient");
-    setState(() {
-      _foodFuture = FoodApiService.fetchFoodData(ingredient: "");
-    });
-  }
+  // void _fetchFoodData([String ingredient = ""]) {
+  //   print("Fetching data for: $ingredient");
+  //   setState(() {
+  //     _foodFuture = FoodApiService.fetchFoodData(ingredient: "");
+  //   });
+  // }
 
+  // MARK: Favorite
   Map<String, bool> favoriteRecipes = {};
 
   Future<void> _loadFavorites() async {
@@ -134,25 +224,254 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     print("Updated Favorites: $_favoriteRecipes"); // Debugging
   }
 
+  // MARK: Weight Goal
+  final TextEditingController _controller = TextEditingController();
+  bool _isSaving = false;
+  bool _isLoading = true;
+
+  Future<void> _loadWeightGoal() async {
+    final String uid = _auth.currentUser?.uid ?? '';
+    if (uid.isEmpty) return;
+
+    try {
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = doc.data();
+      if (data != null && data.containsKey('weightGoal')) {
+        _controller.text = data['weightGoal'].toString();
+      }
+    } catch (e) {
+      print('Error loading weight goal: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _saveWeightGoal() async {
+    final String uid = _auth.currentUser?.uid ?? '';
+    final String weightGoal = _controller.text.trim();
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      double? newGoal = double.tryParse(_controller.text);
+      if (newGoal == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please enter a valid weight goal')),
+        );
+        return;
+      }
+
+      // Assume `userId` is already available
+      await FirebaseFirestore.instance.collection('users').doc(uid).update(
+          {'weightGoal': newGoal.toString()}); // or double if stored that way
+
+      // Update local userData
+      setState(() {
+        userData!['weightGoal'] = newGoal;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Weight goal updated')),
+      );
+    } catch (e) {
+      print("Error saving weight goal: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update weight goal')),
+      );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
+
+  // Future<void> _saveWeightGoal() async {
+  //   final String uid = _auth.currentUser?.uid ?? '';
+  //   final String weightGoal = _controller.text.trim();
+
+  //   if (weightGoal.isEmpty) return;
+
+  //   setState(() {
+  //     _isSaving = true;
+  //   });
+
+  //   try {
+  //     await FirebaseFirestore.instance.collection('users').doc(uid).update({
+  //       'weightGoal': weightGoal,
+  //     });
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Weight goal saved!')),
+  //     );
+  //   } catch (e) {
+  //     print('Error updating weight goal: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to save.')),
+  //     );
+  //   } finally {
+  //     setState(() {
+  //       _isSaving = false;
+  //     });
+  //   }
+  // }
+
+  // MARK: BMI BMR TDEE
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+
+  // MARK: BMI
+  double? _calculatedBMI() {
+    final height = double.tryParse(_heightController.text);
+    final weight = double.tryParse(_weightController.text);
+
+    if (height != null && weight != null && height > 0) {
+      return weight / ((height / 100) * (height / 100)); // BMI formula
+    }
+    return null; // Return null if the input values are invalid
+  }
+
+  String _bmiCategory(double? bmi) {
+    if (bmi == null) return "N/A";
+
+    if (bmi < 18.5) {
+      return "Underweight";
+    } else if (bmi < 24.9) {
+      return "Normal weight";
+    } else if (bmi < 29.9) {
+      return "Overweight";
+    } else {
+      return "Obese";
+    }
+  }
+
+  final List<String> activityLevels = [
+    "Sedentary (little to no exercise)",
+    "Lightly active (1-3 days/week)",
+    "Moderately active (3-5 days/week)",
+    "Very active (6-7 days/week)",
+    "Super active (very hard exercise, physical job)"
+  ];
+
+  String _selectedActivityLevel = "Moderately active (3-5 days/week)";
+
+  // MARK: TDEE & BMR
+  double? _calculateTDEE() {
+    final weight = double.tryParse(_weightController.text);
+    final height = double.tryParse(_heightController.text);
+    final dobString = userData?["dob"] ?? '';
+    final gender = userData?["gender"] ?? "Male";
+
+    // Check if weight, height, dob, and gender are valid
+    if (weight == null ||
+        height == null ||
+        dobString.isEmpty ||
+        gender.isEmpty) {
+      print('Missing data for TDEE calculation');
+      return null; // Return null if any necessary data is missing
+    }
+
+    // Convert dob string to DateTime with error handling
+    DateTime dob;
+    try {
+      dob = DateTime.parse(dobString);
+    } catch (e) {
+      print('Error parsing DOB: $e');
+      return null; // Return null if DOB is invalid
+    }
+
+    int age = _calculateAge(dob);
+
+    // Calculate BMR using the Mifflin-St Jeor Equation
+    double bmr;
+    if (gender == "Male") {
+      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) + 5;
+    } else {
+      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) - 161;
+    }
+
+    // Assign activity factor based on the activity level
+    double activityFactor;
+    switch (_selectedActivityLevel) {
+      case "Sedentary (little to no exercise)":
+        activityFactor = 1.2;
+        break;
+      case "Lightly active (1-3 days/week)":
+        activityFactor = 1.375;
+        break;
+      case "Moderately active (3-5 days/week)":
+        activityFactor = 1.55;
+        break;
+      case "Very active (6-7 days/week)":
+        activityFactor = 1.725;
+        break;
+      case "Super active (very hard exercise, physical job)":
+        activityFactor = 1.9;
+        break;
+      default:
+        activityFactor = 1.55; // Default to "Moderately active"
+    }
+
+    return bmr * activityFactor;
+  }
+
+  // MARK: Age
+  int _calculateAge(DateTime dob) {
+    DateTime today = DateTime.now();
+    int age = today.year - dob.year;
+    if (today.month < dob.month ||
+        (today.month == dob.month && today.day < dob.day)) {
+      age--; // Adjust age if the birthday hasn't occurred yet this year
+    }
+    return age;
+  }
+
+  double? calculateDailyCalorieGoal() {
+    if (userData == null ||
+        userData!['weight'] == null ||
+        userData!['weightGoal'] == null) {
+      return null;
+    }
+
+    double weight = double.tryParse(userData!['weight'].toString()) ?? 0;
+    double weightGoal =
+        double.tryParse(userData!['weightGoal'].toString()) ?? 0;
+    double? baseTDEE = _calculateTDEE(); // Your existing function
+
+    if (baseTDEE == null) return null;
+
+    double goalDiffKg = weightGoal - weight; // Positive = gain, Negative = lose
+    double totalExtraCalories = goalDiffKg * 7700;
+
+    // Avoid divide by zero
+    if (_selectedDuration <= 0) return baseTDEE;
+
+    double dailyAdjustment = totalExtraCalories / _selectedDuration;
+
+    return baseTDEE + dailyAdjustment;
+  }
+
+  // MARK: UI - Build Meal
   Widget _buildMealPlans() {
     return Expanded(
       child: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildMealCategory('Breakfast'),
-            _buildMealCategory('Lunch'),
-            _buildMealCategory('Dinner'),
-            _buildMealCategory('Snack'),
-          ],
-        ),
-      ),
+          child: Column(
+        children: [
+          _buildMealCategory('Breakfast', selectedDate),
+          _buildMealCategory('Lunch', selectedDate),
+          _buildMealCategory('Dinner', selectedDate),
+        ],
+      )),
     );
   }
 
-  Widget _buildMealCategory(String category) {
-    // Filter meals by selected date and category
-    List<Map<String, dynamic>> meals =
-        _loggedMeals.where((meal) => meal['mealType'] == category).toList();
+  Widget _buildMealCategory(String category, DateTime date) {
+    // Get a random recipe for the category
+    String formattedDate = DateFormat('dd').format(date);
+    var randomRecipe = _getRandomRecipeForCategory(category);
 
     return Container(
       padding: EdgeInsets.all(8),
@@ -166,62 +485,198 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
+            // '$category for Day $formattedDate',
             category,
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          meals.isEmpty
+          randomRecipe == null
               ? Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Text("No meals logged"),
+                  child: Text("No meals available"),
                 )
-              : Column(
-                  children: meals.map((meal) {
-                    var recipe = meal['recipe'];
-                    return ListTile(
-                      leading: Image.asset(
-                        'assets/fetchMenu/' +
-                            recipe['label'].replaceAll(' ', '_') +
-                            '.jpg',
+              : ListTile(
+                  leading: Image.asset(
+                    'assets/fetchMenu/' +
+                        randomRecipe['label']
+                            ?.toLowerCase()
+                            .replaceAll(' ', '_') +
+                        '.jpg',
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'assets/images/default.png', // Fallback image
                         width: 50,
                         height: 50,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            'assets/images/default.png', // Fallback image
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                          );
-                        },
-                      ),
-                      title: Text(recipe['label'] ?? 'Unknown Recipe'),
-                      subtitle: Text(
-                          "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal"),
-                      trailing: IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _removeMeal(meal),
-                      ),
-                      onTap: () {
-                        logRecipeClick(recipe['label'], recipe['shareAs']);
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FoodDetailScreen(
-                              recipe: recipe,
-                              selectedDate:
-                                  selectedDate, // Pass selected date here
-                            ),
+                      );
+                    },
+                  ),
+                  title: Text(randomRecipe['label'] ?? 'Unknown Recipe'),
+                  subtitle: Text(
+                      "${formatNumber(randomRecipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal"),
+                  trailing: PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: Colors.teal[700]),
+                    onSelected: (String value) {
+                      if (value == 'delete') {
+                        _removeMeal(randomRecipe);
+                      } else if (value == 'change') {
+                        _changeMeal(randomRecipe);
+                      }
+                    },
+                    itemBuilder: (BuildContext context) {
+                      return [
+                        PopupMenuItem<String>(
+                          value: 'change',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, color: Colors.teal),
+                              SizedBox(width: 8),
+                              Text('Change Menu'),
+                            ],
                           ),
-                        );
-                      },
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Delete Meal'),
+                            ],
+                          ),
+                        ),
+                      ];
+                    },
+                  ),
+                  onTap: () {
+                    logRecipeClick(
+                        randomRecipe['label'], randomRecipe['shareAs']);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FoodDetailScreen(
+                          recipe: randomRecipe,
+                          selectedDate: selectedDate,
+                        ),
+                      ),
                     );
-                  }).toList(),
+                  },
                 ),
         ],
       ),
     );
   }
+  // Widget _buildMealCategory(String category) {
+  //   // Filter meals by selected date and category
+  //   List<Map<String, dynamic>> meals =
+  //       _loggedMeals.where((meal) => meal['mealType'] == category).toList();
+
+  //   return Container(
+  //     padding: EdgeInsets.all(8),
+  //     margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+  //     width: MediaQuery.sizeOf(context).width,
+  //     decoration: BoxDecoration(
+  //       color: Colors.grey[200],
+  //       borderRadius: BorderRadius.circular(10),
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           category,
+  //           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+  //         ),
+  //         meals.isEmpty
+  //             ? Padding(
+  //                 padding: const EdgeInsets.all(8.0),
+  //                 child: Text("No meals logged"),
+  //               )
+  //             : Column(
+  //                 children: meals.map((meal) {
+  //                   var recipe = meal['recipe'];
+  //                   return ListTile(
+  //                     leading: Image.asset(
+  //                       'assets/fetchMenu/' +
+  //                           recipe['label']
+  //                               ?.toLowerCase()
+  //                               .replaceAll(' ', '_') +
+  //                           '.jpg',
+  //                       width: 50,
+  //                       height: 50,
+  //                       fit: BoxFit.cover,
+  //                       errorBuilder: (context, error, stackTrace) {
+  //                         return Image.asset(
+  //                           'assets/images/default.png', // Fallback image
+  //                           width: 50,
+  //                           height: 50,
+  //                           fit: BoxFit.cover,
+  //                         );
+  //                       },
+  //                     ),
+  //                     title: Text(recipe['label'] ?? 'Unknown Recipe'),
+  //                     subtitle: Text(
+  //                         "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal"),
+  //                     trailing: PopupMenuButton<String>(
+  //                       icon: Icon(Icons.more_vert, color: Colors.teal[700]),
+  //                       onSelected: (String value) {
+  //                         if (value == 'delete') {
+  //                           _removeMeal(
+  //                               meal); // Call your existing remove function
+  //                         } else if (value == 'change') {
+  //                           _changeMeal(
+  //                               meal); // Add your function to change the meal
+  //                         }
+  //                       },
+  //                       itemBuilder: (BuildContext context) {
+  //                         return [
+  //                           PopupMenuItem<String>(
+  //                             value: 'change',
+  //                             child: Row(
+  //                               children: [
+  //                                 Icon(Icons.edit, color: Colors.teal),
+  //                                 SizedBox(width: 8),
+  //                                 Text('Change Menu'),
+  //                               ],
+  //                             ),
+  //                           ),
+  //                           PopupMenuItem<String>(
+  //                             value: 'delete',
+  //                             child: Row(
+  //                               children: [
+  //                                 Icon(Icons.delete, color: Colors.red),
+  //                                 SizedBox(width: 8),
+  //                                 Text('Delete Meal'),
+  //                               ],
+  //                             ),
+  //                           ),
+  //                         ];
+  //                       },
+  //                     ),
+  //                     onTap: () {
+  //                       logRecipeClick(recipe['label'], recipe['shareAs']);
+
+  //                       Navigator.push(
+  //                         context,
+  //                         MaterialPageRoute(
+  //                           builder: (context) => FoodDetailScreen(
+  //                             recipe: recipe,
+  //                             selectedDate:
+  //                                 selectedDate, // Pass selected date here
+  //                           ),
+  //                         ),
+  //                       );
+  //                     },
+  //                   );
+  //                 }).toList(),
+  //               ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  // MARK: END UI - Build Meal
 
   List<Map<String, dynamic>> _loggedMeals = [];
 
@@ -253,6 +708,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     });
   }
 
+  // MARK: Date
   Future<void> _pickDate() async {
     DateTime? newSelectedDate = await showDatePicker(
       context: context,
@@ -275,45 +731,46 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     _loadFoodLog();
   }
 
+  // MARK: Date Selector
   Widget _buildDateSelector() {
-    List<DateTime> last7Days = List.generate(
-        7, (index) => DateTime.now().subtract(Duration(days: 6 - index)));
+    List<DateTime> programDays = List.generate(
+      _selectedDuration,
+      (index) => DateTime.now().add(Duration(days: index)),
+    );
+
+    List<DateTime> last7Days =
+        List.generate(7, (index) => DateTime.now().add(Duration(days: index)));
 
     return Container(
-      height: 90,
+      height: 100,
+      alignment: Alignment.center,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: last7Days.length,
+        shrinkWrap: true,
+        itemCount: programDays.length, // ← use the correct list length here
         itemBuilder: (context, index) {
-          DateTime date = last7Days[index];
+          DateTime date = programDays[index];
           bool isSelected = selectedDate.day == date.day &&
               selectedDate.month == date.month &&
               selectedDate.year == date.year;
 
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                selectedDate = date;
-              });
-              _loadFoodLog();
-            },
-            child: Container(
-              margin: EdgeInsets.only(left: 4, right: 4, bottom: 15),
-              padding: EdgeInsets.symmetric(horizontal: 5),
-              decoration: BoxDecoration(
-                color: isSelected ? Color(0xFF1F5F5B) : Colors.grey[300],
-                borderRadius: BorderRadius.circular(30),
-              ),
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedDate = date;
+                });
+                _loadFoodLog();
+              },
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    DateFormat.E()
-                        .format(date), // Display weekday (Mon, Tue, etc.)
+                    DateFormat.E().format(date),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : Colors.black87,
+                      color: isSelected ? Colors.teal : Colors.black87,
                     ),
                   ),
                   SizedBox(height: 4),
@@ -321,14 +778,14 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isSelected ? Colors.teal : Colors.white,
                       shape: BoxShape.circle,
+                      border: Border.all(color: Colors.teal),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black12,
-                          blurRadius: 6,
-                          spreadRadius: 2,
-                          offset: Offset(0, 3),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
                         ),
                       ],
                     ),
@@ -336,9 +793,8 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
                     child: Text(
                       date.day.toString(),
                       style: TextStyle(
-                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: isSelected ? Color(0xFF1F5F5B) : Colors.black87,
+                        color: isSelected ? Colors.white : Colors.black,
                       ),
                     ),
                   ),
@@ -349,6 +805,11 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _changeMeal(Map<String, dynamic> meal) async {
+    // Implement the logic to allow the user to change the meal.
+    // You could use a dialog or navigate to a new screen for editing the meal.
   }
 
   Future<void> _removeMeal(Map<String, dynamic> meal) async {
@@ -370,8 +831,10 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     _loadFoodLog();
   }
 
+  // MARK: Widget Build
   @override
   Widget build(BuildContext context) {
+    int totalCalorieLimit = (_calculateTDEE() ?? 2000).toInt();
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -397,17 +860,126 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDateSelector(),
           Padding(
-            padding: const EdgeInsets.only(left: 10, bottom: 10),
-            child: Text(
-              DateFormat('EEEE, d MMM').format(selectedDate),
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Text("Program Duration: ",
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                SizedBox(width: 10),
+                DropdownButton<int>(
+                  value: _selectedDuration,
+                  items: [1, 7, 15, 30].map((int value) {
+                    return DropdownMenuItem<int>(
+                      value: value,
+                      child: Text('$value days'),
+                    );
+                  }).toList(),
+                  onChanged: (int? newValue) {
+                    if (newValue != null) {
+                      setState(() {
+                        _selectedDuration = newValue;
+                      });
+                    }
+                  },
+                ),
+              ],
             ),
+          ),
+          _buildDateSelector(),
+          SizedBox(
+            child: Text(
+              'TDEE: ${_calculateTDEE() != null ? _calculateTDEE()!.toStringAsFixed(2) : "N/A"} kcal',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              'Goal: ${calculateDailyCalorieGoal()?.toStringAsFixed(2) ?? "N/A"} kcal/day',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _controller,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Weight Goal (kg)',
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: _isSaving ? null : _saveWeightGoal,
+                    icon: _isSaving
+                        ? SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Icon(
+                            Icons.save,
+                            color: Colors.teal[800],
+                          ),
+                    label: _isSaving
+                        ? Text('')
+                        : Text(
+                            'Save',
+                            style: TextStyle(color: Colors.teal[800]),
+                          ),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 10,
+          ),
+          Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 10, bottom: 10),
+                child: Text(
+                  DateFormat('EEEE, d MMM').format(selectedDate),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Expanded(child: Container()),
+              Padding(
+                padding: EdgeInsets.only(right: 20),
+                child: Icon(
+                  Icons.add_circle,
+                  size: 32,
+                  color: Colors.teal[800],
+                ),
+              ),
+            ],
           ),
           _buildMealPlans(),
         ],
       ),
+      // MARK: bottomNav
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.black,
@@ -424,7 +996,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
           } else if (index == 1) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => MenuScreen()),
+              MaterialPageRoute(builder: (context) => HistoryScreen()),
             );
           } else if (index == 2) {
             Navigator.pushReplacement(
@@ -452,9 +1024,9 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.food_bank_outlined,
+              Icons.history,
             ),
-            label: 'Search',
+            label: 'History',
           ),
           BottomNavigationBarItem(
             icon: Icon(

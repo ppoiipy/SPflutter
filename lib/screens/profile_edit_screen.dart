@@ -30,13 +30,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final TextEditingController _ingredientsActivityLevel =
       TextEditingController();
 
-  List<String> allergies = [
+  List<String> foodAllergy = [
+    'None',
     'Nuts',
-    'Dairy',
+    'Milk',
+    'Celery',
+    'Fish',
     'Shellfish',
+    'Mustard',
     'Gluten',
+    'Soy',
     'Eggs',
-    'Peanuts',
+    'Sesame',
+    'Wheat',
+    'Alcohol',
   ];
 
   List<String> activityLevels = [
@@ -52,31 +59,38 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     // "Super active"
   ];
 
-  List<String> cuisineTypes = [
+  List<String> foodCategory = [
+    //   'American',
+    //   'Asian',
+    //   'British',
+    //   'Caribbean',
+    //   'Central Europe',
+    //   'Chinese',
+    //   'Eastern Europe',
+    //   'French',
+    //   'Greek',
+    //   'Indian',
+    //   'Italian',
+    //   'Japanese',
+    //   'Korean',
+    //   'Kosher',
+    //   'Mediterranean',
+    //   'Mexican',
+    //   'Middle Eastern',
+    //   'Nordic',
+    //   'South American',
+    //   'South East Asian',
+    //   'World',
+    // ];
     'American',
-    'Asian',
-    'British',
-    'Caribbean',
-    'Central Europe',
-    'Chinese',
-    'Eastern Europe',
-    'French',
-    'Greek',
-    'Indian',
     'Italian',
     'Japanese',
-    'Korean',
-    'Kosher',
-    'Mediterranean',
-    'Mexican',
-    'Middle Eastern',
-    'Nordic',
-    'South American',
-    'South East Asian',
-    'World',
+    'Chinese',
+    'Thai',
+    'South East Asia'
   ];
 
-  List<String> ingredients = [
+  List<String> foodIngredient = [
     'Chicken',
     'Beef',
     'Pork',
@@ -117,8 +131,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     'Grilling',
     'Steaming'
   ];
-  List<String> foodAllergy = ['Egg', 'Milk', 'Fish', 'Nuts', 'Soybeans'];
-  List<String> foodCategory = ['Italian', 'Japanese', 'Chinese', 'Thai'];
+  // List<String> foodAllergy = ['Egg', 'Milk', 'Fish', 'Nuts', 'Soybeans'];
+  // List<String> foodCategory = ['Italian', 'Japanese', 'Chinese', 'Thai'];
 
   List<String> genderOptions = ['Male', 'Female', 'Other'];
   String? selectedGender;
@@ -191,11 +205,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           _weightGoalController.text =
               (userData?["weightGoal"] ?? '').toString();
           _birthController.text = userData?["dob"] ?? '';
-          selectedAllergies = List<String>.from(userData?["allergies"] ?? []);
+          selectedAllergies = List<String>.from(userData?["foodAllergy"] ?? []);
           selectedCuisineTypes =
-              List<String>.from(userData?["cuisineTypes"] ?? []);
+              List<String>.from(userData?["foodCategory"] ?? []);
           selectedIngredients =
-              List<String>.from(userData?["ingredients"] ?? []);
+              List<String>.from(userData?["foodIngredient"] ?? []);
 
           // Ensure that selectedActivityLevel exists in activityLevels
           selectedActivityLevel =
@@ -256,58 +270,58 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   ],
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
-                child: TextFormField(
-                  controller: _weightController,
-                  decoration: InputDecoration(
-                    labelText: 'Weight',
-                    labelStyle: TextStyle(
-                        color: Color(0xFF1F5F5B),
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
-                child: TextFormField(
-                  controller: _heightController,
-                  decoration: InputDecoration(
-                    labelText: 'Height',
-                    labelStyle: TextStyle(
-                        color: Color(0xFF1F5F5B),
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
-                child: TextFormField(
-                  controller: _weightGoalController,
-                  decoration: InputDecoration(
-                    labelText: 'Weight Goal',
-                    labelStyle: TextStyle(
-                        color: Color(0xFF1F5F5B),
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
-                child: TextFormField(
-                  controller: _birthController,
-                  decoration: InputDecoration(
-                    labelText: 'Date of Birth',
-                    labelStyle: TextStyle(
-                        color: Color(0xFF1F5F5B),
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18),
-                  ),
-                ),
-              ),
+              // Padding(
+              //   padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
+              //   child: TextFormField(
+              //     controller: _weightController,
+              //     decoration: InputDecoration(
+              //       labelText: 'Weight',
+              //       labelStyle: TextStyle(
+              //           color: Color(0xFF1F5F5B),
+              //           fontWeight: FontWeight.w500,
+              //           fontSize: 18),
+              //     ),
+              //   ),
+              // ),
+              // Padding(
+              //   padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
+              //   child: TextFormField(
+              //     controller: _heightController,
+              //     decoration: InputDecoration(
+              //       labelText: 'Height',
+              //       labelStyle: TextStyle(
+              //           color: Color(0xFF1F5F5B),
+              //           fontWeight: FontWeight.w500,
+              //           fontSize: 18),
+              //     ),
+              //   ),
+              // ),
+              // Padding(
+              //   padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
+              //   child: TextFormField(
+              //     controller: _weightGoalController,
+              //     decoration: InputDecoration(
+              //       labelText: 'Weight Goal',
+              //       labelStyle: TextStyle(
+              //           color: Color(0xFF1F5F5B),
+              //           fontWeight: FontWeight.w500,
+              //           fontSize: 18),
+              //     ),
+              //   ),
+              // ),
+              // Padding(
+              //   padding: EdgeInsets.symmetric(horizontal: 25, vertical: 3),
+              //   child: TextFormField(
+              //     controller: _birthController,
+              //     decoration: InputDecoration(
+              //       labelText: 'Date of Birth',
+              //       labelStyle: TextStyle(
+              //           color: Color(0xFF1F5F5B),
+              //           fontWeight: FontWeight.w500,
+              //           fontSize: 18),
+              //     ),
+              //   ),
+              // ),
 
               // _buildInputRow(label: 'Gender', controller: _genderController),
               _buildGenderDropdown(),
@@ -562,7 +576,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
           ),
           MultiSelectDialogField(
-            items: allergies
+            items: foodAllergy
                 .map((allergy) => MultiSelectItem<String>(allergy, allergy))
                 .toList(),
             initialValue: selectedAllergies,
@@ -609,9 +623,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
           ),
           MultiSelectDialogField(
-            items: cuisineTypes
-                .map((cuisineType) =>
-                    MultiSelectItem<String>(cuisineType, cuisineType))
+            items: foodCategory
+                .map((foodCategory) =>
+                    MultiSelectItem<String>(foodCategory, foodCategory))
                 .toList(),
             initialValue: selectedCuisineTypes,
             title: Text(
@@ -657,7 +671,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
           ),
           MultiSelectDialogField(
-            items: ingredients
+            items: foodIngredient
                 .map((ingredient) =>
                     MultiSelectItem<String>(ingredient, ingredient))
                 .toList(),
@@ -803,9 +817,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 'height': _heightController.text,
                 'weightGoal': _weightGoalController.text,
                 'dob': _birthController.text,
-                'allergies': selectedAllergies,
-                'cuisineTypes': selectedCuisineTypes,
-                'ingredients': selectedIngredients,
+                'foodAllergy': selectedAllergies,
+                'foodCategory': selectedCuisineTypes,
+                'foodIngredient': selectedIngredients,
                 'activityLevel': selectedActivityLevel,
               });
 

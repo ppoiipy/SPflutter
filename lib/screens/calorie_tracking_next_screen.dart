@@ -21,7 +21,7 @@ class CalorieTrackingNextScreen extends StatefulWidget {
 }
 
 class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
-  String selectedTab = 'Search';
+  String selectedTab = 'History';
   DateTime selectedDate = DateTime.now();
   late Future<List<FoodItem>?> _foodFuture;
   List<Map<String, dynamic>> _favoriteRecipes = [];
@@ -35,6 +35,7 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
     _fetchFoodData();
     _loadFavorites();
     loadJsonData();
+    _loadFoodLog();
   }
 
   String formatNumber(int number) {
@@ -81,22 +82,46 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
 
     setState(() {
       _favoriteRecipes = favoriteRecipesList;
-      favoriteRecipes = favoriteRecipesMap; // Update the map of favorite states
+      // favoriteRecipes = favoriteRecipesMap; // Update the map of favorite states
     });
   }
 
-  void _toggleFavorite(String recipeLabel, Map<String, dynamic> recipe) {
-    setState(() {
-      if (favoriteRecipes[recipeLabel] == true) {
-        favoriteRecipes.remove(recipeLabel);
-        _favoriteRecipes.removeWhere((item) => item['label'] == recipeLabel);
-      } else {
-        favoriteRecipes[recipeLabel] = true;
-        _favoriteRecipes.add(recipe);
-      }
-    });
+  // void _toggleFavorite(String recipeLabel, Map<String, dynamic> recipe) {
+  //   setState(() {
+  //     if (favoriteRecipes[recipeLabel] == true) {
+  //       favoriteRecipes.remove(recipeLabel);
+  //       _favoriteRecipes.removeWhere((item) => item['label'] == recipeLabel);
+  //     } else {
+  //       favoriteRecipes[recipeLabel] = true;
+  //       _favoriteRecipes.add(recipe);
+  //     }
+  //   });
 
-    print("Updated Favorites: $_favoriteRecipes"); // Debugging
+  //   print("Updated Favorites: $_favoriteRecipes"); // Debugging
+  // }
+
+  Future<void> _toggleFavorite(
+      String recipeLabel, Map<String, dynamic> recipe) async {
+    var user = _auth.currentUser;
+    if (user == null) return;
+
+    var favoriteRef = _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites')
+        .doc(recipeLabel);
+
+    if (favoriteRecipes[recipeLabel] == true) {
+      // Remove from favorites
+      await favoriteRef.delete();
+    } else {
+      // Add to favorites
+      await favoriteRef.set(recipe);
+    }
+
+    setState(() {
+      favoriteRecipes[recipeLabel] = !favoriteRecipes[recipeLabel]!;
+    });
   }
 
   List<dynamic> recipes = [];
@@ -295,7 +320,9 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                     return ListTile(
                       leading: Image.asset(
                         'assets/fetchMenu/' +
-                            recipe['label'].replaceAll(' ', '_') +
+                            recipe['label']
+                                ?.toLowerCase()
+                                .replaceAll(' ', '_') +
                             '.jpg',
                         width: 50,
                         height: 50,
@@ -317,15 +344,14 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                         onPressed: () => _removeMeal(meal),
                       ),
                       onTap: () {
-                        logRecipeClick(recipe['label'], recipe['shareAs']);
+                        logRecipeClick(recipe['label'], recipe['source']);
 
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => FoodDetailScreen(
                               recipe: recipe,
-                              selectedDate:
-                                  selectedDate, // Pass selected date here
+                              selectedDate: selectedDate,
                             ),
                           ),
                         );
@@ -373,7 +399,7 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2101),
+      lastDate: DateTime.now(),
     );
     if (newSelectedDate != null && newSelectedDate != selectedDate) {
       setState(() {
@@ -433,7 +459,8 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                     backgroundColor: Colors.transparent,
                     centerTitle: true,
                     title: Text(
-                      widget.mealType,
+                      // widget.mealType,
+                      'Calorie Tracking',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -476,6 +503,26 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                     TextButton(
                       onPressed: () {
                         setState(() {
+                          selectedTab = 'History';
+                        });
+                        _loadFoodLog();
+                      },
+                      child: Column(
+                        children: [
+                          Text('History',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500)),
+                          if (selectedTab == 'History')
+                            Container(
+                                height: 3, width: 80, color: Colors.white),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
                           selectedTab = 'Search';
                         });
                       },
@@ -508,26 +555,6 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                           if (selectedTab == 'Favorites')
                             Container(
                                 height: 3, width: 95, color: Colors.white),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          selectedTab = 'Diary';
-                        });
-                        _loadFoodLog();
-                      },
-                      child: Column(
-                        children: [
-                          Text('Diary',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w500)),
-                          if (selectedTab == 'Diary')
-                            Container(
-                                height: 3, width: 80, color: Colors.white),
                         ],
                       ),
                     ),
@@ -566,14 +593,13 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
           ),
           selectedTab == 'Search'
               ? SizedBox(
-                  height: MediaQuery.of(context).size.height /
-                      1.43, // You can adjust the height here
+                  height: MediaQuery.of(context).size.height / 1.43,
                   child: ListView.builder(
                     itemCount: filteredRecipes.length,
                     itemBuilder: (context, index) {
                       var recipe = filteredRecipes[index];
                       String imagePath = 'assets/fetchMenu/' +
-                          recipe['label'].replaceAll(' ', '_') +
+                          recipe['label']?.toLowerCase().replaceAll(' ', '_') +
                           '.jpg';
 
                       return Stack(
@@ -611,11 +637,13 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                                       ),
                                     ],
                                   ),
+                                  Text(recipe['source']),
                                 ],
                               ),
                               onTap: () {
                                 logRecipeClick(
-                                    recipe['label'], recipe['shareAs']);
+                                    recipe['label'], recipe['source']);
+
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -683,7 +711,9 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                               var recipe = _favoriteRecipes[index];
                               String recipeName = recipe['label'];
                               String imagePath = 'assets/fetchMenu/' +
-                                  recipe['label'].replaceAll(' ', '_') +
+                                  recipe['label']
+                                      ?.toLowerCase()
+                                      .replaceAll(' ', '_') +
                                   '.jpg';
 
                               return Stack(
@@ -729,14 +759,16 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                                       ),
                                       onTap: () {
                                         logRecipeClick(
-                                            recipe['label'], recipe['shareAs']);
+                                            recipe['label'], recipe['source']);
 
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) =>
                                                 FoodDetailScreen(
-                                                    recipe: recipe),
+                                              recipe: recipe,
+                                              selectedDate: selectedDate,
+                                            ),
                                           ),
                                         );
                                       },

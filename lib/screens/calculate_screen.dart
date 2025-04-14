@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 
 import 'package:ginraidee/SQLite/sqlite.dart';
 import 'homepage.dart';
-import 'menu_screen.dart';
+import 'history_screen.dart';
 import 'favorite_screen.dart';
 import 'profile_screen.dart';
 
@@ -106,16 +106,16 @@ class _CalculateScreenState extends State<CalculateScreen> {
     });
 
     // Save to SQLite
-    await _dbHelper.insertCalculation({
-      'gender': gender,
-      'age': age,
-      'height': height,
-      'weight': weight,
-      'bmi': _bmi,
-      'bmr': _bmr,
-      'tdee': _tdee,
-      'activityLevel': activityLevel,
-    });
+    // await _dbHelper.insertCalculation({
+    //   'gender': gender,
+    //   'age': age,
+    //   'height': height,
+    //   'weight': weight,
+    //   'bmi': _bmi,
+    //   'bmr': _bmr,
+    //   'tdee': _tdee,
+    //   'activityLevel': activityLevel,
+    // });
   }
 
   User? user = FirebaseAuth.instance.currentUser;
@@ -686,7 +686,7 @@ class _CalculateScreenState extends State<CalculateScreen> {
           } else if (index == 1) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => MenuScreen()),
+              MaterialPageRoute(builder: (context) => HistoryScreen()),
             );
           } else if (index == 2) {
             Navigator.pushReplacement(
@@ -714,9 +714,9 @@ class _CalculateScreenState extends State<CalculateScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.food_bank_outlined,
+              Icons.history,
             ),
-            label: 'Search',
+            label: 'History',
           ),
           BottomNavigationBarItem(
             icon: Icon(
