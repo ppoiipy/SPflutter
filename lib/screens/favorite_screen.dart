@@ -12,6 +12,8 @@ import 'calculate_screen.dart';
 import 'profile_screen.dart';
 
 class FavoriteScreen extends StatefulWidget {
+  const FavoriteScreen({super.key});
+
   @override
   _FavoriteScreenState createState() => _FavoriteScreenState();
 }
@@ -170,9 +172,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                 String recipeName = recipe['label']; // Recipe name
                 String imageName = formatRecipeName(
                     recipeName); // Format it to match image name
-                String imagePath = 'assets/fetchMenu/' +
-                    recipe['label']?.toLowerCase().replaceAll(' ', '_') +
-                    '.jpg';
+                String imagePath =
+                    '${'assets/fetchMenu/' + recipe['label']?.toLowerCase().replaceAll(' ', '_')}.jpg';
 
                 return Stack(
                   children: [

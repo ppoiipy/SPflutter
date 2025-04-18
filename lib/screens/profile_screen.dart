@@ -31,19 +31,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final int _currentIndex = 4;
 
-  File? _image;
-  String? _profileImageUrl;
-
-  Future<void> _pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
-    }
-  }
-
   // Future<void> _getProfilePicture() async {
   //   try {
   //     String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -62,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   //   }
   // }
 
-  String _email = "Loading...";
+  final String _email = "Loading...";
   String _selected = 'D';
   String _selectedTrack = 'Body Weight';
   String selectedTab = "profile";
@@ -116,6 +103,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // MARK: Profile Selection
+  final List<String> _profileImages = [
+    'assets/profile/avatar1.png',
+    'assets/profile/avatar2.png',
+    'assets/profile/avatar3.png',
+    'assets/profile/avatar4.png',
+    'assets/profile/avatar5.png',
+    'assets/profile/avatar6.png',
+    'assets/profile/avatar7.png',
+  ];
+
+  File? _image;
+  String? _profileImageUrl;
+
+  String? _selectedAssetImage;
+
+  void _pickImage() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SizedBox(
+          height: 250,
+          child: GridView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _profileImages.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+            ),
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _profileImageUrl = null; // Clear Firebase URL if needed
+                      _selectedAssetImage = _profileImages[index];
+                    });
+                    Navigator.pop(context); // Close bottom sheet
+                  },
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundImage: _profileImageUrl != null
+                        ? NetworkImage(_profileImageUrl!)
+                        : _selectedAssetImage != null
+                            ? AssetImage('assets/profile/$_selectedAssetImage')
+                            : const AssetImage('assets/images/default.png')
+                                as ImageProvider,
+                  ));
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // MARK: build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -206,48 +252,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       SizedBox(height: 100),
                       // Profile Picture
-                      Stack(children: [
-                        Center(
-                          child: GestureDetector(
-                            onTap: _pickImage,
-                            child: Stack(
-                              alignment: Alignment.topRight,
-                              children: [
-                                CircleAvatar(
-                                  radius: 60,
-                                  backgroundImage: _profileImageUrl != null
-                                      ? NetworkImage(
-                                          _profileImageUrl!) // Use the Firebase URL
-                                      : const AssetImage(
-                                              'assets/images/default.png')
-                                          as ImageProvider,
-                                ),
-                                Positioned(
-                                  right: 4,
-                                  bottom: 0,
-                                  child: Icon(
-                                    Icons.camera_alt,
-                                    size: 30,
-                                    color: Color(0xFF1F5F5B),
-                                    // backgroundColor:
-                                    //     Colors.black.withOpacity(0.5),
-                                    // padding: EdgeInsets.all(6),
-                                    // shape: CircleBorder(),
-                                  ),
-                                ),
-                              ],
-                            ),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () {},
+                          child: CircleAvatar(
+                            radius: 60,
+                            backgroundColor: Colors.white,
+                            backgroundImage: _profileImageUrl != null
+                                ? NetworkImage(_profileImageUrl!)
+                                : _selectedAssetImage != null
+                                    ? AssetImage(
+                                        'assets/profile/$_selectedAssetImage')
+                                    : const AssetImage(
+                                            'assets/profile/avatar1.png')
+                                        as ImageProvider,
                           ),
                         ),
-                        // Positioned(
-                        //   bottom: 0,
-                        //   right: 120,
-                        //   child: Icon(
-                        //     Icons.camera_alt,
-                        //     size: 36,
-                        //   ),
-                        // ),
-                      ]),
+                      ),
                       const SizedBox(height: 20),
 
                       // Show user email
@@ -706,7 +727,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String
         userId, // Assuming you have a userId for identifying the user
   }) async {
-    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
     // Create a timestamp for today
     DateTime today = DateTime.now();
@@ -724,7 +745,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     };
 
     // Store the data in Firestore (in a collection named 'tracking_logs')
-    await _firestore.collection('tracking_logs').add(data);
+    await firestore.collection('tracking_logs').add(data);
   }
 
   void updateTrackingData() {
@@ -840,7 +861,8 @@ class ChartWidget extends StatefulWidget {
   final String selectedTrack;
   final String dateRange;
 
-  ChartWidget({required this.selectedTrack, required this.dateRange});
+  const ChartWidget(
+      {super.key, required this.selectedTrack, required this.dateRange});
 
   @override
   State<ChartWidget> createState() => _ChartWidgetState();
@@ -992,7 +1014,7 @@ class _ChartWidgetState extends State<ChartWidget> {
                       ),
                     ],
                   ),
-                  Container(
+                  SizedBox(
                     height: 230,
                     child: Padding(
                       padding: const EdgeInsets.only(top: 20),

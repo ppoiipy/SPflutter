@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:ginraidee/screens/food_detail_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 import 'package:ginraidee/screens/calculate_screen.dart';
 import 'package:ginraidee/screens/favorite_screen.dart';
@@ -11,24 +11,209 @@ import 'package:ginraidee/screens/history_screen.dart';
 import 'package:ginraidee/screens/profile_screen.dart';
 
 class NutritionScreen extends StatefulWidget {
+  const NutritionScreen({super.key});
+
   @override
   _NutritionScreenState createState() => _NutritionScreenState();
 }
 
 class _NutritionScreenState extends State<NutritionScreen> {
-  int _currentIndex = 0;
+  final int _currentIndex = 0;
   String selectedTab = 'Summary';
   User? user = FirebaseAuth.instance.currentUser;
 
   List<Map<String, dynamic>> foodLogData = [];
   DateTime selectedDate = DateTime.now();
 
+  Map<String, bool> _isExpanded = {
+    'Calories': false,
+    'Protein': false,
+    'Carbs': false,
+    'Fats': false,
+    'Fiber': false,
+    'Sugar': false,
+    'Sodium': false,
+  };
+
+  // MARK: initState
   @override
   void initState() {
     super.initState();
-    _loadFoodLog();
+    fetchUserData();
     _loadUserData();
     _loadFoodLogData();
+    fetchWeeklyNutritionData();
+    fetchNutrientData('ENERC_KCAL', Colors.orange);
+    fetchNutrientData('PROCNT', Colors.blue);
+    fetchNutrientData('CHOCDF', Colors.green);
+    fetchNutrientData('FAT', Colors.red);
+    fetchNutrientData('FIBTG', Colors.brown);
+    fetchNutrientData('SUGAR', Colors.pink);
+    fetchNutrientData('NA', Colors.purple);
+  }
+
+  late List<BarChartGroupData> barGroups;
+
+  //
+  Future<void> fetchNutrientData(String nutrientKey, Color color) async {
+    try {
+      DateTime today = selectedDate;
+      List<DateTime> dates = List.generate(7, (index) {
+        return today.subtract(Duration(days: 6 - index));
+      });
+
+      List<String> formattedDates = dates.map((date) {
+        return DateFormat('dd/MM').format(date);
+      }).toList();
+
+      setState(() {
+        days = formattedDates;
+      });
+
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        List<double> nutrientValues = await Future.wait(dates.map((date) async {
+          double total = 0;
+
+          DateTime startOfDay = DateTime(date.year, date.month, date.day);
+          DateTime endOfDay = startOfDay
+              .add(Duration(days: 1))
+              .subtract(Duration(milliseconds: 1));
+
+          QuerySnapshot snapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('food_log')
+              .where('date',
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+              .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+              .get();
+
+          print(
+              '📅 ${DateFormat('dd/MM/yyyy').format(date)} → ${snapshot.docs.length} logs found');
+
+          for (var doc in snapshot.docs) {
+            var recipe = doc['recipe'];
+            if (recipe != null &&
+                recipe['totalNutrients'] != null &&
+                recipe['totalNutrients'][nutrientKey] != null) {
+              var nutrient = recipe['totalNutrients'][nutrientKey];
+              num quantity = nutrient['quantity'] ?? 0;
+              String label = nutrient['label'] ?? nutrientKey;
+              String unit = nutrient['unit'] ?? '';
+
+              print('  🔹 $label: $quantity $unit');
+              total += quantity.toDouble();
+            } else {
+              print('  ⚠️ No $nutrientKey data in one log');
+            }
+          }
+
+          print(
+              "✅ Total $nutrientKey on ${DateFormat('dd/MM').format(date)}: $total\n");
+          return total;
+        }));
+
+        setState(() {
+          barGroups = List.generate(7, (index) {
+            return BarChartGroupData(
+              x: index,
+              barRods: [
+                BarChartRodData(
+                  toY: nutrientValues[index],
+                  color: color,
+                  width: 10,
+                ),
+              ],
+            );
+          });
+        });
+      }
+    } catch (e) {
+      print("❌ Error fetching nutrient data: $e");
+      setState(() {
+        barGroups = [];
+        days = [];
+      });
+    }
+  }
+
+  Future<void> fetchUserData() async {
+    try {
+      // Get today's date and previous 6 days
+      DateTime today = DateTime.now();
+      List<DateTime> dates = List.generate(7, (index) {
+        return today.subtract(Duration(days: 6 - index));
+      });
+
+      List<String> formattedDates = dates.map((date) {
+        return DateFormat('dd/MM').format(date);
+      }).toList();
+
+      // Fetch data for each day in the list
+      List<Map<String, int>> dailyNutrients =
+          await Future.wait(dates.map((date) async {
+        num cal = 0,
+            protein = 0,
+            carbs = 0,
+            fat = 0,
+            fiber = 0,
+            sugar = 0,
+            sodium = 0;
+
+        DateTime startOfDay = DateTime(date.year, date.month, date.day);
+        DateTime endOfDay = startOfDay
+            .add(Duration(days: 1))
+            .subtract(Duration(milliseconds: 1));
+
+        QuerySnapshot snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uid)
+            .collection('food_log')
+            .where('date',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+            .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+            .get();
+
+        for (var doc in snapshot.docs) {
+          var recipe = doc['recipe'];
+          var nutrients = recipe?['totalNutrients'];
+
+          if (nutrients != null) {
+            cal += (nutrients['ENERC_KCAL']?['quantity'] ?? 0).toInt();
+            protein += (nutrients['PROCNT']?['quantity'] ?? 0).toInt();
+            carbs += (nutrients['CHOCDF']?['quantity'] ?? 0).toInt();
+            fat += (nutrients['FAT']?['quantity'] ?? 0).toInt();
+            fiber += (nutrients['FIBTG']?['quantity'] ?? 0).toInt();
+            sugar += (nutrients['SUGAR']?['quantity'] ?? 0).toInt();
+            sodium += (nutrients['NA']?['quantity'] ?? 0).toInt();
+          }
+        }
+
+        return {
+          'calories': cal.toInt(),
+          'protein': protein.toInt(),
+          'carbs': carbs.toInt(),
+          'fat': fat.toInt(),
+          'fiber': fiber.toInt(),
+          'sugar': sugar.toInt(),
+          'sodium': sodium.toInt(),
+        };
+      }));
+
+      setState(() {
+        // Save this daily nutrient data for each day (past 7 days)
+        weeklyData = dailyNutrients;
+        days = formattedDates;
+      });
+    } catch (e) {
+      print("Error fetching data: $e");
+      setState(() {
+        weeklyData = [];
+        days = [];
+      });
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -86,13 +271,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
   }
 
   List<Map<String, dynamic>> _loggedMeals = [];
-
-  /// Format numbers to remove extra decimal places
-  String _formatNumber(dynamic value) {
-    if (value == null) return '0';
-    if (value is num) return value.toStringAsFixed(2);
-    return value.toString();
-  }
 
   /// Filter food logs based on the selected date
   List<Map<String, dynamic>> _getFilteredLogs() {
@@ -238,6 +416,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
     return bmr * activityFactor;
   }
 
+  // MARK: widget build
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> filteredLogs = _getFilteredLogs();
@@ -304,6 +483,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         Icons.local_fire_department,
                         Colors.orange,
                         'kcal',
+                        'Calories',
                       ),
                       _buildNutritionCard(
                         'Protein',
@@ -312,6 +492,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         Icons.fitness_center,
                         Colors.blue,
                         'g',
+                        'Protein',
                       ),
                       _buildNutritionCard(
                         'Carbs',
@@ -320,6 +501,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         Icons.fastfood,
                         Colors.green,
                         'g',
+                        'Carbs',
                       ),
                       _buildNutritionCard(
                         'Fats',
@@ -328,6 +510,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         Icons.opacity,
                         Colors.red,
                         'g',
+                        'Fats',
                       ),
                       _buildNutritionCard(
                         'Fiber',
@@ -336,6 +519,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         Icons.eco,
                         Colors.brown,
                         'g',
+                        'Fiber',
                       ),
                       _buildNutritionCard(
                         'Sugar',
@@ -344,6 +528,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         Icons.icecream,
                         Colors.pink,
                         'g',
+                        'Sugar',
                       ),
                       _buildNutritionCardWithImage(
                         'Sodium',
@@ -352,11 +537,12 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         'assets/images/salt.png',
                         Colors.purple,
                         'mg',
+                        'Sodium',
                       ),
                     ],
                   ),
                 )
-              : _buildMealPlans()
+              : SizedBox()
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -405,9 +591,18 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
-  Widget _buildNutritionCard(String title, int value, int maxValue,
-      IconData icon, Color color, String unit) {
+  // MARK: Card
+  Widget _buildNutritionCard(
+    String title,
+    int value,
+    int maxValue,
+    IconData icon,
+    Color color,
+    String unit,
+    String key,
+  ) {
     bool isExceeding = value > maxValue;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Card(
@@ -419,57 +614,130 @@ class _NutritionScreenState extends State<NutritionScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             gradient: LinearGradient(
-                colors: [color.withOpacity(0.2), color.withOpacity(0.6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight),
+              colors: [color.withOpacity(0.2), color.withOpacity(0.6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
-          child: ListTile(
-            contentPadding: EdgeInsets.all(15),
-            leading: Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                  shape: BoxShape.circle, color: color.withOpacity(0.2)),
-              child: Icon(icon, color: color, size: 40),
-            ),
-            title: Text(
-              title,
-              style: TextStyle(
-                  fontSize: 22, fontWeight: FontWeight.bold, color: color),
-            ),
-            subtitle: Text(
-              'Max: ${formatNumber(maxValue)}',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            trailing: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${formatNumber(value)} $unit',
+          child: Column(
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.all(15),
+                leading: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: color.withOpacity(0.2)),
+                  child: Icon(icon, color: color, size: 40),
+                ),
+                title: Text(
+                  title,
                   style: TextStyle(
                       fontSize: 22, fontWeight: FontWeight.bold, color: color),
                 ),
-                if (isExceeding)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      '⚠ Exceeding!',
+                subtitle: Text(
+                  'Max: ${formatNumber(maxValue)}',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                trailing: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${formatNumber(value)} $unit',
                       style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold),
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: color),
+                    ),
+                    if (isExceeding)
+                      // Padding(
+                      //   padding: const EdgeInsets.only(top: 4),
+                      //   child: Container(
+                      //     height: 200,
+                      //     child: BarChart(
+                      //       BarChartData(
+                      //         titlesData: FlTitlesData(
+                      //           show: true,
+                      //           bottomTitles: AxisTitles(
+                      //             sideTitles: SideTitles(
+                      //                 showTitles: true,
+                      //                 getTitlesWidget: (value, meta) {
+                      //                   return Text(
+                      //                     days[value.toInt()],
+                      //                     style: TextStyle(fontSize: 10),
+                      //                   );
+                      //                 }),
+                      //           ),
+                      //           leftTitles: AxisTitles(
+                      //             sideTitles: SideTitles(showTitles: true),
+                      //           ),
+                      //         ),
+                      //         borderData: FlBorderData(show: true),
+                      //         gridData: FlGridData(show: true),
+                      //         barGroups:
+                      //             barGroups, // Using the updated barGroups
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      Text(
+                        '⚠ Exceeding!',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  setState(() {
+                    _isExpanded[key] = !_isExpanded[
+                        key]!; // Toggle the expansion state for the selected card
+                  });
+                },
+              ),
+              if (_isExpanded[key]!) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: SizedBox(
+                    height: 200,
+                    width: MediaQuery.sizeOf(context).width / 1.15,
+                    child: BarChart(
+                      BarChartData(
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    days[value.toInt()],
+                                    style: TextStyle(fontSize: 10),
+                                  );
+                                }),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: true),
+                          ),
+                        ),
+                        borderData: FlBorderData(show: true),
+                        gridData: FlGridData(show: true),
+                        barGroups: barGroups,
+                      ),
                     ),
                   ),
-              ],
-            ),
+                ),
+              ]
+            ],
           ),
         ),
       ),
     );
   }
 
+  // MARK: Card Image
   Widget _buildNutritionCardWithImage(String title, int value, int maxValue,
-      String imagePath, Color color, String unit) {
+      String imagePath, Color color, String unit, String key) {
     bool isExceeding = value > maxValue;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -486,224 +754,313 @@ class _NutritionScreenState extends State<NutritionScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight),
           ),
-          child: ListTile(
-            contentPadding: EdgeInsets.all(20),
-            leading: Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                  shape: BoxShape.circle, color: color.withOpacity(0.2)),
-              child:
-                  Image.asset(imagePath, color: color, width: 40, height: 40),
-            ),
-            title: Text(
-              title,
-              style: TextStyle(
-                  fontSize: 22, fontWeight: FontWeight.bold, color: color),
-            ),
-            subtitle: Text(
-              'Max: ${formatNumber(maxValue)}',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            trailing: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${formatNumber(value)} $unit',
+          child: Column(
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.all(20),
+                leading: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: color.withOpacity(0.2)),
+                  child: Image.asset(imagePath,
+                      color: color, width: 40, height: 40),
+                ),
+                title: Text(
+                  title,
                   style: TextStyle(
                       fontSize: 22, fontWeight: FontWeight.bold, color: color),
                 ),
-                if (isExceeding)
-                  Text(
-                    '⚠ Exceeding!',
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold),
+                subtitle: Text(
+                  'Max: ${formatNumber(maxValue)}',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                trailing: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${formatNumber(value)} $unit',
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: color),
+                    ),
+                    if (isExceeding)
+                      // Container(
+                      //   height: 200,
+                      //   child: BarChart(
+                      //     BarChartData(
+                      //       titlesData: FlTitlesData(
+                      //         show: true,
+                      //         bottomTitles: AxisTitles(
+                      //           sideTitles: SideTitles(
+                      //               showTitles: true,
+                      //               getTitlesWidget: (value, meta) {
+                      //                 return Text(
+                      //                   days[value.toInt()],
+                      //                   style: TextStyle(fontSize: 10),
+                      //                 );
+                      //               }),
+                      //         ),
+                      //         leftTitles: AxisTitles(
+                      //           sideTitles: SideTitles(showTitles: true),
+                      //         ),
+                      //       ),
+                      //       borderData: FlBorderData(show: true),
+                      //       gridData: FlGridData(show: true),
+                      //       barGroups: barGroups, // Using the updated barGroups
+                      //     ),
+                      //   ),
+                      // ),
+                      Text(
+                        '⚠ Exceeding!',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  setState(() {
+                    _isExpanded[key] = !_isExpanded[key]!;
+                  });
+                },
+              ),
+              if (_isExpanded[key]!) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: SizedBox(
+                    height: 200,
+                    width: MediaQuery.sizeOf(context).width / 1.15,
+                    child: BarChart(
+                      BarChartData(
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    days[value.toInt()],
+                                    style: TextStyle(fontSize: 10),
+                                  );
+                                }),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: true),
+                          ),
+                        ),
+                        borderData: FlBorderData(show: true),
+                        gridData: FlGridData(show: true),
+                        barGroups: barGroups, // Using the updated barGroups
+                      ),
+                    ),
                   ),
+                ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Map<String, num>> weeklyData = [
+    {
+      'Calories': 2000,
+      'Protein': 80,
+      'Carbs': 250,
+      'Fats': 70,
+      'Fiber': 30,
+      'Sugar': 25,
+      'Sodium': 1500
+    },
+  ];
+  List<String> days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  Map<String, List<int>> _weeklyData = {
+    'calories': [],
+    'protein': [],
+    'carbs': [],
+    'fat': [],
+    'fiber': [],
+    'sugar': [],
+    'sodium': [],
+  };
+
+  Future<void> fetchWeeklyNutritionData() async {
+    try {
+      DateTime today = selectedDate; // same as your base
+      List<DateTime> dates = List.generate(7, (index) {
+        return today.subtract(Duration(days: 6 - index));
+      });
+
+      List<String> formattedDates = dates.map((date) {
+        return DateFormat('dd/MM').format(date);
+      }).toList();
+
+      setState(() {
+        days = formattedDates;
+      });
+
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        // initialize all nutrients
+        Map<String, List<int>> weeklyNutrients = {
+          'calories': [],
+          'protein': [],
+          'carbs': [],
+          'fat': [],
+          'fiber': [],
+          'sugar': [],
+          'sodium': [],
+        };
+
+        for (var date in dates) {
+          // Declare the variables as num to avoid type issues
+          num cal = 0,
+              protein = 0,
+              carbs = 0,
+              fat = 0,
+              fiber = 0,
+              sugar = 0,
+              sodium = 0;
+
+          DateTime startOfDay = DateTime(date.year, date.month, date.day);
+          DateTime endOfDay = startOfDay
+              .add(Duration(days: 1))
+              .subtract(Duration(milliseconds: 1));
+
+          QuerySnapshot snapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('food_log')
+              .where('date',
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+              .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+              .get();
+
+          for (var doc in snapshot.docs) {
+            var recipe = doc['recipe'];
+            var nutrients = recipe?['totalNutrients'];
+
+            if (nutrients != null) {
+              cal += (nutrients['ENERC_KCAL']?['quantity'] ?? 0).toDouble();
+              protein += (nutrients['PROCNT']?['quantity'] ?? 0).toDouble();
+              carbs += (nutrients['CHOCDF']?['quantity'] ?? 0).toDouble();
+              fat += (nutrients['FAT']?['quantity'] ?? 0).toDouble();
+              fiber += (nutrients['FIBTG']?['quantity'] ?? 0).toDouble();
+              sugar += (nutrients['SUGAR']?['quantity'] ?? 0).toDouble();
+              sodium += (nutrients['NA']?['quantity'] ?? 0).toDouble();
+            }
+          }
+
+          weeklyNutrients['calories']!.add(cal.toInt());
+          weeklyNutrients['protein']!.add(protein.toInt());
+          weeklyNutrients['carbs']!.add(carbs.toInt());
+          weeklyNutrients['fat']!.add(fat.toInt());
+          weeklyNutrients['fiber']!.add(fiber.toInt());
+          weeklyNutrients['sugar']!.add(sugar.toInt());
+          weeklyNutrients['sodium']!.add(sodium.toInt());
+
+          print(
+              "Date: ${DateFormat('dd/MM').format(date)} | Cal: $cal, Protein: $protein, Carbs: $carbs, Fat: $fat, Fiber: $fiber, Sugar: $sugar, Sodium: $sodium");
+        }
+
+        // Save in state for graphing
+        setState(() {
+          _weeklyData = weeklyNutrients;
+        });
+      }
+    } catch (e) {
+      print("Error fetching nutrition data: $e");
+      setState(() {
+        _weeklyData = {};
+        days = [];
+      });
+    }
+  }
+}
+
+class GraphWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      child: Center(
+        child: Text('Graph Placeholder'), // Replace with your actual graph
+      ),
+    );
+  }
+}
+
+class NutritionGraphWidget extends StatelessWidget {
+  final String title;
+  final List<double> data; // Nutritional data for the graph
+  final List<String> labels; // Nutritional labels for the x-axis
+
+  NutritionGraphWidget(
+      {required this.title, required this.data, required this.labels});
+
+  @override
+  Widget build(BuildContext context) {
+    // Check if data and labels are valid
+    if (data.isEmpty || labels.isEmpty) {
+      return Center(child: Text('No data available'));
+    }
+
+    return Column(
+      children: [
+        Text(
+          title,
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 16),
+        Container(
+          padding: EdgeInsets.all(8),
+          height: 250, // Height for the graph
+          child: BarChart(
+            BarChartData(
+              titlesData: FlTitlesData(
+                show: true,
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (value, meta) {
+                      return Text(labels[value.toInt()]);
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: true),
+                ),
+              ),
+              borderData: FlBorderData(show: true),
+              gridData: FlGridData(show: true),
+              barGroups: data
+                  .asMap()
+                  .map((index, value) {
+                    return MapEntry(
+                      index,
+                      BarChartGroupData(
+                        x: index,
+                        barRods: [
+                          BarChartRodData(
+                            toY: value,
+                            color: Colors.blue, // Optionally customize
+                          ),
+                        ],
+                      ),
+                    );
+                  })
+                  .values
+                  .toList(),
             ),
           ),
         ),
-      ),
+      ],
     );
-  }
-
-  Widget _buildMealPlans() {
-    return Expanded(
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildMealCategory('Breakfast'),
-            _buildMealCategory('Lunch'),
-            _buildMealCategory('Dinner'),
-            _buildMealCategory('Snack'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMealCategory(String category) {
-    // Filter meals by selected date and category
-    List<Map<String, dynamic>> meals =
-        _loggedMeals.where((meal) => meal['mealType'] == category).toList();
-
-    return Container(
-      padding: EdgeInsets.all(8),
-      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      width: MediaQuery.sizeOf(context).width,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            category,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          meals.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text("No meals logged"),
-                )
-              : Column(
-                  children: meals.map((meal) {
-                    var recipe = meal['recipe'];
-                    return ListTile(
-                      leading: Image.asset(
-                        'assets/fetchMenu/' +
-                            recipe['label'].replaceAll(' ', '_') +
-                            '.jpg',
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            'assets/images/default.png', // Fallback image
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                          );
-                        },
-                      ),
-                      title: Text(recipe['label'] ?? 'Unknown Recipe'),
-                      subtitle: Text(
-                          "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal"),
-                      trailing: IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _removeMeal(meal),
-                      ),
-                      onTap: () {
-                        logRecipeClick(recipe['label'], recipe['shareAs']);
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FoodDetailScreen(
-                              recipe: recipe,
-                              selectedDate: selectedDate,
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  }).toList(),
-                ),
-        ],
-      ),
-    );
-  }
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  Future<void> _loadFoodLog() async {
-    var user = _auth.currentUser;
-    if (user == null) return;
-
-    // Format the date range based on the selected date (start of day to end of day)
-    DateTime startOfDay =
-        DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
-    DateTime endOfDay =
-        DateTime(selectedDate.year, selectedDate.month, selectedDate.day + 1);
-
-    // Convert to Firestore-compatible DateTime objects
-    var startTimestamp = Timestamp.fromDate(startOfDay);
-    var endTimestamp = Timestamp.fromDate(endOfDay);
-
-    var snapshot = await _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('food_log')
-        .where('date', isGreaterThanOrEqualTo: startTimestamp)
-        .where('date', isLessThan: endTimestamp)
-        .get();
-
-    setState(() {
-      _loggedMeals = snapshot.docs.map((doc) => doc.data()).toList();
-      print("Loaded meals: $_loggedMeals");
-    });
-  }
-
-  Future<void> _removeMeal(Map<String, dynamic> meal) async {
-    var user = _auth.currentUser;
-    if (user == null) return;
-
-    var query = await _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('food_log')
-        .where('recipe.label', isEqualTo: meal['recipe']['label'])
-        .where('mealType', isEqualTo: meal['mealType'])
-        .get();
-
-    for (var doc in query.docs) {
-      await doc.reference.delete();
-    }
-
-    _loadFoodLog();
-  }
-
-  Future<void> logRecipeClick(String recipeLabel, String recipeShareAs) async {
-    try {
-      // Get the current user's ID (from FirebaseAuth)
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        // Get reference to the user's 'clicks' subcollection
-        CollectionReference clicks = FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('clicks');
-
-        // Reference to the recipe document using the recipeLabel as document ID
-        DocumentReference recipeRef = clicks.doc(recipeLabel);
-
-        // Get the document to check if it exists
-        DocumentSnapshot snapshot = await recipeRef.get();
-
-        // If the document exists, increment the click count
-        if (snapshot.exists) {
-          // Update the existing click count
-          await recipeRef.update({
-            'clickCount': FieldValue.increment(1),
-          });
-        } else {
-          // If the document doesn't exist, create a new one with clickCount = 1
-          await recipeRef.set({
-            'clickCount': 1,
-            'shareAs': recipeShareAs,
-          });
-        }
-
-        print('Click logged successfully for $recipeLabel!');
-      } else {
-        print('User is not logged in.');
-      }
-    } catch (e) {
-      print('Error logging click: $e');
-    }
   }
 }

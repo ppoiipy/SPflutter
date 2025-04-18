@@ -20,6 +20,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   final _auth = AuthService();
   late Timer timer;
 
+  @override
   void initState() {
     super.initState();
 

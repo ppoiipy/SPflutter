@@ -10,7 +10,8 @@ class FilterSheet extends StatefulWidget {
   final double? initialCalories;
   final Function(Map<String, dynamic>) onFiltersApplied;
 
-  const FilterSheet({this.initialCalories, required this.onFiltersApplied});
+  const FilterSheet(
+      {super.key, this.initialCalories, required this.onFiltersApplied});
 
   @override
   _FilterSheetState createState() => _FilterSheetState();
@@ -28,7 +29,6 @@ class _FilterSheetState extends State<FilterSheet> {
     'Japanese',
     'Chinese',
     'Thai',
-    'South East Asia'
   ];
 
   List<String> foodIngredient = [
@@ -287,15 +287,15 @@ class _FilterSheetState extends State<FilterSheet> {
               children: [
                 ElevatedButton(
                   onPressed: _resetFilters,
-                  child: Text('Reset',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.black)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[300],
                     minimumSize: Size(120, 40),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(7)),
                   ),
+                  child: Text('Reset',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.black)),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -307,15 +307,15 @@ class _FilterSheetState extends State<FilterSheet> {
                       'foodIngredient': selectedFoodIngredient.toList(),
                     });
                   },
-                  child: Text('Apply',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF39C184),
                     minimumSize: Size(120, 40),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(7)),
                   ),
+                  child: Text('Apply',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -332,7 +332,8 @@ class CalorieFilterSheet extends StatefulWidget {
   final double initialCalories;
   final Function(double) onCaloriesChanged;
 
-  CalorieFilterSheet({
+  const CalorieFilterSheet({
+    super.key,
     required this.initialCalories,
     required this.onCaloriesChanged,
   });
@@ -415,28 +416,28 @@ class _CalorieFilterSheetState extends State<CalorieFilterSheet> {
                   });
                   _saveFilters();
                 },
-                child: Text('Reset',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey[300],
                   minimumSize: Size(120, 40),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(7)),
                 ),
+                child: Text('Reset',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.black)),
               ),
               ElevatedButton(
                 onPressed: () {
                   widget.onCaloriesChanged(_selectedCalories);
                   _saveFilters();
                 },
-                child: Text('Apply', style: TextStyle(color: Colors.white)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF39C184),
                   minimumSize: Size(120, 40),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(7)),
                 ),
+                child: Text('Apply', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -451,7 +452,8 @@ class CategoryFilter extends StatefulWidget {
   final Set<String> selectedCategories;
   final Function(Set<String>) onSelectionChanged;
 
-  CategoryFilter({
+  const CategoryFilter({
+    super.key,
     required this.selectedCategories,
     required this.onSelectionChanged,
   });
@@ -478,7 +480,6 @@ class _CategoryFilterState extends State<CategoryFilter> {
     'Japanese',
     'Chinese',
     'Thai',
-    'South East Asia'
   ];
 
   late Set<String> selectedCategories;
@@ -565,28 +566,28 @@ class _CategoryFilterState extends State<CategoryFilter> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             ElevatedButton(
-              onPressed: _resetFilters, // Reset the categories when clicked
-              child: Text('Reset',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.black)),
+              onPressed: _resetFilters,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey[300],
                 minimumSize: Size(120, 40),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(7)),
-              ),
+              ), // Reset the categories when clicked
+              child: Text('Reset',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black)),
             ),
             ElevatedButton(
-              onPressed: _saveFilters, // Save the selected categories
-              child: Text('Apply',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
+              onPressed: _saveFilters,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF39C184),
                 minimumSize: Size(120, 40),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(7)),
-              ),
+              ), // Save the selected categories
+              child: Text('Apply',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -599,7 +600,8 @@ class IngredientFilter extends StatefulWidget {
   final Set<String> selectedIngredients;
   final Function(Set<String>) onSelectionChanged;
 
-  IngredientFilter({
+  const IngredientFilter({
+    super.key,
     required this.selectedIngredients,
     required this.onSelectionChanged,
   });
@@ -681,30 +683,30 @@ class _IngredientFilterState extends State<IngredientFilter> {
             children: [
               ElevatedButton(
                 onPressed: _resetFilters,
-                child: Text('Reset',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey[300],
                   minimumSize: Size(120, 40),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(7)),
                 ),
+                child: Text('Reset',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.black)),
               ),
               ElevatedButton(
                 onPressed: () {
                   _applyFilters();
                   _saveFilters();
                 },
-                child: Text('Apply',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF39C184),
                   minimumSize: Size(120, 40),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(7)),
                 ),
+                child: Text('Apply',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -758,7 +760,8 @@ class AllergyFilter extends StatefulWidget {
   final Set<String> selectedAllergies;
   final Function(Set<String>) onSelectionChanged;
 
-  AllergyFilter({
+  const AllergyFilter({
+    super.key,
     required this.selectedAllergies,
     required this.onSelectionChanged,
   });
@@ -831,30 +834,30 @@ class _AllergyFilterState extends State<AllergyFilter> {
             children: [
               ElevatedButton(
                 onPressed: _resetFilters,
-                child: Text('Reset',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey[300],
                   minimumSize: Size(120, 40),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(7)),
                 ),
+                child: Text('Reset',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.black)),
               ),
               ElevatedButton(
                 onPressed: () {
                   _applyFilters();
                   _saveAllergies();
                 },
-                child: Text('Apply',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF39C184),
                   minimumSize: Size(120, 40),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(7)),
                 ),
+                child: Text('Apply',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

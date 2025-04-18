@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:developer';
 
 // import 'package:flutter_application_1/SQLite/sqlite.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 import 'package:ginraidee/screens/wrapper.dart';
 import 'package:ginraidee/screens/forget_pass_screen.dart';
@@ -221,6 +219,7 @@ class LoginFieldState extends State<LoginField> {
 
   bool _isPasswordState = false;
 
+  @override
   void dispose() {
     super.dispose();
     _emailController.dispose();

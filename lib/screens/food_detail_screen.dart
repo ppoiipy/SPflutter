@@ -6,15 +6,14 @@ class FoodDetailScreen extends StatefulWidget {
   final Map<String, dynamic> recipe;
   final DateTime? selectedDate;
 
-  const FoodDetailScreen({Key? key, required this.recipe, this.selectedDate})
-      : super(key: key);
+  const FoodDetailScreen({super.key, required this.recipe, this.selectedDate});
 
   @override
   _FoodDetailScreenState createState() => _FoodDetailScreenState();
 }
 
 class _FoodDetailScreenState extends State<FoodDetailScreen> {
-  String _selectedDetail = 'InN';
+  final String _selectedDetail = 'InN';
   bool _isFavorite = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -146,9 +145,8 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
   Widget build(BuildContext context) {
     var recipe = widget.recipe;
 
-    String imagePath = 'assets/fetchMenu/' +
-        recipe['label']?.toLowerCase().replaceAll(' ', '_') +
-        '.jpg';
+    String imagePath =
+        '${'assets/fetchMenu/' + recipe['label']?.toLowerCase().replaceAll(' ', '_')}.jpg';
 
     return Scaffold(
       appBar: AppBar(

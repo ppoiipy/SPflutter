@@ -8,6 +8,8 @@ import 'package:ginraidee/screens/calorie_tracking_screen.dart';
 import 'package:ginraidee/screens/calorie_tracking_next_screen.dart';
 
 class UserDataChartScreen extends StatefulWidget {
+  const UserDataChartScreen({super.key});
+
   @override
   _UserDataChartScreenState createState() => _UserDataChartScreenState();
 }

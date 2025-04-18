@@ -27,6 +27,8 @@ class MyApp extends StatelessWidget {
 }
 
 class AuthStateHandler extends StatelessWidget {
+  const AuthStateHandler({super.key});
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(

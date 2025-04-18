@@ -137,7 +137,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   List<String> genderOptions = ['Male', 'Female', 'Other'];
   String? selectedGender;
 
-  String _profileImageUrl = 'assets/images/default.png';
   final ImagePicker _picker = ImagePicker();
   Future<void> _selectProfileImage() async {
     // Let the user pick an image from their gallery
@@ -194,6 +193,26 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           .doc(user!.uid)
           .get();
 
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .get();
+      final data = doc.data();
+      if (data != null) {
+        if (data.containsKey('profileImage') && data['profileImage'] != null) {
+          setState(() {
+            _selectedAssetImage = 'assets/profile/${data['profileImage']}';
+          });
+        }
+
+        if (data.containsKey('profileImageUrl')) {
+          setState(() {
+            _profileImageUrl =
+                data['profileImageUrl']; // if you're using Firebase Storage too
+          });
+        }
+      }
+
       if (userDoc.exists && mounted) {
         // Ensure widget is still active
         setState(() {
@@ -233,6 +252,61 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
   }
 
+  // MARK: Profile Selection
+
+  final List<String> _profileImages = [
+    'assets/profile/avatar1.png',
+    'assets/profile/avatar2.png',
+    'assets/profile/avatar3.png',
+    'assets/profile/avatar4.png',
+    'assets/profile/avatar5.png',
+    'assets/profile/avatar6.png',
+    'assets/profile/avatar7.png',
+  ];
+
+  File? _image;
+  String? _profileImageUrl;
+
+  String? _selectedAssetImage;
+
+  void _pickImage() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SizedBox(
+          height: MediaQuery.sizeOf(context).height,
+          child: GridView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _profileImages.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+            ),
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _profileImageUrl = null; // Clear Firebase URL if needed
+                    _selectedAssetImage = _profileImages[index];
+                  });
+                  Navigator.pop(context); // Close bottom sheet
+                },
+                child: CircleAvatar(
+                  backgroundImage: AssetImage(_profileImages[index]),
+                  radius: 40,
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -245,15 +319,18 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               _buildHeader(),
               SizedBox(height: 20),
               GestureDetector(
-                onTap: _selectProfileImage,
+                onTap: _pickImage,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
                     CircleAvatar(
                       radius: 60,
-                      backgroundImage: _profileImageUrl.startsWith('assets')
-                          ? AssetImage(_profileImageUrl) as ImageProvider
-                          : NetworkImage(_profileImageUrl),
+                      backgroundImage: _profileImageUrl != null
+                          ? NetworkImage(_profileImageUrl!)
+                          : _selectedAssetImage != null
+                              ? AssetImage(_selectedAssetImage!)
+                              : const AssetImage('assets/images/default.png')
+                                  as ImageProvider,
                     ),
                     Positioned(
                       right: 4,
@@ -461,7 +538,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 5),
                 child: Text(
-                  ' ${unit}',
+                  ' $unit',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -808,6 +885,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         onPressed: () async {
           if (_formKey.currentState!.validate()) {
             try {
+              final String? profileImageName = _selectedAssetImage != null
+                  ? _selectedAssetImage!.split('/').last
+                  : null;
+
               await FirebaseFirestore.instance
                   .collection('users')
                   .doc(user!.uid)
@@ -821,6 +902,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 'foodCategory': selectedCuisineTypes,
                 'foodIngredient': selectedIngredients,
                 'activityLevel': selectedActivityLevel,
+                if (profileImageName != null) 'profileImage': profileImageName,
               });
 
               ScaffoldMessenger.of(context).showSnackBar(

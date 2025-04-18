@@ -6,7 +6,7 @@ import 'package:ginraidee/api/fetch_recipe_api.dart';
 class RecipeDetailScreen extends StatefulWidget {
   final RecipeItem recipe;
 
-  RecipeDetailScreen({required this.recipe});
+  const RecipeDetailScreen({super.key, required this.recipe});
 
   @override
   _RecipeDetailScreenState createState() => _RecipeDetailScreenState();

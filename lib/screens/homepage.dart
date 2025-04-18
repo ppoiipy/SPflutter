@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 
 import 'package:flutter/services.dart'; // For rootBundle
-import 'package:ginraidee/screens/RecipeRecommendationsPage.dart';
 import 'package:intl/intl.dart';
 
 import 'package:ginraidee/screens/filter_sheet.dart';
@@ -24,9 +23,10 @@ import 'meal_planning_screen.dart';
 // import 'fetch_food_data.dart';
 
 // Get DB Path
-import 'package:path/path.dart';
 
 class Homepage extends StatefulWidget {
+  const Homepage({super.key});
+
   @override
   _HomepageState createState() => _HomepageState();
 }
@@ -35,8 +35,8 @@ class _HomepageState extends State<Homepage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  int _currentIndex = 0;
-  int _selectedIndex = 0;
+  final int _currentIndex = 0;
+  final int _selectedIndex = 0;
   List foodItems = [];
   List<String> recommendedLabels = [];
   bool isLoading = false;
@@ -240,8 +240,9 @@ class _HomepageState extends State<Homepage> {
 
       filteredRecipes =
           (startFromAllRecipes ? allRecipes : filteredRecipes).where((recipe) {
-        if (selectedCategories.isEmpty)
+        if (selectedCategories.isEmpty) {
           return true; // No category filter applied
+        }
 
         // Check if recipe's cuisineType matches any selected category
         bool containsSelectedCategories = selectedCategories.any((category) {
@@ -556,17 +557,15 @@ class _HomepageState extends State<Homepage> {
           var recipeName = clickDoc.id;
           var clickCount = clickDoc['clickCount'] as int? ?? 0;
 
-          if (clickCount != null) {
-            // print('   ClicksName: $recipeName');
-            // print('   Count: $clickCount');
+          // print('   ClicksName: $recipeName');
+          // print('   Count: $clickCount');
 
-            // Add click count to the recipeClickCounts map
-            if (recipeClickCounts.containsKey(recipeName)) {
-              recipeClickCounts[recipeName] =
-                  recipeClickCounts[recipeName]! + clickCount;
-            } else {
-              recipeClickCounts[recipeName] = clickCount;
-            }
+          // Add click count to the recipeClickCounts map
+          if (recipeClickCounts.containsKey(recipeName)) {
+            recipeClickCounts[recipeName] =
+                recipeClickCounts[recipeName]! + clickCount;
+          } else {
+            recipeClickCounts[recipeName] = clickCount;
           }
         }
 
@@ -880,29 +879,25 @@ class _HomepageState extends State<Homepage> {
             ),
             Column(
               children: [
-                // Second ListView (filteredRecipes) will show first, always visible.
                 Column(
                   children: [
-                    // Show the first ListView (recommendedLabels) when loading is complete
                     isLoading
-                        ? Center(
-                            child:
-                                CircularProgressIndicator()) // Show a loading spinner while loading
+                        ? Center(child: CircularProgressIndicator())
                         // : Container(),
                         : Center(
                             child: SizedBox(
                               height: MediaQuery.of(context).size.height * 0.5,
                               width: MediaQuery.of(context).size.width * 0.93,
                               child: Container(
-                                decoration: BoxDecoration(
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.12),
-                                      blurRadius: 3,
-                                      offset: Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
+                                // decoration: BoxDecoration(
+                                //   boxShadow: [
+                                //     BoxShadow(
+                                //       color: Colors.black.withOpacity(0.12),
+                                //       blurRadius: 3,
+                                //       offset: Offset(0, 4),
+                                //     ),
+                                //   ],
+                                // ),
                                 child: ListView.builder(
                                   itemCount: recommendedLabels.length,
                                   itemBuilder: (context, index) {
@@ -1027,11 +1022,8 @@ class _HomepageState extends State<Homepage> {
                             itemCount: filteredRecipes.length,
                             itemBuilder: (context, index) {
                               var recipe = filteredRecipes[index];
-                              String imagePath = 'assets/fetchMenu/' +
-                                  recipe['label']
-                                      ?.toLowerCase()
-                                      .replaceAll(' ', '_') +
-                                  '.jpg';
+                              String imagePath =
+                                  '${'assets/fetchMenu/' + recipe['label']?.toLowerCase().replaceAll(' ', '_')}.jpg';
 
                               return Stack(
                                 children: [
@@ -1204,8 +1196,9 @@ class FunctionCard extends StatelessWidget {
   final String functionName;
   final Widget destinationScreen;
 
-  FunctionCard(
-      {required this.imagePath,
+  const FunctionCard(
+      {super.key,
+      required this.imagePath,
       required this.functionName,
       required this.destinationScreen});
 
@@ -1357,7 +1350,7 @@ Future<List<String>> getRecommendedRecipes(String currentUserId) async {
   // Fetch aggregated stats from Firestore
   final statsDoc = await FirebaseFirestore.instance
       .collection('recipe_stats')
-      .doc('stat')
+      .doc('current_states')
       .get();
 
   if (!statsDoc.exists) {
@@ -1411,9 +1404,9 @@ Future<List<String>> getRecommendedRecipes(String currentUserId) async {
     ..sort((a, b) => b.value.compareTo(a.value));
 
   // Debug print
-  sorted.forEach((entry) {
+  for (var entry in sorted) {
     print('Recipe: ${entry.key}, Score: ${entry.value}');
-  });
+  }
 
   return sorted.map((entry) => entry.key).toList();
 }

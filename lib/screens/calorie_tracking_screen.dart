@@ -4,16 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
-import 'dart:math';
 
 import 'package:ginraidee/screens/calculate_screen.dart';
 import 'package:ginraidee/screens/favorite_screen.dart';
 import 'package:ginraidee/screens/history_screen.dart';
-// import 'calorie_tracking_next_screen.dart';
+import 'calorie_tracking_next_screen.dart';
 import 'homepage.dart';
 import 'profile_screen.dart';
 
 class CalorieTrackingScreen extends StatefulWidget {
+  const CalorieTrackingScreen({super.key});
+
   @override
   _CalorieTrackingScreenScreenState createState() =>
       _CalorieTrackingScreenScreenState();
@@ -39,13 +40,13 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
 
   final int _currentIndex = 0;
 
-  // void navigateToMealScreen(String mealType) {
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //         builder: (context) => CalorieTrackingNextScreen(mealType: mealType)),
-  //   );
-  // }
+  void navigateToMealScreen(String mealType) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => CalorieTrackingNextScreen(mealType: mealType)),
+    );
+  }
 
   late List<BarChartGroupData> barGroups;
   late List<String> days;
@@ -1015,7 +1016,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
   Widget mealTypeButton(
       String mealType, IconData icon, Color color, double size) {
     return GestureDetector(
-      // onTap: () => navigateToMealScreen(mealType),
+      onTap: () => navigateToMealScreen(mealType),
       child: Container(
         width: size,
         height: size,

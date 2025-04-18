@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
@@ -7,13 +6,13 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 
 import 'package:ginraidee/screens/calorie_tracking_screen.dart';
-import 'package:ginraidee/api/fetch_food_api.dart';
+// import 'package:ginraidee/api/fetch_food_api.dart';
 import 'package:ginraidee/screens/food_detail_screen.dart';
 
 class CalorieTrackingNextScreen extends StatefulWidget {
   final String mealType;
 
-  CalorieTrackingNextScreen({required this.mealType});
+  const CalorieTrackingNextScreen({super.key, required this.mealType});
 
   @override
   _CalorieTrackingNextScreenState createState() =>
@@ -21,9 +20,9 @@ class CalorieTrackingNextScreen extends StatefulWidget {
 }
 
 class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
-  String selectedTab = 'History';
+  String selectedTab = 'Search';
   DateTime selectedDate = DateTime.now();
-  late Future<List<FoodItem>?> _foodFuture;
+  // late Future<List<FoodItem>?> _foodFuture;
   List<Map<String, dynamic>> _favoriteRecipes = [];
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -32,7 +31,7 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchFoodData();
+    // _fetchFoodData();
     _loadFavorites();
     loadJsonData();
     _loadFoodLog();
@@ -42,12 +41,12 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
     return NumberFormat("#,###").format(number);
   }
 
-  void _fetchFoodData([String ingredient = ""]) {
-    print("Fetching data for: $ingredient");
-    setState(() {
-      _foodFuture = FoodApiService.fetchFoodData(ingredient: "");
-    });
-  }
+  // void _fetchFoodData([String ingredient = ""]) {
+  //   print("Fetching data for: $ingredient");
+  //   setState(() {
+  //     _foodFuture = FoodApiService.fetchFoodData(ingredient: "");
+  //   });
+  // }
 
   Map<String, bool> favoriteRecipes = {};
 
@@ -319,11 +318,7 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                     var recipe = meal['recipe'];
                     return ListTile(
                       leading: Image.asset(
-                        'assets/fetchMenu/' +
-                            recipe['label']
-                                ?.toLowerCase()
-                                .replaceAll(' ', '_') +
-                            '.jpg',
+                        '${'assets/fetchMenu/' + recipe['label']?.toLowerCase().replaceAll(' ', '_')}.jpg',
                         width: 50,
                         height: 50,
                         fit: BoxFit.cover,
@@ -460,7 +455,7 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                     centerTitle: true,
                     title: Text(
                       // widget.mealType,
-                      'Calorie Tracking',
+                      'Add Meal',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -503,26 +498,6 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                     TextButton(
                       onPressed: () {
                         setState(() {
-                          selectedTab = 'History';
-                        });
-                        _loadFoodLog();
-                      },
-                      child: Column(
-                        children: [
-                          Text('History',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w500)),
-                          if (selectedTab == 'History')
-                            Container(
-                                height: 3, width: 80, color: Colors.white),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
                           selectedTab = 'Search';
                         });
                       },
@@ -558,6 +533,26 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                         ],
                       ),
                     ),
+                    // TextButton(
+                    //   onPressed: () {
+                    //     setState(() {
+                    //       selectedTab = 'History';
+                    //     });
+                    //     _loadFoodLog();
+                    //   },
+                    //   child: Column(
+                    //     children: [
+                    //       Text('History',
+                    //           style: TextStyle(
+                    //               color: Colors.white,
+                    //               fontSize: 20,
+                    //               fontWeight: FontWeight.w500)),
+                    //       if (selectedTab == 'History')
+                    //         Container(
+                    //             height: 3, width: 80, color: Colors.white),
+                    //     ],
+                    //   ),
+                    // ),
                   ],
                 ),
                 Row(
@@ -598,9 +593,8 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                     itemCount: filteredRecipes.length,
                     itemBuilder: (context, index) {
                       var recipe = filteredRecipes[index];
-                      String imagePath = 'assets/fetchMenu/' +
-                          recipe['label']?.toLowerCase().replaceAll(' ', '_') +
-                          '.jpg';
+                      String imagePath =
+                          '${'assets/fetchMenu/' + recipe['label']?.toLowerCase().replaceAll(' ', '_')}.jpg';
 
                       return Stack(
                         children: [
@@ -710,11 +704,8 @@ class _CalorieTrackingNextScreenState extends State<CalorieTrackingNextScreen> {
                             itemBuilder: (context, index) {
                               var recipe = _favoriteRecipes[index];
                               String recipeName = recipe['label'];
-                              String imagePath = 'assets/fetchMenu/' +
-                                  recipe['label']
-                                      ?.toLowerCase()
-                                      .replaceAll(' ', '_') +
-                                  '.jpg';
+                              String imagePath =
+                                  '${'assets/fetchMenu/' + recipe['label']?.toLowerCase().replaceAll(' ', '_')}.jpg';
 
                               return Stack(
                                 children: [

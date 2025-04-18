@@ -8,7 +8,7 @@ class ChartWidget extends StatefulWidget {
 
   final String selectedTrack;
 
-  ChartWidget({required this.selectedTrack});
+  const ChartWidget({super.key, required this.selectedTrack});
 
   @override
   State<ChartWidget> createState() => _ChartWidgetState();
@@ -254,7 +254,7 @@ class _ChartWidgetState extends State<ChartWidget> {
                   )
                 ],
               ),
-              Container(
+              SizedBox(
                 height: 200,
                 child: BarChart(
                   BarChartData(

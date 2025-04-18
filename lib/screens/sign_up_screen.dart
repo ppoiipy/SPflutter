@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/intl.dart';
 
 import 'package:ginraidee/auth/auth_service.dart';
@@ -291,6 +290,7 @@ class SignUpFieldState extends State<SignUpField> {
   String? emailError;
   bool _isPasswordState = false;
 
+  @override
   void dispose() {
     super.dispose();
     _emailController.dispose();
@@ -828,10 +828,10 @@ class SignUpFieldState extends State<SignUpField> {
                   SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text('Done'),
                     style: ElevatedButton.styleFrom(
                       minimumSize: Size(double.infinity, 50),
                     ),
+                    child: Text('Done'),
                   ),
                 ],
               ),
@@ -885,10 +885,10 @@ class SignUpFieldState extends State<SignUpField> {
                   SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text('Done'),
                     style: ElevatedButton.styleFrom(
                       minimumSize: Size(double.infinity, 50),
                     ),
+                    child: Text('Done'),
                   ),
                 ],
               ),

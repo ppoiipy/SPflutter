@@ -1,19 +1,19 @@
 // 5
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart'; // For rootBundle
+// For rootBundle
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'food_detail_screen.dart';
-import 'filter_sheet.dart';
 import 'homepage.dart';
 import 'favorite_screen.dart';
 import 'calculate_screen.dart';
 import 'profile_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
+  const HistoryScreen({super.key});
+
   @override
   _HistoryScreenState createState() => _HistoryScreenState();
 }
@@ -22,7 +22,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  int _currentIndex = 1;
+  final int _currentIndex = 1;
 
   DateTime selectedDate = DateTime.now();
 
@@ -148,77 +148,91 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildMealCategory(String category) {
-    // Filter meals by selected date and category
     List<Map<String, dynamic>> meals =
         _loggedMeals.where((meal) => meal['mealType'] == category).toList();
 
-    return Container(
-      padding: EdgeInsets.all(8),
-      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      width: MediaQuery.sizeOf(context).width,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            category,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          meals.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text("No meals logged"),
-                )
-              : Column(
-                  children: meals.map((meal) {
-                    var recipe = meal['recipe'];
-                    return ListTile(
-                      leading: Image.asset(
-                        'assets/fetchMenu/' +
-                            recipe['label']
-                                ?.toLowerCase()
-                                .replaceAll(' ', '_') +
-                            '.jpg',
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            'assets/images/default.png', // Fallback image
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                          );
-                        },
+    return Card(
+      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              category,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.teal[700],
+              ),
+            ),
+            const SizedBox(height: 12),
+            meals.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Text(
+                        "No meals logged",
+                        style: TextStyle(color: Colors.grey[600]),
                       ),
-                      title: Text(recipe['label'] ?? 'Unknown Recipe'),
-                      subtitle: Text(
-                          "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal"),
-                      trailing: IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _removeMeal(meal),
-                      ),
-                      onTap: () {
-                        logRecipeClick(recipe['label'], recipe['shareAs']);
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FoodDetailScreen(
-                              recipe: recipe,
-                              selectedDate:
-                                  selectedDate, // Pass selected date here
+                    ),
+                  )
+                : Column(
+                    children: meals.map((meal) {
+                      var recipe = meal['recipe'];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6.0),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.asset(
+                              'assets/fetchMenu/${recipe['label']?.toLowerCase().replaceAll(' ', '_')}.jpg',
+                              width: 55,
+                              height: 55,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/default.png',
+                                  width: 55,
+                                  height: 55,
+                                  fit: BoxFit.cover,
+                                );
+                              },
                             ),
                           ),
-                        );
-                      },
-                    );
-                  }).toList(),
-                ),
-        ],
+                          title: Text(
+                            recipe['label'] ?? 'Unknown Recipe',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Text(
+                            "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal",
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                          trailing: IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _removeMeal(meal),
+                          ),
+                          onTap: () {
+                            logRecipeClick(recipe['label'], recipe['shareAs']);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FoodDetailScreen(
+                                  recipe: recipe,
+                                  selectedDate: selectedDate,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+          ],
+        ),
       ),
     );
   }

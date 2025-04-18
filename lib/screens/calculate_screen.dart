@@ -13,6 +13,8 @@ import 'profile_screen.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 
 class CalculateScreen extends StatefulWidget {
+  const CalculateScreen({super.key});
+
   @override
   _CalculateScreenState createState() => _CalculateScreenState();
 }
@@ -221,6 +223,19 @@ class _CalculateScreenState extends State<CalculateScreen> {
     return NumberFormat("#,###.##").format(number);
   }
 
+  String _bmiMessage(double bmi) {
+    if (bmi < 18.5) {
+      return "You're considered underweight. It might be beneficial to consult a healthcare provider or nutritionist for a balanced diet plan.";
+    } else if (bmi < 25) {
+      return "You're within the normal BMI range. Keep up the healthy habits and balanced lifestyle!";
+    } else if (bmi < 30) {
+      return "A Body Mass Index (BMI) of 25 or higher is classified as overweight, but it's essential to remember that BMI is just one of many indicators of health. The journey to achieving a healthy weight is not just about numbers; it's about making sustainable lifestyle changes that enhance your overall well-being.";
+    } else {
+      return "Your BMI falls within the obesity range. It's recommended to seek guidance from healthcare professionals for safe and effective weight management strategies.";
+    }
+  }
+
+  // MARK: widget build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -573,7 +588,7 @@ class _CalculateScreenState extends State<CalculateScreen> {
                           ),
 
                           Text(
-                            "A Body Mass Index (BMI) of 25 or higher is classified as overweight, but it's essential to remember that BMI is just one of many indicators of health. The journey to achieving a healthy weight is not just about numbers; it's about making sustainable lifestyle changes that enhance your overall well-being.",
+                            _bmiMessage(_calculatedBMI() ?? 0),
                           ),
                         ],
                       ),

@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-import 'package:ginraidee/api/fetch_food_api.dart';
+// import 'package:ginraidee/api/fetch_food_api.dart';
 import 'package:ginraidee/screens/homepage.dart';
 import 'package:ginraidee/screens/history_screen.dart';
 import 'package:ginraidee/screens/favorite_screen.dart';
@@ -33,7 +33,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
 
   String selectedTab = 'Search';
   DateTime selectedDate = DateTime.now();
-  late Future<List<FoodItem>?> _foodFuture;
+  // late Future<List<FoodItem>?> _foodFuture;
   List<Map<String, dynamic>> _favoriteRecipes = [];
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -47,6 +47,12 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
 
   List<Map<String, dynamic>> allRecipes = [];
   Random _random = Random();
+  bool mealsGenerated = false; // Flag to track meal generation
+  Map<String, List<Map<String, dynamic>>> mealPlan = {
+    'Breakfast': [],
+    'Lunch': [],
+    'Dinner': [],
+  };
 
   // MARK: initState
   @override
@@ -55,10 +61,56 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     _loadUserData();
     // trackData();
     _loadFoodLog();
-    _loadRecipes();
+    // _loadRecipes();
+    _loadRecipesFromJson();
     _loadWeightGoal();
     _controller.text = userData?['weightGoal']?.toString() ?? '';
+    // _initializeMealsIfNeeded();
+    _initializeMeals();
   }
+
+  void _initializeMeals() {
+    if (!mealsGenerated) {
+      // Generate and save meals for the first time
+      _refreshMeals();
+      mealsGenerated = true; // Set the flag after meals are generated
+    }
+  }
+
+  void _generateMeals() {
+    double dailyCalorieGoal = calculateDailyCalorieGoal() ?? 2000;
+    double breakfastCalories = dailyCalorieGoal * 0.3;
+    double lunchCalories = dailyCalorieGoal * 0.4;
+    double dinnerCalories = dailyCalorieGoal * 0.3;
+
+    _loadRecipesFromJson().then((recipes) {
+      setState(() {
+        // Save the meals to the state for later reuse
+        mealPlan['Breakfast'] = _getRecipesForMeal(recipes, breakfastCalories,
+            shuffle: false); // No shuffle
+        mealPlan['Lunch'] = _getRecipesForMeal(recipes, lunchCalories,
+            shuffle: false); // No shuffle
+        mealPlan['Dinner'] = _getRecipesForMeal(recipes, dinnerCalories,
+            shuffle: false); // No shuffle
+      });
+    });
+  }
+
+  // void _initializeMeals() {
+  //   double dailyCalorieGoal = calculateDailyCalorieGoal() ?? 2000;
+  //   double breakfastCalories = dailyCalorieGoal * 0.3;
+  //   double lunchCalories = dailyCalorieGoal * 0.4;
+  //   double dinnerCalories = dailyCalorieGoal * 0.3;
+
+  //   _loadRecipesFromJson().then((recipes) {
+  //     setState(() {
+  //       dailyMeals['Breakfast'] =
+  //           _getRecipesForMeal(recipes, breakfastCalories, shuffle: false);
+  //       dailyMeals['Lunch'] = _getRecipesForMeal(recipes, lunchCalories);
+  //       dailyMeals['Dinner'] = _getRecipesForMeal(recipes, dinnerCalories);
+  //     });
+  //   });
+  // }
 
   User? user = FirebaseAuth.instance.currentUser;
   Map<String, dynamic>? userData;
@@ -86,37 +138,65 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     }
   }
 
-  Future<void> _loadRecipes() async {
+  // Future<void> _loadRecipes() async {
+  //   try {
+  //     // Load the JSON file from assets
+  //     String jsonString =
+  //         await rootBundle.loadString('assets/fetchMenu/recipe_output.json');
+
+  //     // Decode the JSON string into a List of Maps
+  //     List<dynamic> jsonResponse = json.decode(jsonString);
+
+  //     // Cast the dynamic list to a List<Map<String, dynamic>>
+  //     setState(() {
+  //       allRecipes = List<Map<String, dynamic>>.from(jsonResponse);
+  //     });
+  //   } catch (e) {
+  //     print('Error loading recipes: $e');
+  //   }
+  // }
+
+  Map<String, dynamic>? _getRandomRecipeForCategory(String category) {
+    if (recipes.isEmpty) return null;
+
+    // If your recipe data has no 'category', use all recipes
+    final random = Random();
+    return recipes[random.nextInt(recipes.length)];
+  }
+
+  Future<List<Map<String, dynamic>>> _loadRecipesFromJson() async {
     try {
-      // Load the JSON file from assets
-      String jsonString =
-          await rootBundle.loadString('assets/recipe_output.json');
+      final String jsonString = await DefaultAssetBundle.of(context)
+          .loadString('assets/fetchMenu/recipe_output.json');
+      final Map<String, dynamic> jsonMap = json.decode(jsonString);
 
-      // Decode the JSON string into a List of Maps
-      List<dynamic> jsonResponse = json.decode(jsonString);
-
-      // Cast the dynamic list to a List<Map<String, dynamic>>
-      setState(() {
-        allRecipes = List<Map<String, dynamic>>.from(jsonResponse);
-      });
+      if (jsonMap['hits'] != null && jsonMap['hits'] is List) {
+        final List<dynamic> hits = jsonMap['hits'];
+        final List<Map<String, dynamic>> recipes = hits
+            .map((hit) => Map<String, dynamic>.from(hit['recipe']))
+            .toList();
+        return recipes;
+      } else {
+        print("Key 'hits' is missing or not a list.");
+        return [];
+      }
     } catch (e) {
-      print('Error loading recipes: $e');
+      print("Error loading recipes: $e");
+      return [];
     }
   }
 
-  Map<String, dynamic>? _getRandomRecipeForCategory(String category) {
-    // Filter recipes based on the meal category
-    List<Map<String, dynamic>> categoryRecipes = allRecipes.where((recipe) {
-      return recipe['mealType'] == category;
+// Filter recipes based on the daily calorie goal.
+  Map<String, dynamic>? _getRandomRecipeByCalories(double targetCalories) {
+    final filtered = recipes.where((r) {
+      final kcal = r['totalNutrients']?['ENERC_KCAL']?['quantity'];
+      return kcal != null &&
+          kcal > targetCalories - 100 &&
+          kcal < targetCalories + 100;
     }).toList();
 
-    // If there are recipes for this category, return a random one
-    if (categoryRecipes.isNotEmpty) {
-      Random random = Random();
-      return categoryRecipes[random.nextInt(categoryRecipes.length)];
-    }
-
-    return null; // If no recipes for the category
+    if (filtered.isEmpty) return null;
+    return filtered[Random().nextInt(filtered.length)];
   }
 
   // MARK: Click
@@ -290,35 +370,6 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     }
   }
 
-  // Future<void> _saveWeightGoal() async {
-  //   final String uid = _auth.currentUser?.uid ?? '';
-  //   final String weightGoal = _controller.text.trim();
-
-  //   if (weightGoal.isEmpty) return;
-
-  //   setState(() {
-  //     _isSaving = true;
-  //   });
-
-  //   try {
-  //     await FirebaseFirestore.instance.collection('users').doc(uid).update({
-  //       'weightGoal': weightGoal,
-  //     });
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Weight goal saved!')),
-  //     );
-  //   } catch (e) {
-  //     print('Error updating weight goal: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Failed to save.')),
-  //     );
-  //   } finally {
-  //     setState(() {
-  //       _isSaving = false;
-  //     });
-  //   }
-  // }
-
   // MARK: BMI BMR TDEE
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
@@ -454,229 +505,300 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     return baseTDEE + dailyAdjustment;
   }
 
+  // void _refreshMeals() {
+  //   final used = <Map<String, dynamic>>[];
+  //   final double goalCalories = calculateDailyCalorieGoal() ?? 2000;
+
+  //   Map<String, dynamic>? getUniqueRecipe(double calories) {
+  //     final filtered = recipes.where((r) {
+  //       final kcal = r['totalNutrients']?['ENERC_KCAL']?['quantity'];
+  //       return kcal != null &&
+  //           kcal > calories - 100 &&
+  //           kcal < calories + 100 &&
+  //           !used.contains(r);
+  //     }).toList();
+
+  //     if (filtered.isEmpty) return null;
+  //     final selected = filtered[Random().nextInt(filtered.length)];
+  //     used.add(selected);
+  //     return selected;
+  //   }
+
+  //   setState(() {
+  //     dailyMeals['Breakfast'] = _getRecipesForMeal(
+  //         recipes.cast<Map<String, dynamic>>(), goalCalories * 0.3);
+  //     dailyMeals['Lunch'] = _getRecipesForMeal(
+  //         recipes.cast<Map<String, dynamic>>(), goalCalories * 0.4);
+  //     dailyMeals['Dinner'] = _getRecipesForMeal(
+  //         recipes.cast<Map<String, dynamic>>(), goalCalories * 0.3);
+  //   });
+  // }
+
+  void _refreshMeals() {
+    setState(() {
+      double dailyCalorieGoal = calculateDailyCalorieGoal() ?? 2000;
+      double breakfastCalories = dailyCalorieGoal * 0.3;
+      double lunchCalories = dailyCalorieGoal * 0.4;
+      double dinnerCalories = dailyCalorieGoal * 0.3;
+
+      _loadRecipesFromJson().then((recipes) {
+        // Assign updated recipes to the dailyMeals
+        dailyMeals['Breakfast'] =
+            _getRecipesForMeal(recipes, breakfastCalories, shuffle: true);
+        dailyMeals['Lunch'] =
+            _getRecipesForMeal(recipes, lunchCalories, shuffle: true);
+        dailyMeals['Dinner'] =
+            _getRecipesForMeal(recipes, dinnerCalories, shuffle: true);
+      });
+    });
+  }
+
   // MARK: UI - Build Meal
+  List<Map<String, dynamic>> _getRecipesForMeal(
+      List<Map<String, dynamic>> recipes, double targetCalories,
+      {bool shuffle = false}) {
+    final used = <Map<String, dynamic>>[];
+    final remaining = List<Map<String, dynamic>>.from(recipes);
+
+    if (shuffle) {
+      remaining.shuffle(); // Only shuffle when needed
+    }
+
+    double totalCalories = 0;
+    List<Map<String, dynamic>> selectedRecipes = [];
+
+    for (final recipe in remaining) {
+      final kcal =
+          recipe['totalNutrients']?['ENERC_KCAL']?['quantity']?.toDouble();
+      if (kcal == null || used.contains(recipe)) continue;
+
+      if (totalCalories + kcal <= targetCalories + 50) {
+        selectedRecipes.add(recipe);
+        used.add(recipe);
+        totalCalories += kcal;
+      }
+
+      if (totalCalories >= targetCalories - 50) break;
+    }
+
+    return selectedRecipes;
+  }
+
+  // List<Map<String, dynamic>> _getRecipesForMeal(
+  //     List<Map<String, dynamic>> recipes, double targetCalories,
+  //     {bool shuffle = false}) {
+  //   final used = <Map<String, dynamic>>[];
+  //   final remaining = List<Map<String, dynamic>>.from(recipes);
+
+  //   // Shuffle only if the flag is true (i.e., during refresh)
+  //   if (shuffle) {
+  //     remaining.shuffle();
+  //   }
+
+  //   double totalCalories = 0;
+  //   List<Map<String, dynamic>> selectedRecipes = [];
+
+  //   for (final recipe in remaining) {
+  //     final kcal =
+  //         recipe['totalNutrients']?['ENERC_KCAL']?['quantity']?.toDouble();
+  //     if (kcal == null || used.contains(recipe)) continue;
+
+  //     if (totalCalories + kcal <= targetCalories + 50) {
+  //       selectedRecipes.add(recipe);
+  //       used.add(recipe);
+  //       totalCalories += kcal;
+  //     }
+
+  //     if (totalCalories >= targetCalories - 50) break;
+  //   }
+
+  //   return selectedRecipes;
+  // }
+
   Widget _buildMealPlans() {
     return Expanded(
-      child: SingleChildScrollView(
-          child: Column(
+      child: Column(
         children: [
-          _buildMealCategory('Breakfast', selectedDate),
-          _buildMealCategory('Lunch', selectedDate),
-          _buildMealCategory('Dinner', selectedDate),
+          Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+              icon: Icon(Icons.refresh, color: Colors.teal),
+              onPressed: _refreshMeals,
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildMealCategory('Breakfast', selectedDate),
+                  _buildMealCategory('Lunch', selectedDate),
+                  _buildMealCategory('Dinner', selectedDate),
+                ],
+              ),
+            ),
+          ),
         ],
-      )),
+      ),
     );
   }
 
   Widget _buildMealCategory(String category, DateTime date) {
-    // Get a random recipe for the category
-    String formattedDate = DateFormat('dd').format(date);
-    var randomRecipe = _getRandomRecipeForCategory(category);
+    double dailyCalorieGoal = calculateDailyCalorieGoal() ?? 2000;
+    double calorieGoal;
 
-    return Container(
-      padding: EdgeInsets.all(8),
-      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      width: MediaQuery.sizeOf(context).width,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            // '$category for Day $formattedDate',
-            category,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    switch (category) {
+      case 'Breakfast':
+        calorieGoal = dailyCalorieGoal * 0.3;
+        break;
+      case 'Lunch':
+        calorieGoal = dailyCalorieGoal * 0.4;
+        break;
+      case 'Dinner':
+        calorieGoal = dailyCalorieGoal * 0.3;
+        break;
+      default:
+        calorieGoal = dailyCalorieGoal / 3;
+    }
+
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _loadRecipesFromJson(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Error loading recipes'));
+        }
+
+        final recipes = snapshot.data ?? [];
+        List<Map<String, dynamic>> selectedRecipes = dailyMeals[category] ?? [];
+
+        // Calculate the total calories for the selected recipes
+        int totalCalories = selectedRecipes.fold(0, (sum, recipe) {
+          // Safely convert the quantity to double, then cast to int
+          double calories =
+              (recipe['totalNutrients']['ENERC_KCAL']['quantity'] as num)
+                  .toDouble();
+          return sum + calories.toInt();
+        });
+
+        return Container(
+          padding: EdgeInsets.all(8),
+          margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          width: MediaQuery.of(context).size.width,
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(10),
           ),
-          randomRecipe == null
-              ? Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text("No meals available"),
-                )
-              : ListTile(
-                  leading: Image.asset(
-                    'assets/fetchMenu/' +
-                        randomRecipe['label']
-                            ?.toLowerCase()
-                            .replaceAll(' ', '_') +
-                        '.jpg',
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.asset(
-                        'assets/images/default.png', // Fallback image
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      );
-                    },
-                  ),
-                  title: Text(randomRecipe['label'] ?? 'Unknown Recipe'),
-                  subtitle: Text(
-                      "${formatNumber(randomRecipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal"),
-                  trailing: PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert, color: Colors.teal[700]),
-                    onSelected: (String value) {
-                      if (value == 'delete') {
-                        _removeMeal(randomRecipe);
-                      } else if (value == 'change') {
-                        _changeMeal(randomRecipe);
-                      }
-                    },
-                    itemBuilder: (BuildContext context) {
-                      return [
-                        PopupMenuItem<String>(
-                          value: 'change',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit, color: Colors.teal),
-                              SizedBox(width: 8),
-                              Text('Change Menu'),
-                            ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                category,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Total Calories: ${formatNumber(totalCalories)} kcal',
+                style: TextStyle(fontSize: 16),
+              ),
+              selectedRecipes.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text("No meals available within calorie range"),
+                    )
+                  : Column(
+                      children: selectedRecipes.map((selectedRecipe) {
+                        return ListTile(
+                          leading: Image.asset(
+                            'assets/fetchMenu/' +
+                                selectedRecipe['label']
+                                    ?.toLowerCase()
+                                    .replaceAll(' ', '_') +
+                                '.jpg',
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/images/default.png',
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                              );
+                            },
                           ),
-                        ),
-                        PopupMenuItem<String>(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text('Delete Meal'),
-                            ],
+                          title:
+                              Text(selectedRecipe['label'] ?? 'Unknown Recipe'),
+                          subtitle: Text(
+                            "${formatNumber(selectedRecipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal",
                           ),
-                        ),
-                      ];
-                    },
-                  ),
-                  onTap: () {
-                    logRecipeClick(
-                        randomRecipe['label'], randomRecipe['shareAs']);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FoodDetailScreen(
-                          recipe: randomRecipe,
-                          selectedDate: selectedDate,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ],
-      ),
+                          trailing: PopupMenuButton<String>(
+                            icon:
+                                Icon(Icons.more_vert, color: Colors.teal[700]),
+                            onSelected: (String value) {
+                              if (value == 'delete') {
+                                _removeMeal(selectedRecipe);
+                              } else if (value == 'change') {
+                                _changeMeal(selectedRecipe);
+                              }
+                            },
+                            itemBuilder: (BuildContext context) {
+                              return [
+                                PopupMenuItem<String>(
+                                  value: 'change',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit, color: Colors.teal),
+                                      SizedBox(width: 8),
+                                      Text('Change Menu'),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem<String>(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.delete, color: Colors.red),
+                                      SizedBox(width: 8),
+                                      Text('Delete Meal'),
+                                    ],
+                                  ),
+                                ),
+                              ];
+                            },
+                          ),
+                          onTap: () {
+                            logRecipeClick(selectedRecipe['label'],
+                                selectedRecipe['shareAs']);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FoodDetailScreen(
+                                  recipe: selectedRecipe,
+                                  selectedDate: selectedDate,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ),
+            ],
+          ),
+        );
+      },
     );
   }
-  // Widget _buildMealCategory(String category) {
-  //   // Filter meals by selected date and category
-  //   List<Map<String, dynamic>> meals =
-  //       _loggedMeals.where((meal) => meal['mealType'] == category).toList();
-
-  //   return Container(
-  //     padding: EdgeInsets.all(8),
-  //     margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-  //     width: MediaQuery.sizeOf(context).width,
-  //     decoration: BoxDecoration(
-  //       color: Colors.grey[200],
-  //       borderRadius: BorderRadius.circular(10),
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           category,
-  //           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-  //         ),
-  //         meals.isEmpty
-  //             ? Padding(
-  //                 padding: const EdgeInsets.all(8.0),
-  //                 child: Text("No meals logged"),
-  //               )
-  //             : Column(
-  //                 children: meals.map((meal) {
-  //                   var recipe = meal['recipe'];
-  //                   return ListTile(
-  //                     leading: Image.asset(
-  //                       'assets/fetchMenu/' +
-  //                           recipe['label']
-  //                               ?.toLowerCase()
-  //                               .replaceAll(' ', '_') +
-  //                           '.jpg',
-  //                       width: 50,
-  //                       height: 50,
-  //                       fit: BoxFit.cover,
-  //                       errorBuilder: (context, error, stackTrace) {
-  //                         return Image.asset(
-  //                           'assets/images/default.png', // Fallback image
-  //                           width: 50,
-  //                           height: 50,
-  //                           fit: BoxFit.cover,
-  //                         );
-  //                       },
-  //                     ),
-  //                     title: Text(recipe['label'] ?? 'Unknown Recipe'),
-  //                     subtitle: Text(
-  //                         "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal"),
-  //                     trailing: PopupMenuButton<String>(
-  //                       icon: Icon(Icons.more_vert, color: Colors.teal[700]),
-  //                       onSelected: (String value) {
-  //                         if (value == 'delete') {
-  //                           _removeMeal(
-  //                               meal); // Call your existing remove function
-  //                         } else if (value == 'change') {
-  //                           _changeMeal(
-  //                               meal); // Add your function to change the meal
-  //                         }
-  //                       },
-  //                       itemBuilder: (BuildContext context) {
-  //                         return [
-  //                           PopupMenuItem<String>(
-  //                             value: 'change',
-  //                             child: Row(
-  //                               children: [
-  //                                 Icon(Icons.edit, color: Colors.teal),
-  //                                 SizedBox(width: 8),
-  //                                 Text('Change Menu'),
-  //                               ],
-  //                             ),
-  //                           ),
-  //                           PopupMenuItem<String>(
-  //                             value: 'delete',
-  //                             child: Row(
-  //                               children: [
-  //                                 Icon(Icons.delete, color: Colors.red),
-  //                                 SizedBox(width: 8),
-  //                                 Text('Delete Meal'),
-  //                               ],
-  //                             ),
-  //                           ),
-  //                         ];
-  //                       },
-  //                     ),
-  //                     onTap: () {
-  //                       logRecipeClick(recipe['label'], recipe['shareAs']);
-
-  //                       Navigator.push(
-  //                         context,
-  //                         MaterialPageRoute(
-  //                           builder: (context) => FoodDetailScreen(
-  //                             recipe: recipe,
-  //                             selectedDate:
-  //                                 selectedDate, // Pass selected date here
-  //                           ),
-  //                         ),
-  //                       );
-  //                     },
-  //                   );
-  //                 }).toList(),
-  //               ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   // MARK: END UI - Build Meal
+
+  Map<String, List<Map<String, dynamic>>> dailyMeals = {
+    'Breakfast': [],
+    'Lunch': [],
+    'Dinner': [],
+  };
 
   List<Map<String, dynamic>> _loggedMeals = [];
 
