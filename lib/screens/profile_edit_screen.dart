@@ -60,34 +60,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   ];
 
   List<String> foodCategory = [
-    //   'American',
-    //   'Asian',
-    //   'British',
-    //   'Caribbean',
-    //   'Central Europe',
-    //   'Chinese',
-    //   'Eastern Europe',
-    //   'French',
-    //   'Greek',
-    //   'Indian',
-    //   'Italian',
-    //   'Japanese',
-    //   'Korean',
-    //   'Kosher',
-    //   'Mediterranean',
-    //   'Mexican',
-    //   'Middle Eastern',
-    //   'Nordic',
-    //   'South American',
-    //   'South East Asian',
-    //   'World',
-    // ];
     'American',
     'Italian',
     'Japanese',
     'Chinese',
     'Thai',
-    'South East Asia'
   ];
 
   List<String> foodIngredient = [

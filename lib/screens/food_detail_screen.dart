@@ -23,6 +23,37 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
   void initState() {
     super.initState();
     _checkIfFavorite();
+    _loadUserAllergies();
+  }
+
+  Set<String> _userAllergies = {};
+
+  void _loadUserAllergies() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (!doc.exists) return;
+
+    final userData = doc.data();
+    if (userData == null) return;
+
+    // Get the user's allergies from Firebase
+    final dynamic allergiesRaw = userData['foodAllergy'];
+    final Set<String> userAllergies = <String>{
+      if (allergiesRaw is List)
+        ...allergiesRaw.map((e) => e.toString().toLowerCase()),
+      if (allergiesRaw is String) allergiesRaw.toLowerCase(),
+    };
+
+    // Assuming this is a StatefulWidget, update the state with the user's allergies
+    setState(() {
+      _userAllergies = userAllergies;
+    });
   }
 
   Future<void> _checkIfFavorite() async {
@@ -209,6 +240,36 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
             const SizedBox(height: 10),
             for (var ingredient in recipe['ingredientLines'])
               Text('• $ingredient', style: const TextStyle(fontSize: 14)),
+            const SizedBox(height: 20),
+            const Text('Cautions',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Container(
+              color: Colors.grey[600],
+              width: MediaQuery.sizeOf(context).width,
+              height: 1,
+            ),
+            const SizedBox(height: 10),
+            if (_userAllergies.isNotEmpty)
+              for (var caution in recipe['cautions'])
+                Text(
+                  '• $caution',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: _userAllergies.contains(caution.toLowerCase())
+                        ? Colors.red
+                        : Colors.black,
+                    fontWeight: _userAllergies.contains(caution.toLowerCase())
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+            if (_userAllergies.isEmpty)
+              for (var caution in recipe['cautions'])
+                Text(
+                  '• $caution',
+                  style: const TextStyle(fontSize: 14, color: Colors.black),
+                ),
             const SizedBox(height: 20),
             const Text('Nutritional Information',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

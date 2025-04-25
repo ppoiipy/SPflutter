@@ -19,6 +19,8 @@ import 'profile_screen.dart';
 import 'calorie_tracking_screen.dart';
 import 'meal_planning_screen.dart';
 
+// import 'package:';
+
 // import 'package:flutter_application_1/api/fetch_food_api.dart';
 // import 'fetch_food_data.dart';
 
@@ -57,6 +59,8 @@ class _HomepageState extends State<Homepage> {
 
   String selectedCuisineType = "All";
 
+  late Future<void> _filterDataFuture;
+
   // MARK: initState
   @override
   void initState() {
@@ -66,6 +70,18 @@ class _HomepageState extends State<Homepage> {
     printAllUserRecipeData();
     loadRecommendations();
     loadRecipeData();
+    _filterDataFuture = _loadDataAndApplyFilters();
+  }
+
+  Future<void> _loadDataAndApplyFilters() async {
+    // Ensure that data is loaded first
+    // await loadJsonData();
+    await _loadUserFilters();
+    // await loadRecommendations();
+    await loadRecipeData();
+
+    // After all data is loaded, apply filters based on user data
+    await _applyFiltersFromUserData();
   }
 
   @override
@@ -74,10 +90,28 @@ class _HomepageState extends State<Homepage> {
     super.dispose();
   }
 
+  // Future<void> loadRecommendations() async {
+  //   User? user = _auth.currentUser; // Get current user
+  //   if (user != null) {
+  //     final results =
+  //         // await getCollaborativeRecommendations(user.uid);
+  //         await getRecommendedRecipes(user.uid);
+  //     setState(() {
+  //       recommendedLabels = results;
+  //       isLoading = false;
+  //     });
+  //   } else {
+  //     print('User not logged in!');
+  //   }
+  // }
+
+  // MARK: load ver 1
   Future<void> loadRecommendations() async {
     User? user = _auth.currentUser; // Get current user
     if (user != null) {
-      final results = await getRecommendedRecipes(user.uid); // Pass the userId
+      final results =
+          // await getCollaborativeRecommendations(user.uid);
+          await getRecommendedRecipes(user.uid);
       setState(() {
         recommendedLabels = results;
         isLoading = false;
@@ -86,6 +120,26 @@ class _HomepageState extends State<Homepage> {
       print('User not logged in!');
     }
   }
+
+  // MARK: load ver 2
+  // Future<void> loadRecommendations() async {
+  //   User? user = _auth.currentUser; // Get current user
+  //   if (user != null) {
+  //     // Get raw recommendations
+  //     final results = await getRecommendedRecipes(
+  //         user.uid); // Or getCollaborativeRecommendations
+
+  //     // Apply user filters to recommendations
+  //     final filteredResults = await _applyFiltersFromUserData(results);
+
+  //     setState(() {
+  //       recommendedLabels = filteredResults;
+  //       isLoading = false;
+  //     });
+  //   } else {
+  //     print('User not logged in!');
+  //   }
+  // }
 
   String formatNumber(int number) {
     return NumberFormat("#,###").format(number);
@@ -125,20 +179,59 @@ class _HomepageState extends State<Homepage> {
   }
 
   // Call Filter Sheet Function
+  // void openFilterSheet() async {
+  //   // Show the filter sheet and wait for the selected filters
+  //   final filters = await showFilterSheet(context);
+
+  //   if (filters != null) {
+  //     // If filters are selected, apply them
+  //     setState(() {
+  //       selectedFilters = filters; // Store the selected filters
+  //       _selectedCalories = filters['calories']; // Get calories filter
+  //     });
+
+  //     // Apply the filters on the recipes based on the selected filters
+  //     _filterRecipesByCalories();
+  //     _filterRecipesByIngredients();
+
+  //     print("Selected Filters: $selectedFilters");
+  //   }
+  // }
+
+  // Future<Map<String, dynamic>?> showFilterSheet(context) {
+  //   return showModalBottomSheet<Map<String, dynamic>>(
+  //     context: context,
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  //     ),
+  //     isScrollControlled: true,
+  //     builder: (context) {
+  //       return FilterSheet(
+  //         initialCalories: _selectedCalories, // Pass the current value
+  //         onFiltersApplied: (filters) {
+  //           Navigator.pop(context, filters);
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
+
   void openFilterSheet() async {
-    final filters = await showFilterSheet(context);
+    // Show the filter sheet and wait for the selected filters
+    final filters = await showFilterSheet(context as BuildContext);
+
     if (filters != null) {
       setState(() {
-        selectedFilters = filters;
+        selectedFilters = filters; // Store the selected filters
         _selectedCalories = filters['calories']; // Get calories filter
-        _filterRecipesByCalories(); // Apply filter
-        _filterRecipesByIngredients();
       });
-      print("Selected Filters: $selectedFilters");
+
+      // Apply the filters on the recipes based on the selected filters
+      await _applyFilters();
     }
   }
 
-  Future<Map<String, dynamic>?> showFilterSheet(context) {
+  Future<Map<String, dynamic>?> showFilterSheet(BuildContext context) {
     return showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       shape: RoundedRectangleBorder(
@@ -154,6 +247,20 @@ class _HomepageState extends State<Homepage> {
         );
       },
     );
+  }
+
+  Future<void> _applyFilters() async {
+    // Step 1: Apply Calorie Filter
+    // _filterRecipesByCalories(startFromAllRecipes: true);
+
+    // Step 2: Apply Category Filter
+    _filterRecipesByCategories(startFromAllRecipes: false);
+
+    // Step 3: Apply Ingredient Filter
+    _filterRecipesByIngredients(startFromAllRecipes: false);
+
+    // Step 4: Apply Allergy Filter
+    _filterRecipesByAllergies(startFromAllRecipes: false);
   }
 
   // MARK: Calorie
@@ -178,11 +285,20 @@ class _HomepageState extends State<Homepage> {
   void _filterRecipesByCalories() {
     setState(() {
       filteredRecipes = allRecipes.where((recipe) {
-        if (_selectedCalories == null) return true; // No calorie filter applied
+        if (_selectedCalories == null) return true; // No calorie filter
 
-        double calories =
-            recipe['totalNutrients']['ENERC_KCAL']['quantity'] ?? 0.0;
-        return calories <= _selectedCalories!;
+        try {
+          final nutrients = recipe['totalNutrients'];
+          if (nutrients == null || nutrients['ENERC_KCAL'] == null)
+            return false;
+
+          final calorie =
+              (nutrients['ENERC_KCAL']['quantity'] as num).toDouble();
+          return calorie <= _selectedCalories!;
+        } catch (e) {
+          print("Error parsing calories: $e");
+          return false;
+        }
       }).toList();
     });
 
@@ -190,13 +306,75 @@ class _HomepageState extends State<Homepage> {
         "Filtered Recipes by Calories: ${filteredRecipes.map((r) => r['label']).toList()}");
   }
 
+  // void _filterRecipesByCalories({bool startFromAllRecipes = false}) {
+  //   setState(() {
+  //     filteredRecipes =
+  //         (startFromAllRecipes ? allRecipes : filteredRecipes).where((recipe) {
+  //       if (_selectedCalories == null) {
+  //         return true; // No calorie filter applied
+  //       }
+
+  //       // Ensure the recipe has a calorie value and apply the filter
+  //       var recipeCalories = recipe['calories'];
+  //       if (recipeCalories != null) {
+  //         return recipeCalories <= _selectedCalories;
+  //       }
+
+  //       return false;
+  //     }).toList();
+  //   });
+
+  //   print(
+  //       "Filtered Recipes by Calories: ${filteredRecipes.map((r) => r['label']).toList()}");
+  // }
+
   // MARK: Category
+  // Future<Set<String>?> showCategoryFilterSheet(
+  //     BuildContext context, Set<String> selectedCategories) async {
+  //   var user = _auth.currentUser;
+  //   if (user == null) return null;
+
+  //   // Fetch categories from Firebase
+  //   var userDoc = await _firestore.collection('users').doc(user.uid).get();
+  //   var data = userDoc.data();
+
+  //   Set<String> loadedCategories = {};
+  //   if (data != null && data['foodCategory'] != null) {
+  //     loadedCategories = Set<String>.from(data['foodCategory']);
+  //   }
+
+  //   return showModalBottomSheet<Set<String>>(
+  //     context: context,
+  //     isScrollControlled: false, // Prevents full-screen height
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  //     ),
+  //     builder: (context) {
+  //       return Container(
+  //         width: MediaQuery.of(context).size.width,
+  //         height: MediaQuery.of(context).size.height * 0.5,
+  //         padding: const EdgeInsets.all(16.0),
+  //         decoration: BoxDecoration(
+  //           color: Colors.white,
+  //           borderRadius: BorderRadius.circular(20),
+  //         ),
+  //         child: CategoryFilter(
+  //           selectedCategories: loadedCategories,
+  //           onSelectionChanged: (selected) {
+  //             print("Ingredient Selection Updated: $selected");
+  //             // Navigator.pop(context, selected);
+  //           },
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
   Future<Set<String>?> showCategoryFilterSheet(
       BuildContext context, Set<String> selectedCategories) async {
     var user = _auth.currentUser;
     if (user == null) return null;
 
-    // Fetch categories from Firebase
     var userDoc = await _firestore.collection('users').doc(user.uid).get();
     var data = userDoc.data();
 
@@ -205,27 +383,18 @@ class _HomepageState extends State<Homepage> {
       loadedCategories = Set<String>.from(data['foodCategory']);
     }
 
-    return showModalBottomSheet<Set<String>>(
+    return await showModalBottomSheet<Set<String>>(
       context: context,
-      isScrollControlled: false, // Prevents full-screen height
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height * 0.5,
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: CategoryFilter(
-            selectedCategories: loadedCategories,
-            onSelectionChanged: (updatedCategories) {
-              Navigator.pop(context, updatedCategories);
-            },
-          ),
+        Padding(padding: EdgeInsets.only(top: 200));
+        return CategoryFilter(
+          selectedCategories: loadedCategories,
+          onSelectionChanged: (selected) {
+            // Navigator.pop(context, selected);
+          },
         );
       },
     );
@@ -294,8 +463,8 @@ class _HomepageState extends State<Homepage> {
         return IngredientFilter(
           selectedIngredients: loadedIngredients,
           onSelectionChanged: (selected) {
-            print("Ingredient Selection Updated: $selected"); // Debugging
-            Navigator.pop(context, selected);
+            print("Ingredient Selection Updated: $selected");
+            // Navigator.pop(context, selected);
           },
         );
       },
@@ -505,8 +674,247 @@ class _HomepageState extends State<Homepage> {
     });
   }
 
-  // MARK: Print User Data
+  void applyAllFilters(String query, String cuisineType) {
+    List<dynamic> filtered = allRecipes; // Start from full list
 
+    // Category filter
+    if (selectedCategories != null && selectedCategories.isNotEmpty) {
+      filtered = filtered
+          .where((recipe) => selectedCategories.contains(recipe['category']))
+          .toList();
+    }
+
+    // Ingredient filter
+    if (selectedIngredients.isNotEmpty) {
+      filtered = filtered.where((recipe) {
+        return selectedIngredients
+            .every((ingredient) => recipe['ingredients'].contains(ingredient));
+      }).toList();
+    }
+
+    // Calorie filter
+    if (_selectedCalories != null) {
+      filtered = filtered
+          .where((recipe) =>
+              recipe['calories'] != null &&
+              recipe['calories'] <= _selectedCalories)
+          .toList();
+    }
+
+    // Allergy filter
+    if (selectedAllergies.isNotEmpty) {
+      filtered = filtered.where((recipe) {
+        return !selectedAllergies
+            .any((allergy) => recipe['ingredients'].contains(allergy));
+      }).toList();
+    }
+
+    // Search + Cuisine Type filter
+    if (query.isNotEmpty || cuisineType != "All") {
+      filtered = filtered.where((recipe) {
+        final label = recipe['label']?.toString().toLowerCase() ?? '';
+        final cuisine = recipe['cuisineType']?.toString().toLowerCase() ?? '';
+        final searchMatch = label.contains(query.toLowerCase());
+        final cuisineMatch = cuisineType == "All" ||
+            cuisine.contains(cuisineType.toLowerCase()) ||
+            label.contains(cuisineType.toLowerCase());
+        return searchMatch && cuisineMatch;
+      }).toList();
+    }
+
+    setState(() {
+      filteredRecipes = filtered;
+    });
+  }
+
+  // MARK: NEW
+
+  // MARK: Worked
+  // List<dynamic> allRecipes = []; // Full recipe list
+  // List<dynamic> filteredRecipes = []; // Recipes after applying the filter
+
+  // Selected filters
+  String? _selectedCuisine;
+  String? _selectedCategory;
+  // double _selectedCalories = 2000; // Default max calories
+  List<String> recommendedRecipes = [];
+
+  // MARK: apply ver 1.
+  Future<void> _applyFiltersFromUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (!doc.exists) return;
+
+    final userData = doc.data();
+    if (userData == null) return;
+
+    final dynamic calorieRaw = userData['calories'];
+    final dynamic allergyRaw = userData['foodAllergy'];
+    final dynamic foodIngredientRaw = userData['foodIngredient'];
+
+    final double? userCalorie = calorieRaw is num
+        ? calorieRaw.toDouble()
+        : double.tryParse(calorieRaw.toString());
+
+    final Set<String> userAllergy = {
+      if (allergyRaw is List)
+        ...allergyRaw.map((e) => e.toString().toLowerCase()),
+      if (allergyRaw is String) allergyRaw.toLowerCase(),
+    };
+
+    final Set<String> userFoodIngredients = {
+      if (foodIngredientRaw is List)
+        ...foodIngredientRaw.map((e) => e.toString().toLowerCase()),
+      if (foodIngredientRaw is String) foodIngredientRaw.toLowerCase(),
+    };
+
+    setState(() {
+      List<dynamic> currentList = List.from(allRecipes);
+
+      // Apply the filters as per user preferences
+      if (userCalorie != null) {
+        currentList = currentList.where((recipe) {
+          final nutrients = recipe['totalNutrients'];
+          final energy = nutrients?['ENERC_KCAL'];
+          final value = energy?['quantity']?.toDouble();
+          return value != null && value <= userCalorie;
+        }).toList();
+      }
+
+      if (userAllergy.isNotEmpty) {
+        currentList = currentList.where((recipe) {
+          final recipeAllergy = recipe['cautions'];
+          final Set<String> recipeAllergySet = {
+            if (recipeAllergy is List)
+              ...recipeAllergy.map((a) => a.toString().toLowerCase()),
+            if (recipeAllergy is String) recipeAllergy.toLowerCase(),
+          };
+
+          final hasConflict =
+              userAllergy.intersection(recipeAllergySet).isNotEmpty;
+          return !hasConflict;
+        }).toList();
+      }
+
+      if (userFoodIngredients.isNotEmpty) {
+        currentList = currentList.where((recipe) {
+          final ingredientLines = recipe['ingredientLines'];
+          if (ingredientLines is List) {
+            return ingredientLines.any((ingredient) {
+              return userFoodIngredients.any(
+                (userIngredient) => ingredient
+                    .toString()
+                    .toLowerCase()
+                    .contains(userIngredient),
+              );
+            });
+          }
+          return false;
+        }).toList();
+      }
+
+      if (_selectedCuisine != null) {
+        currentList = currentList.where((recipe) {
+          final cuisineType = recipe['cuisineType'];
+          return cuisineType
+              .toString()
+              .toLowerCase()
+              .contains(_selectedCuisine!.toLowerCase());
+        }).toList();
+      }
+
+      if (_selectedCategory != null) {
+        currentList = currentList.where((recipe) {
+          final categoryType = recipe['foodCategory'];
+          return categoryType != null &&
+              categoryType
+                  .toString()
+                  .toLowerCase()
+                  .contains(_selectedCategory!.toLowerCase());
+        }).toList();
+      }
+
+      currentList = currentList.where((recipe) {
+        final ingredientLines = recipe['ingredientLines'];
+        return ingredientLines is List && ingredientLines.isNotEmpty;
+      }).toList();
+
+      filteredRecipes = currentList;
+
+      // Now get the recommendations based on the filtered recipes
+      // _fetchRecommendations(user.uid);
+    });
+  }
+
+  // MARK: with rec system
+  // Future<List<String>> _applyFiltersFromUserData(
+  //     List<dynamic> allRecipes) async {
+  //   final user = FirebaseAuth.instance.currentUser;
+  //   if (user == null) return [];
+
+  //   final doc = await FirebaseFirestore.instance
+  //       .collection('users')
+  //       .doc(user.uid)
+  //       .get();
+
+  //   if (!doc.exists) return [];
+
+  //   final userData = doc.data();
+  //   if (userData == null) return [];
+
+  //   final dynamic calorieRaw = userData['calories'];
+  //   final dynamic allergyRaw = userData['foodAllergy'];
+  //   final dynamic foodIngredientRaw = userData['foodIngredient'];
+
+  //   final double? userCalorie = calorieRaw is num
+  //       ? calorieRaw.toDouble()
+  //       : double.tryParse(calorieRaw.toString());
+
+  //   final Set<String> userAllergy = {
+  //     if (allergyRaw is List)
+  //       ...allergyRaw.map((e) => e.toString().toLowerCase()),
+  //     if (allergyRaw is String) allergyRaw.toLowerCase(),
+  //   };
+
+  //   final Set<String> userFoodIngredients = {
+  //     if (foodIngredientRaw is List)
+  //       ...foodIngredientRaw.map((e) => e.toString().toLowerCase()),
+  //     if (foodIngredientRaw is String) foodIngredientRaw.toLowerCase(),
+  //   };
+
+  //   // Apply filters
+  //   List<String> currentList = [];
+
+  //   // Filter by calories, allergies, ingredients, etc.
+  //   List<dynamic> filteredList = List.from(allRecipes);
+
+  //   // Apply various filters (as before)...
+  //   // After filtering, you can extract the recipe names or relevant string data:
+
+  //   currentList = filteredList.map<String>((recipe) {
+  //     return recipe['label'] ??
+  //         ''; // assuming 'label' is the string you're filtering
+  //   }).toList();
+
+  //   return currentList;
+  // }
+
+  // // Fetch recommendations based on collaborative filtering
+  // Future<void> _fetchRecommendations(String userId) async {
+  //   final recommendations = await getCollaborativeRecommendations(userId);
+
+  //   setState(() {
+  //     recommendedRecipes = recommendations;
+  //   });
+  // }
+
+  // MARK: Print User Data
   Future<void> printAllUserRecipeData() async {
     try {
       var userCollection = FirebaseFirestore.instance.collection('users');
@@ -621,301 +1029,483 @@ class _HomepageState extends State<Homepage> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 20, bottom: 5),
-              child: Text(
-                'Search',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-              child: Material(
-                borderRadius: BorderRadius.circular(15),
-                elevation: 3,
-                shadowColor: Colors.black26,
-                child: TextFormField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    contentPadding: EdgeInsets.symmetric(vertical: 12),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide(color: Colors.transparent),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide:
-                          BorderSide(color: Color(0xFF1F5F5B), width: 1.5),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[200],
-                    prefixIcon: IconButton(
-                      icon: Icon(Icons.search, color: Colors.grey[700]),
-                      splashRadius: 22,
-                      onPressed: () {
-                        filterRecipes(
-                            searchController.text, selectedCuisineType);
-                      },
-                    ),
-                    hintText: 'Search food...',
-                    hintStyle: TextStyle(color: Colors.grey[600]),
-                    suffixIcon: IconButton(
-                      onPressed: () async {
-                        Map<String, dynamic>? result =
-                            await showFilterSheet(context);
-                        if (result != null) {
-                          setState(() {
-                            _selectedCalories = result['calories'];
-                            _filterRecipesByCalories();
-                            _filterRecipesByCategories();
-                            _filterRecipesByIngredients();
-                            _filterRecipesByAllergies();
-                          });
-                          print("Updated Calories: $_selectedCalories");
-                        }
-                      },
-                      icon: Icon(Icons.tune, color: Color(0xFF1F5F5B)),
-                      splashRadius: 22,
+      body: FutureBuilder(
+          future: _filterDataFuture,
+          builder: (context, snapshot) {
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 20, bottom: 5),
+                    child: Text(
+                      'Search',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                   ),
-                  onFieldSubmitted: (query) {
-                    filterRecipes(query, selectedCuisineType);
-                  },
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 20, bottom: 5),
-              child: Text(
-                'Function List',
-                style: TextStyleBold.boldTextStyle(),
-              ),
-            ),
-            SizedBox(height: 5),
-            Center(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    FunctionCard(
-                      imagePath: 'assets/images/calorieTracking.png',
-                      functionName: 'Calorie Tracking',
-                      destinationScreen: CalorieTrackingScreen(),
-                    ),
-                    FunctionCard(
-                      imagePath: 'assets/images/calorieTracking.png',
-                      functionName: 'Nutrition Tracking',
-                      destinationScreen: NutritionScreen(),
-                    ),
-                    FunctionCard(
-                      imagePath: 'assets/images/mealPlanning.png',
-                      functionName: 'Meal Planning',
-                      destinationScreen: MealPlanningScreen(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 15),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      // Icons.tune,
-                      Icons.fastfood,
-                      Icons.category,
-                      Icons.kitchen,
-                      Icons.warning,
-                    ].map((icon) {
-                      return GestureDetector(
-                        onTap: () async {
-                          if (icon == Icons.tune) {
-                            // Open filter modal
-                            Map<String, dynamic>? result =
-                                await showFilterSheet(context);
-                            if (result != null) {
-                              setState(() {
-                                _selectedCalories = result['calories'];
-                                _filterRecipesByCalories();
-                                _filterRecipesByIngredients();
-                                _filterRecipesByCategories();
-                                _filterRecipesByAllergies();
-                              });
-                              print("Updated Calories: $_selectedCalories");
-                            }
-                          } else if (icon == Icons.fastfood) {
-                            double? result = await showCalorieFilterSheet(
-                                context, _selectedCalories ?? 100);
-                            if (result != null) {
-                              print("Updated Calories: $result");
-                              setState(() {
-                                _selectedCalories = result;
-                                _filterRecipesByCalories();
-                              });
-                            }
-                          } else if (icon == Icons.category) {
-                            Set<String>? result = await showCategoryFilterSheet(
-                                context, selectedCategories);
-                            if (result != null) {
-                              setState(() {
-                                selectedCategories = result;
-                                _filterRecipesByCategories(
-                                    startFromAllRecipes: true);
-                              });
-                              print("Selected Categories: $selectedCategories");
-                            }
-                          } else if (icon == Icons.kitchen) {
-                            Set<String>? result =
-                                await showIngredientFilterSheet(
-                                    context, selectedIngredients);
-                            if (result != null) {
-                              setState(() {
-                                selectedIngredients = result;
-                                _filterRecipesByIngredients(
-                                    startFromAllRecipes: true);
-                              });
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                    child: Material(
+                      borderRadius: BorderRadius.circular(15),
+                      elevation: 3,
+                      shadowColor: Colors.black26,
+                      child: TextFormField(
+                        controller: searchController,
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(vertical: 12),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(color: Colors.transparent),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(
+                                color: Color(0xFF1F5F5B), width: 1.5),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[200],
+                          prefixIcon: IconButton(
+                            icon: Icon(Icons.search, color: Colors.grey[700]),
+                            splashRadius: 22,
+                            onPressed: () {
+                              filterRecipes(
+                                  searchController.text, selectedCuisineType);
+                              // applyAllFilters(searchController.text);
+                            },
+                          ),
+                          hintText: 'Search food...',
+                          hintStyle: TextStyle(color: Colors.grey[600]),
+                          suffixIcon: IconButton(
+                            onPressed: () async {
+                              Map<String, dynamic>? result =
+                                  await showFilterSheet(context);
                               print(
-                                  "Selected Ingredients: $selectedIngredients");
-                            }
-                          } else if (icon == Icons.warning) {
-                            Set<String>? result = await showAllergyFilterSheet(
-                                context, selectedAllergies);
-                            if (result != null) {
-                              setState(() {
-                                selectedAllergies = result;
-                                _filterRecipesByAllergies(
-                                    startFromAllRecipes: true);
-                              });
-                              print("Selected Allergies: $selectedAllergies");
-                            }
+                                  "FilterSheet returned: $result"); // 👈 Check this
+                              if (result != null) {
+                                setState(() {
+                                  _selectedCalories = result['calories'];
+                                  selectedIngredients = result['ingredients'];
+                                  selectedAllergies = result['allergies'];
+                                  selectedCategories =
+                                      result['category']; // Error likely here
+                                });
+                                applyAllFilters(
+                                    searchController.text, selectedCuisineType);
+                              }
+                            },
+                            icon: Icon(Icons.tune, color: Color(0xFF1F5F5B)),
+                            splashRadius: 22,
+                          ),
+                        ),
+                        onFieldSubmitted: (query) {
+                          // filterRecipes(query, selectedCuisineType);
+                          applyAllFilters(query, selectedCuisineType);
+                        },
+                      ),
+                    ),
+                  ),
+                  // MARK: New Icon
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Recommended Recipes',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.filter_alt, color: Colors.deepOrange),
+                        tooltip: "Filter from preferences",
+                        onPressed: () async {
+                          // Get the current user
+                          final user = FirebaseAuth.instance.currentUser;
+                          if (user != null) {
+                            // Assuming getRecommendedRecipes takes the user UID as an argument
+                            List<dynamic> allRecipes =
+                                await getRecommendedRecipes(user.uid);
+                            // Apply filters based on user preferences
+                            // MARK: apply ver 1
+                            _applyFiltersFromUserData();
+                            // MARK: apply ver 2
+                            // await _applyFiltersFromUserData(allRecipes);
+                          } else {
+                            // Handle case where the user is not logged in
+                            print("No user logged in.");
                           }
                         },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 7),
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(15),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.2),
-                                      spreadRadius: 2,
-                                      blurRadius: 5,
-                                      offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.only(left: 20, bottom: 5),
+                    child: Text(
+                      'Function List',
+                      style: TextStyleBold.boldTextStyle(),
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  // Card Lists
+                  Center(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          FunctionCard(
+                            imagePath: 'assets/images/calorieTracking.png',
+                            functionName: 'Calorie Tracking',
+                            destinationScreen: CalorieTrackingScreen(),
+                          ),
+                          FunctionCard(
+                            imagePath: 'assets/images/calorieTracking.png',
+                            functionName: 'Nutrition Tracking',
+                            destinationScreen: NutritionScreen(),
+                          ),
+                          FunctionCard(
+                            imagePath: 'assets/images/mealPlanning.png',
+                            functionName: 'Meal Planning',
+                            destinationScreen: MealPlanningScreen(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Filter Lists
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 15),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            // Icons.tune,
+                            Icons.fastfood,
+                            Icons.category,
+                            Icons.kitchen,
+                            Icons.warning,
+                          ].map((icon) {
+                            return GestureDetector(
+                              onTap: () async {
+                                if (icon == Icons.tune) {
+                                  // Open filter modal
+                                  Map<String, dynamic>? result =
+                                      await showFilterSheet(context);
+                                  if (result != null) {
+                                    setState(() {
+                                      _selectedCalories = result['calories'];
+                                      _filterRecipesByCalories();
+                                      _filterRecipesByIngredients();
+                                      _filterRecipesByCategories();
+                                      _filterRecipesByAllergies();
+                                    });
+                                    print(
+                                        "Updated Calories: $_selectedCalories");
+                                  }
+                                } else if (icon == Icons.fastfood) {
+                                  double? result = await showCalorieFilterSheet(
+                                      context, _selectedCalories ?? 100);
+                                  if (result != null) {
+                                    print("Updated Calories: $result");
+                                    setState(() {
+                                      _selectedCalories = result;
+                                      _filterRecipesByCalories();
+                                    });
+                                  }
+                                } else if (icon == Icons.category) {
+                                  Set<String>? result =
+                                      await showCategoryFilterSheet(
+                                          context, selectedCategories);
+                                  if (result != null) {
+                                    setState(() {
+                                      selectedCategories = result;
+                                      _filterRecipesByCategories(
+                                          startFromAllRecipes: true);
+                                    });
+                                    print(
+                                        "Selected Categories: $selectedCategories");
+                                  }
+                                } else if (icon == Icons.kitchen) {
+                                  Set<String>? result =
+                                      await showIngredientFilterSheet(
+                                          context, selectedIngredients);
+                                  if (result != null) {
+                                    setState(() {
+                                      selectedIngredients = result;
+                                      _filterRecipesByIngredients(
+                                          startFromAllRecipes: true);
+                                    });
+                                    print(
+                                        "Selected Ingredients: $selectedIngredients");
+                                  }
+                                } else if (icon == Icons.warning) {
+                                  Set<String>? result =
+                                      await showAllergyFilterSheet(
+                                          context, selectedAllergies);
+                                  if (result != null) {
+                                    setState(() {
+                                      selectedAllergies = result;
+                                      _filterRecipesByAllergies(
+                                          startFromAllRecipes: true);
+                                    });
+                                    print(
+                                        "Selected Allergies: $selectedAllergies");
+                                  }
+                                }
+                              },
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 7),
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      width: 60,
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(15),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.2),
+                                            spreadRadius: 2,
+                                            blurRadius: 5,
+                                            offset: Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          icon,
+                                          size: 30,
+                                          color: Color(0xFF1F5F5B),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 5),
+                                    Text(
+                                      // icon == Icons.tune
+                                      //     ? 'Edit'
+                                      // : icon == Icons.category
+                                      icon == Icons.category
+                                          ? 'Category'
+                                          : icon == Icons.kitchen
+                                              ? 'Ingredients'
+                                              : icon == Icons.warning
+                                                  ? 'Allergy'
+                                                  : 'Calories',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF1F5F5B),
+                                      ),
+                                      textAlign: TextAlign.center,
                                     ),
                                   ],
                                 ),
-                                child: Center(
-                                  child: Icon(
-                                    icon,
-                                    size: 30,
-                                    color: Color(0xFF1F5F5B),
-                                  ),
-                                ),
                               ),
-                              SizedBox(height: 5),
-                              Text(
-                                // icon == Icons.tune
-                                //     ? 'Edit'
-                                // : icon == Icons.category
-                                icon == Icons.category
-                                    ? 'Category'
-                                    : icon == Icons.kitchen
-                                        ? 'Ingredients'
-                                        : icon == Icons.warning
-                                            ? 'Allergy'
-                                            : 'Calories',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF1F5F5B),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
+                            );
+                          }).toList(),
                         ),
-                      );
-                    }).toList(),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
-            // TextButton(
-            //   onPressed: () {
-            //     var user = _auth.currentUser;
-            //     if (user != null) {
-            //       Navigator.push(
-            //         context,
-            //         MaterialPageRoute(
-            //           builder: (context) =>
-            //               RecommendationScreen(userId: user.uid),
-            //         ),
-            //       );
-            //     } else {
-            //       // Handle case where user is not logged in
-            //       // For example, show a login prompt or message
-            //       print('User is not logged in.');
-            //     }
-            //   },
-            //   child: Text('to another'),
-            // ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Text(
-                'Recommended Menu🔥',
-                style: TextStyleBold.boldTextStyle(),
-              ),
-            ),
-            Column(
-              children: [
-                Column(
-                  children: [
-                    isLoading
-                        ? Center(child: CircularProgressIndicator())
-                        // : Container(),
-                        : Center(
+                  // TextButton(
+                  //   onPressed: () {
+                  //     var user = _auth.currentUser;
+                  //     if (user != null) {
+                  //       Navigator.push(
+                  //         context,
+                  //         MaterialPageRoute(
+                  //           builder: (context) =>
+                  //               RecommendationScreen(userId: user.uid),
+                  //         ),
+                  //       );
+                  //     } else {
+                  //       // Handle case where user is not logged in
+                  //       // For example, show a login prompt or message
+                  //       print('User is not logged in.');
+                  //     }
+                  //   },
+                  //   child: Text('to another'),
+                  // ),
+                  // Recommendation Lists
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    child: Text(
+                      'Recommended Menu🔥',
+                      style: TextStyleBold.boldTextStyle(),
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      Column(
+                        children: [
+                          isLoading
+                              ? Center(child: CircularProgressIndicator())
+                              // : Container(),
+                              : Center(
+                                  // child: SizedBox(
+                                  //   height: MediaQuery.of(context).size.height *
+                                  //       0.5,
+                                  //   width: MediaQuery.of(context).size.width *
+                                  //       0.93,
+                                  //   child: Container(
+                                  //     decoration: BoxDecoration(
+                                  //       boxShadow: [
+                                  //         BoxShadow(
+                                  //           color:
+                                  //               Colors.black.withOpacity(0.12),
+                                  //           blurRadius: 3,
+                                  //           offset: Offset(0, 4),
+                                  //         ),
+                                  //       ],
+                                  //     ),
+                                  //     child: ListView.builder(
+                                  //       itemCount: recommendedLabels.length,
+                                  //       itemBuilder: (context, index) {
+                                  //         String labelName =
+                                  //             recommendedLabels[index];
+                                  //         var recipe = allRecipes.firstWhere(
+                                  //           (r) => r['label'] == labelName,
+                                  //           orElse: () => <String, dynamic>{},
+                                  //         );
+
+                                  //         String imagePath =
+                                  //             'assets/fetchMenu/${labelName.toLowerCase().replaceAll(' ', '_')}.jpg';
+
+                                  //         return Stack(
+                                  //           children: [
+                                  //             Padding(
+                                  //               padding: const EdgeInsets.only(
+                                  //                   right:
+                                  //                       40.0), // Leave space for icon
+                                  //               child: ListTile(
+                                  //                 leading: Image.asset(
+                                  //                   imagePath,
+                                  //                   width: 50,
+                                  //                   height: 50,
+                                  //                   fit: BoxFit.cover,
+                                  //                   errorBuilder:
+                                  //                       (BuildContext context,
+                                  //                           Object error,
+                                  //                           StackTrace?
+                                  //                               stackTrace) {
+                                  //                     return Image.asset(
+                                  //                       'assets/images/default.png',
+                                  //                       width: 50,
+                                  //                       height: 50,
+                                  //                       fit: BoxFit.cover,
+                                  //                     );
+                                  //                   },
+                                  //                 ),
+                                  //                 title: Text(labelName),
+                                  //                 subtitle: recipe.isNotEmpty
+                                  //                     ? Column(
+                                  //                         crossAxisAlignment:
+                                  //                             CrossAxisAlignment
+                                  //                                 .start,
+                                  //                         children: [
+                                  //                           Row(
+                                  //                             children: [
+                                  //                               Icon(
+                                  //                                   Icons
+                                  //                                       .local_fire_department_outlined,
+                                  //                                   color: Colors
+                                  //                                       .red),
+                                  //                               Text(
+                                  //                                 "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
+                                  //                               ),
+                                  //                             ],
+                                  //                           ),
+                                  //                           Text(recipe[
+                                  //                               'source']),
+                                  //                         ],
+                                  //                       )
+                                  //                     : Text(
+                                  //                         "Details not found"),
+                                  //                 onTap: () {
+                                  //                   if (recipe.isNotEmpty) {
+                                  //                     logRecipeClick(
+                                  //                         recipe['label'],
+                                  //                         recipe['source']);
+                                  //                     Navigator.push(
+                                  //                       context,
+                                  //                       MaterialPageRoute(
+                                  //                         builder: (context) =>
+                                  //                             FoodDetailScreen(
+                                  //                                 recipe:
+                                  //                                     recipe),
+                                  //                       ),
+                                  //                     );
+                                  //                   }
+                                  //                 },
+                                  //               ),
+                                  //             ),
+                                  //             Positioned(
+                                  //               top: 10,
+                                  //               right: 10,
+                                  //               child: IconButton(
+                                  //                 icon: Icon(
+                                  //                   favoriteRecipes[
+                                  //                               labelName] ==
+                                  //                           true
+                                  //                       ? Icons.star
+                                  //                       : Icons.star_border,
+                                  //                   size: 30,
+                                  //                   color:
+                                  //                       favoriteRecipes[
+                                  //                                   labelName] ==
+                                  //                               true
+                                  //                           ? Color.fromARGB(
+                                  //                               255,
+                                  //                               255,
+                                  //                               191,
+                                  //                               0)
+                                  //                           : Colors.grey,
+                                  //                 ),
+                                  //                 onPressed: () {
+                                  //                   _toggleFavorite(
+                                  //                       labelName, recipe);
+                                  //                 },
+                                  //               ),
+                                  //             ),
+                                  //           ],
+                                  //         );
+                                  //       },
+                                  //     ),
+                                  //   ),
+                                  // ),
+                                  ),
+
+                          // After loading, the second ListView (filteredRecipes) goes below the first one
+                          Center(
                             child: SizedBox(
                               height: MediaQuery.of(context).size.height * 0.5,
                               width: MediaQuery.of(context).size.width * 0.93,
                               child: Container(
-                                // decoration: BoxDecoration(
-                                //   boxShadow: [
-                                //     BoxShadow(
-                                //       color: Colors.black.withOpacity(0.12),
-                                //       blurRadius: 3,
-                                //       offset: Offset(0, 4),
-                                //     ),
-                                //   ],
-                                // ),
+                                decoration: BoxDecoration(
+                                  boxShadow: [
+                                    // BoxShadow(
+                                    //   color: Colors.black.withOpacity(0.12),
+                                    //   blurRadius: 3,
+                                    //   offset: Offset(0, 4),
+                                    // ),
+                                  ],
+                                ),
                                 child: ListView.builder(
-                                  itemCount: recommendedLabels.length,
+                                  itemCount: filteredRecipes.length,
                                   itemBuilder: (context, index) {
-                                    String labelName = recommendedLabels[index];
-                                    var recipe = allRecipes.firstWhere(
-                                      (r) => r['label'] == labelName,
-                                      orElse: () => <String, dynamic>{},
-                                    );
-
+                                    var recipe = filteredRecipes[index];
                                     String imagePath =
-                                        'assets/fetchMenu/${labelName.toLowerCase().replaceAll(' ', '_')}.jpg';
+                                        '${'assets/fetchMenu/' + recipe['label']?.toLowerCase().replaceAll(' ', '_')}.jpg';
 
                                     return Stack(
                                       children: [
                                         Padding(
-                                          padding: const EdgeInsets.only(
-                                              right:
-                                                  40.0), // Leave space for icon
+                                          padding:
+                                              const EdgeInsets.only(right: 20),
                                           child: ListTile(
                                             leading: Image.asset(
                                               imagePath,
@@ -934,64 +1524,62 @@ class _HomepageState extends State<Homepage> {
                                                 );
                                               },
                                             ),
-                                            title: Text(labelName),
-                                            subtitle: recipe.isNotEmpty
-                                                ? Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Row(
-                                                        children: [
-                                                          Icon(
-                                                              Icons
-                                                                  .local_fire_department_outlined,
-                                                              color:
-                                                                  Colors.red),
-                                                          Text(
-                                                            "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      Text(recipe['source']),
-                                                    ],
-                                                  )
-                                                : Text("Details not found"),
+                                            title: Text(recipe['label']),
+                                            subtitle: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .local_fire_department_outlined,
+                                                      color: Colors.red,
+                                                    ),
+                                                    Text(
+                                                      "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
+                                                    ),
+                                                  ],
+                                                ),
+                                                Text(recipe['source']),
+                                              ],
+                                            ),
                                             onTap: () {
-                                              if (recipe.isNotEmpty) {
-                                                logRecipeClick(recipe['label'],
-                                                    recipe['source']);
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        FoodDetailScreen(
-                                                            recipe: recipe),
-                                                  ),
-                                                );
-                                              }
+                                              logRecipeClick(recipe['label'],
+                                                  recipe['source']);
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      FoodDetailScreen(
+                                                          recipe: recipe),
+                                                ),
+                                              );
                                             },
                                           ),
                                         ),
+                                        // Favorite Icon on Top-Right
                                         Positioned(
-                                          top: 10,
-                                          right: 10,
+                                          top: 5, // Adjust top position
+                                          right: 5, // Adjust right position
                                           child: IconButton(
                                             icon: Icon(
-                                              favoriteRecipes[labelName] == true
+                                              favoriteRecipes[
+                                                          recipe['label']] ==
+                                                      true
                                                   ? Icons.star
                                                   : Icons.star_border,
                                               size: 30,
-                                              color:
-                                                  favoriteRecipes[labelName] ==
-                                                          true
-                                                      ? Color.fromARGB(
-                                                          255, 255, 191, 0)
-                                                      : Colors.grey,
+                                              color: favoriteRecipes[
+                                                          recipe['label']] ==
+                                                      true
+                                                  ? Color.fromARGB(
+                                                      255, 255, 191, 0)
+                                                  : Colors.grey,
                                             ),
                                             onPressed: () {
                                               _toggleFavorite(
-                                                  labelName, recipe);
+                                                  recipe['label'], recipe);
                                             },
                                           ),
                                         ),
@@ -1002,121 +1590,14 @@ class _HomepageState extends State<Homepage> {
                               ),
                             ),
                           ),
-
-                    // After loading, the second ListView (filteredRecipes) goes below the first one
-                    Center(
-                      child: SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.5,
-                        width: MediaQuery.of(context).size.width * 0.93,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.12),
-                                blurRadius: 3,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ListView.builder(
-                            itemCount: filteredRecipes.length,
-                            itemBuilder: (context, index) {
-                              var recipe = filteredRecipes[index];
-                              String imagePath =
-                                  '${'assets/fetchMenu/' + recipe['label']?.toLowerCase().replaceAll(' ', '_')}.jpg';
-
-                              return Stack(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 20),
-                                    child: ListTile(
-                                      leading: Image.asset(
-                                        imagePath,
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (BuildContext context,
-                                            Object error,
-                                            StackTrace? stackTrace) {
-                                          return Image.asset(
-                                            'assets/images/default.png',
-                                            width: 50,
-                                            height: 50,
-                                            fit: BoxFit.cover,
-                                          );
-                                        },
-                                      ),
-                                      title: Text(recipe['label']),
-                                      subtitle: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons
-                                                    .local_fire_department_outlined,
-                                                color: Colors.red,
-                                              ),
-                                              Text(
-                                                "${formatNumber(recipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} ${recipe['totalNutrients']['ENERC_KCAL']['unit']}",
-                                              ),
-                                            ],
-                                          ),
-                                          Text(recipe['source']),
-                                        ],
-                                      ),
-                                      onTap: () {
-                                        logRecipeClick(
-                                            recipe['label'], recipe['source']);
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                FoodDetailScreen(
-                                                    recipe: recipe),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  // Favorite Icon on Top-Right
-                                  Positioned(
-                                    top: 5, // Adjust top position
-                                    right: 5, // Adjust right position
-                                    child: IconButton(
-                                      icon: Icon(
-                                        favoriteRecipes[recipe['label']] == true
-                                            ? Icons.star
-                                            : Icons.star_border,
-                                        size: 30,
-                                        color:
-                                            favoriteRecipes[recipe['label']] ==
-                                                    true
-                                                ? Color.fromARGB(
-                                                    255, 255, 191, 0)
-                                                : Colors.grey,
-                                      ),
-                                      onPressed: () {
-                                        _toggleFavorite(
-                                            recipe['label'], recipe);
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              ],
-            )
-          ],
-        ),
-      ),
+                        ],
+                      )
+                    ],
+                  )
+                ],
+              ),
+            );
+          }),
       // MARK: bottomNavigationBar
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -1270,10 +1751,10 @@ class TextStyleBold {
 }
 
 // MARK: ! Rec System
-void fetchAndShowRecommendations(String userId) async {
-  final recommendations = await getRecommendedRecipes(userId);
-  print("Top recommendations: $recommendations");
-}
+// void fetchAndShowRecommendations(String userId) async {
+//   final recommendations = await getRecommendedRecipes(userId);
+//   print("Top recommendations: $recommendations");
+// }
 
 Future<Map<String, int>> fetchUserData(String userId) async {
   final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
@@ -1345,6 +1826,59 @@ Future<Map<String, dynamic>> loadRecipeData() async {
   return recipeMap;
 }
 
+List filterRecipes({
+  required Map<String, dynamic> recipeMap,
+  required double minCalorie,
+  required double maxCalorie,
+  required List<String> categories,
+  required List<String> requiredIngredients,
+  required List<String> allergies,
+  String query = '',
+}) {
+  return recipeMap.entries
+      .where((entry) {
+        final recipe = entry.value;
+        final label = recipe['label'].toString().toLowerCase();
+        final calories = (recipe['calories'] as num).toDouble();
+        final recipeCategory = recipe['category']?.toString() ?? '';
+        final ingredientLines =
+            List<String>.from(recipe['ingredientLines'] ?? []);
+
+        // Filter by calorie
+        if (calories < minCalorie || calories > maxCalorie) return false;
+
+        // Filter by category
+        if (categories.isNotEmpty &&
+            !categories.any((cat) =>
+                recipeCategory.toLowerCase().contains(cat.toLowerCase()))) {
+          return false;
+        }
+
+        // Filter by must-have ingredients
+        if (requiredIngredients.isNotEmpty &&
+            !requiredIngredients.every((ing) => ingredientLines.any(
+                (line) => line.toLowerCase().contains(ing.toLowerCase())))) {
+          return false;
+        }
+
+        // Filter by allergies
+        if (allergies.isNotEmpty &&
+            ingredientLines.any((line) => allergies.any((allergy) =>
+                line.toLowerCase().contains(allergy.toLowerCase())))) {
+          return false;
+        }
+
+        // Filter by search query in label
+        if (query.isNotEmpty && !label.contains(query.toLowerCase())) {
+          return false;
+        }
+
+        return true;
+      })
+      .map((entry) => entry.value)
+      .toList();
+}
+
 // MARK: Get Rec.
 Future<List<String>> getRecommendedRecipes(String currentUserId) async {
   // Fetch aggregated stats from Firestore
@@ -1405,8 +1939,43 @@ Future<List<String>> getRecommendedRecipes(String currentUserId) async {
 
   // Debug print
   for (var entry in sorted) {
-    print('Recipe: ${entry.key}, Score: ${entry.value}');
+    // print('Recipe: ${entry.key}, Score: ${entry.value}');
   }
 
   return sorted.map((entry) => entry.key).toList();
+}
+
+Future<List<String>> getCollaborativeRecommendations(
+    String currentUserId) async {
+  final currentUserData = await fetchUserData(currentUserId);
+  final allUserData = await fetchAllUserData();
+
+  final Map<String, double> similarityScores = {};
+
+  allUserData.forEach((otherUserId, data) {
+    if (otherUserId != currentUserId) {
+      similarityScores[otherUserId] = cosineSimilarity(currentUserData, data);
+    }
+  });
+
+  final topUsers = similarityScores.entries.where((e) => e.value > 0).toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
+
+  final Map<String, double> recommendedRecipes = {};
+
+  for (var entry in topUsers.take(5)) {
+    final otherUserId = entry.key;
+    final similarity = entry.value;
+    final otherUserData = allUserData[otherUserId]!;
+
+    otherUserData.forEach((recipe, count) {
+      recommendedRecipes[recipe] =
+          (recommendedRecipes[recipe] ?? 0) + count * similarity;
+    });
+  }
+
+  final sorted = recommendedRecipes.entries.toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
+
+  return sorted.map((e) => e.key).toList();
 }

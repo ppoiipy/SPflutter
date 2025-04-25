@@ -19,6 +19,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Column(children: [
           // Top Bar
@@ -233,6 +234,7 @@ class SignUpFieldState extends State<SignUpField> {
   // final FirestoreService firestoreService = FirestoreService();
 
   List<String> foodIngredient = [
+    'None',
     'Chicken',
     'Beef',
     'Pork',
@@ -270,6 +272,14 @@ class SignUpFieldState extends State<SignUpField> {
     'Wheat',
     'Alcohol',
   ];
+  List<String> foodCategory = [
+    'None',
+    'American',
+    'Italian',
+    'Japanese',
+    'Chinese',
+    'Thai',
+  ];
 
   String? selectedGender;
   String? _selectedActivityLevel;
@@ -277,6 +287,7 @@ class SignUpFieldState extends State<SignUpField> {
 
   List<String> selectedIngredients = [];
   List<String> selectedAllergies = [];
+  List<String> selectedCategories = [];
 
   List<String> genderOptions = ['Male', 'Female', 'Other'];
   Set<String> activityLevels = {
@@ -345,6 +356,7 @@ class SignUpFieldState extends State<SignUpField> {
         // 'allergies': _allergiesController.text,
         'foodIngredient': selectedIngredients,
         'foodAllergy': selectedAllergies,
+        'foodCategory': selectedCategories,
         'activityLevel': _selectedActivityLevel,
       }).then((_) {
         log('User details saved to Firestore');
@@ -421,7 +433,7 @@ class SignUpFieldState extends State<SignUpField> {
               children: [
                 Text(
                   'Password',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 TextFormField(
                   obscureText: !_isPasswordState,
@@ -469,7 +481,7 @@ class SignUpFieldState extends State<SignUpField> {
               children: [
                 Text(
                   'Confirm Password',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 TextFormField(
                   obscureText: !_isPasswordState,
@@ -515,97 +527,189 @@ class SignUpFieldState extends State<SignUpField> {
             SizedBox(height: 10),
 
             // Weight
-            TextFormField(
-              controller: _weightController,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Weight is required';
-                }
-                return null;
-              },
-              decoration: InputDecoration(
-                labelText: 'Weight (kg)',
-                hintText: 'Enter your weight',
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Weight (kg)',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                TextFormField(
+                  controller: _weightController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Weight is required';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    prefixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(width: 5),
+                        Icon(Icons.monitor_weight_outlined,
+                            size: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                        SizedBox(width: 6),
+                        Container(
+                            width: 1.5,
+                            height: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                      ],
+                    ),
+                    hintText: 'Enter your weight',
+                    hintStyle:
+                        TextStyle(color: Color.fromARGB(255, 124, 124, 124)),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 10),
 
             // Weight Goal
-            TextFormField(
-              controller: _weightGoalController,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Weight Goal is required';
-                }
-                return null;
-              },
-              decoration: InputDecoration(
-                labelText: 'Weight Goal (kg)',
-                hintText: 'Enter your weight goal',
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Weight Goal (kg)',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                TextFormField(
+                  controller: _weightGoalController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Weight Goal is required';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    prefixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(width: 5),
+                        Icon(Icons.flag_outlined,
+                            size: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                        SizedBox(width: 6),
+                        Container(
+                            width: 1.5,
+                            height: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                      ],
+                    ),
+                    hintText: 'Enter your weight goal',
+                    hintStyle:
+                        TextStyle(color: Color.fromARGB(255, 124, 124, 124)),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 10),
 
             // Height
-            TextFormField(
-              controller: _heightController,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Height is required';
-                }
-                return null;
-              },
-              decoration: InputDecoration(
-                labelText: 'Height (cm)',
-                hintText: 'Enter your height',
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Height (cm)',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                TextFormField(
+                  controller: _heightController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Height is required';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    prefixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(width: 5),
+                        Icon(Icons.height_outlined,
+                            size: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                        SizedBox(width: 6),
+                        Container(
+                            width: 1.5,
+                            height: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                      ],
+                    ),
+                    hintText: 'Enter your height',
+                    hintStyle:
+                        TextStyle(color: Color.fromARGB(255, 124, 124, 124)),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 10),
 
             // Date of Birth
-            TextFormField(
-              controller: _dobController,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Birth Date is required';
-                }
-                return null;
-              },
-              decoration: InputDecoration(
-                labelText: 'Date of Birth',
-                hintText: 'Select your date of birth',
-                suffixIcon: Icon(Icons.calendar_today),
-              ),
-              onTap: () async {
-                FocusScope.of(context)
-                    .requestFocus(FocusNode()); // to hide keyboard
-                DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(1900),
-                  lastDate: DateTime.now(),
-                );
-                if (pickedDate != null) {
-                  String formattedDate =
-                      DateFormat('yyyy-MM-dd').format(pickedDate);
-                  setState(() {
-                    _dobController.text = formattedDate;
-                  });
-                }
-              },
-              readOnly: true, // Disable keyboard input to prevent manual typing
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Date of Birth',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                TextFormField(
+                  controller: _dobController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Birth Date is required';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    prefixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(width: 5),
+                        Icon(Icons.cake_outlined,
+                            size: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                        SizedBox(width: 6),
+                        Container(
+                            width: 1.5,
+                            height: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                      ],
+                    ),
+                    suffixIcon: Icon(Icons.calendar_today,
+                        size: 20, color: Color.fromARGB(255, 124, 124, 124)),
+                    hintText: 'Select your date of birth',
+                    hintStyle:
+                        TextStyle(color: Color.fromARGB(255, 124, 124, 124)),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onTap: () async {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (pickedDate != null) {
+                      String formattedDate =
+                          DateFormat('yyyy-MM-dd').format(pickedDate);
+                      setState(() {
+                        _dobController.text = formattedDate;
+                      });
+                    }
+                  },
+                  readOnly: true,
+                ),
+              ],
             ),
             SizedBox(height: 10),
 
             // Gender
-            // TextFormField(
-            //   controller: _genderController,
-            //   decoration: InputDecoration(
-            //     labelText: 'Gender',
-            //     hintText: 'Enter your gender',
-            //   ),
-            // ),
-
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -622,7 +726,7 @@ class SignUpFieldState extends State<SignUpField> {
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please select gender';
+                      return 'Gender is required';
                     }
                     return null;
                   },
@@ -633,8 +737,10 @@ class SignUpFieldState extends State<SignUpField> {
                     );
                   }).toList(),
                   decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.person, size: 20),
-                    hintText: 'Select gender',
+                    prefixIcon: Icon(Icons.person_outlined,
+                        size: 20, color: Color.fromARGB(255, 124, 124, 124)),
+                    hintText: 'Gender',
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
                   ),
                 ),
               ],
@@ -642,116 +748,172 @@ class SignUpFieldState extends State<SignUpField> {
             SizedBox(height: 10),
 
             // Ingredients
-            TextFormField(
-              controller:
-                  TextEditingController(text: selectedIngredients.join(', ')),
-              readOnly: true, // Prevent manual input
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please select ingredients';
-                }
-                return null;
-              },
-              decoration: InputDecoration(
-                labelText: 'Ingredients',
-                hintText: 'Select your ingredients',
-                suffixIcon: Icon(Icons.arrow_drop_down),
-              ),
-              onTap: _showIngredientSheet, // Opens the bottom sheet on tap
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ingredients',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                TextFormField(
+                  controller: TextEditingController(
+                      text: selectedIngredients.join(', ')),
+                  readOnly: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select ingredients';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    prefixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(width: 5),
+                        Icon(Icons.kitchen_outlined,
+                            size: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                        SizedBox(width: 6),
+                        Container(
+                            width: 1.5,
+                            height: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                      ],
+                    ),
+                    suffixIcon: Icon(Icons.arrow_drop_down),
+                    hintText: 'Select your ingredients',
+                    hintStyle:
+                        TextStyle(color: Color.fromARGB(255, 124, 124, 124)),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onTap: _showIngredientSheet,
+                ),
+              ],
             ),
             SizedBox(height: 10),
 
             // Allergies
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Allergies',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                TextFormField(
+                  controller:
+                      TextEditingController(text: selectedAllergies.join(', ')),
+                  readOnly: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select allergies';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    prefixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(width: 5),
+                        Icon(Icons.warning_outlined,
+                            size: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                        SizedBox(width: 6),
+                        Container(
+                            width: 1.5,
+                            height: 20,
+                            color: Color.fromARGB(255, 124, 124, 124)),
+                      ],
+                    ),
+                    suffixIcon: Icon(Icons.arrow_drop_down),
+                    hintText: 'Select your allergies',
+                    hintStyle:
+                        TextStyle(color: Color.fromARGB(255, 124, 124, 124)),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onTap: _showAllergySheet,
+                ),
+              ],
+            ),
+            SizedBox(height: 10),
+
+            // Category / Cuisine Types
             TextFormField(
               controller:
-                  TextEditingController(text: selectedAllergies.join(', ')),
-              readOnly: true, // Prevent manual input
+                  TextEditingController(text: selectedCategories.join(', ')),
+              readOnly: true,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please select allergies';
+                  return 'Please select cuisine types';
                 }
                 return null;
               },
               decoration: InputDecoration(
-                labelText: 'Allergies',
-                hintText: 'Select your allergies',
+                labelText: 'Cuisine Types',
+                hintText: 'Select your cuisine types',
+                prefixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(width: 6),
+                    Icon(Icons.restaurant_menu_outlined,
+                        size: 20, color: Color.fromARGB(255, 124, 124, 124)),
+                    SizedBox(width: 5),
+                    Container(
+                        width: 1.5,
+                        height: 20,
+                        color: Color.fromARGB(255, 124, 124, 124)),
+                    SizedBox(width: 5),
+                  ],
+                ),
                 suffixIcon: Icon(Icons.arrow_drop_down),
               ),
-              onTap: _showAllergySheet,
+              onTap: _showCuisineSheet,
             ),
             SizedBox(height: 10),
 
             // Activity Level
-            // TextFormField(
-            //   controller: _activityLevelController,
-            //   decoration: InputDecoration(
-            //     labelText: 'Activity Level',
-            //     hintText: 'Enter your activity level',
-            //   ),
-            // ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: EdgeInsets.only(bottom: 10.0), // Prevent overflow
-                  child: DropdownButtonFormField<String>(
-                    value: _selectedActivityLevel,
-                    items: activityLevels.map((entry) {
-                      return DropdownMenuItem<String>(
-                        value: entry,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              entry,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w500, fontSize: 15),
-                            ),
-                            // Padding(
-                            //   padding: const EdgeInsets.only(top: 4.0),
-                            //   child: Text(
-                            //     entry.value,
-                            //     style: TextStyle(
-                            //         fontSize: 12, color: Colors.grey[600]),
-                            //   ),
-                            // ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedActivityLevel = value;
-                        // _activityDescription = activityLevels[value];
-                      });
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Select your activity level',
-                      contentPadding: EdgeInsets.symmetric(
-                          vertical: 8.0,
-                          horizontal: 10.0), // Increase vertical padding
-                    ),
-                    isDense:
-                        false, // Ensure there is more space in the dropdown
-                    validator: (value) {
-                      if (value == null) {
-                        return 'Please select an activity level';
-                      }
-                      return null;
-                    },
+            DropdownButtonFormField<String>(
+              value: _selectedActivityLevel,
+              items: activityLevels.map((entry) {
+                return DropdownMenuItem<String>(
+                  value: entry,
+                  child: Text(
+                    entry,
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                   ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedActivityLevel = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Activity Level',
+                prefixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(width: 6),
+                    Icon(Icons.fitness_center_outlined,
+                        size: 20, color: Color.fromARGB(255, 124, 124, 124)),
+                    SizedBox(width: 5),
+                    Container(
+                        width: 1.5,
+                        height: 20,
+                        color: Color.fromARGB(255, 124, 124, 124)),
+                    SizedBox(width: 5),
+                  ],
                 ),
-
-                // Show selected description
-                // if (_selectedActivityLevel != null)
-                //   Padding(
-                //     padding: const EdgeInsets.only(top: 10.0),
-                //     child: Text(
-                //       'Description: $_activityDescription',
-                //       style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                //     ),
-                //   ),
-              ],
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 8.0, horizontal: 0),
+              ),
+              isDense: false,
+              validator: (value) {
+                if (value == null) {
+                  return 'Please select an activity level';
+                }
+                return null;
+              },
             ),
 
             SizedBox(height: 20),
@@ -873,6 +1035,63 @@ class SignUpFieldState extends State<SignUpField> {
                                   selectedAllergies.add(allergy);
                                 } else {
                                   selectedAllergies.remove(allergy);
+                                }
+                              });
+                              setState(() {});
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity, 50),
+                    ),
+                    child: Text('Done'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showCuisineSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: const EdgeInsets.all(16.0),
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select Cuisine Types',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(height: 10),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: foodCategory.map((cuisine) {
+                          return CheckboxListTile(
+                            title: Text(cuisine),
+                            value: selectedCategories.contains(cuisine),
+                            onChanged: (bool? value) {
+                              setSheetState(() {
+                                if (value == true) {
+                                  selectedCategories.add(cuisine);
+                                } else {
+                                  selectedCategories.remove(cuisine);
                                 }
                               });
                               setState(() {});

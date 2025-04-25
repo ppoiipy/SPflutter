@@ -72,7 +72,8 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
   void _initializeMeals() {
     if (!mealsGenerated) {
       // Generate and save meals for the first time
-      _refreshMeals();
+      // _refreshMeals();
+      _generateMeals();
       mealsGenerated = true; // Set the flag after meals are generated
     }
   }
@@ -619,13 +620,6 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     return Expanded(
       child: Column(
         children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: IconButton(
-              icon: Icon(Icons.refresh, color: Colors.teal),
-              onPressed: _refreshMeals,
-            ),
-          ),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -660,6 +654,21 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
         calorieGoal = dailyCalorieGoal / 3;
     }
 
+    IconData categoryIcon;
+    switch (category) {
+      case 'Breakfast':
+        categoryIcon = Icons.free_breakfast;
+        break;
+      case 'Lunch':
+        categoryIcon = Icons.lunch_dining;
+        break;
+      case 'Dinner':
+        categoryIcon = Icons.dinner_dining;
+        break;
+      default:
+        categoryIcon = Icons.fastfood;
+    }
+
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _loadRecipesFromJson(),
       builder: (context, snapshot) {
@@ -674,118 +683,151 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
         final recipes = snapshot.data ?? [];
         List<Map<String, dynamic>> selectedRecipes = dailyMeals[category] ?? [];
 
-        // Calculate the total calories for the selected recipes
         int totalCalories = selectedRecipes.fold(0, (sum, recipe) {
-          // Safely convert the quantity to double, then cast to int
           double calories =
               (recipe['totalNutrients']['ENERC_KCAL']['quantity'] as num)
                   .toDouble();
           return sum + calories.toInt();
         });
 
-        return Container(
-          padding: EdgeInsets.all(8),
-          margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          width: MediaQuery.of(context).size.width,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                category,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Total Calories: ${formatNumber(totalCalories)} kcal',
-                style: TextStyle(fontSize: 16),
-              ),
-              selectedRecipes.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text("No meals available within calorie range"),
-                    )
-                  : Column(
-                      children: selectedRecipes.map((selectedRecipe) {
-                        return ListTile(
-                          leading: Image.asset(
-                            'assets/fetchMenu/' +
-                                selectedRecipe['label']
-                                    ?.toLowerCase()
-                                    .replaceAll(' ', '_') +
-                                '.jpg',
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/images/default.png',
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                              );
-                            },
-                          ),
-                          title:
-                              Text(selectedRecipe['label'] ?? 'Unknown Recipe'),
-                          subtitle: Text(
-                            "${formatNumber(selectedRecipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal",
-                          ),
-                          trailing: PopupMenuButton<String>(
-                            icon:
-                                Icon(Icons.more_vert, color: Colors.teal[700]),
-                            onSelected: (String value) {
-                              if (value == 'delete') {
-                                _removeMeal(selectedRecipe);
-                              } else if (value == 'change') {
-                                _changeMeal(selectedRecipe);
-                              }
-                            },
-                            itemBuilder: (BuildContext context) {
-                              return [
-                                PopupMenuItem<String>(
-                                  value: 'change',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.edit, color: Colors.teal),
-                                      SizedBox(width: 8),
-                                      Text('Change Menu'),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<String>(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.delete, color: Colors.red),
-                                      SizedBox(width: 8),
-                                      Text('Delete Meal'),
-                                    ],
-                                  ),
-                                ),
-                              ];
-                            },
-                          ),
-                          onTap: () {
-                            logRecipeClick(selectedRecipe['label'],
-                                selectedRecipe['shareAs']);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => FoodDetailScreen(
-                                  recipe: selectedRecipe,
-                                  selectedDate: selectedDate,
+        double progress = (totalCalories / calorieGoal).clamp(0, 1);
+
+        return Card(
+          margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 4,
+          child: Padding(
+            padding: EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(categoryIcon, color: Colors.teal[600], size: 24),
+                    SizedBox(width: 8),
+                    Text(
+                      category,
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    Spacer(),
+                    Text(
+                      '${formatNumber(totalCalories)} / ${formatNumber(calorieGoal.toInt())} kcal',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: Colors.grey[300],
+                  color: Colors.teal,
+                  minHeight: 8,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                SizedBox(height: 12),
+                selectedRecipes.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Text("No meals available in this category"),
+                        ),
+                      )
+                    : Column(
+                        children: selectedRecipes.map((selectedRecipe) {
+                          return Container(
+                            margin: EdgeInsets.symmetric(vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ListTile(
+                              contentPadding: EdgeInsets.all(8),
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.asset(
+                                  'assets/fetchMenu/' +
+                                      selectedRecipe['label']
+                                          ?.toLowerCase()
+                                          .replaceAll(' ', '_') +
+                                      '.jpg',
+                                  width: 55,
+                                  height: 55,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.asset(
+                                      'assets/images/default.png',
+                                      width: 55,
+                                      height: 55,
+                                      fit: BoxFit.cover,
+                                    );
+                                  },
                                 ),
                               ),
-                            );
-                          },
-                        );
-                      }).toList(),
-                    ),
-            ],
+                              title: Text(
+                                selectedRecipe['label'] ?? 'Unknown Recipe',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              subtitle: Text(
+                                "${formatNumber(selectedRecipe['totalNutrients']['ENERC_KCAL']['quantity'].toInt())} kcal",
+                                style: TextStyle(color: Colors.grey[700]),
+                              ),
+                              trailing: PopupMenuButton<String>(
+                                icon: Icon(Icons.more_vert, color: Colors.teal),
+                                onSelected: (String value) {
+                                  if (value == 'delete') {
+                                    _removeMeal(selectedRecipe);
+                                  } else if (value == 'change') {
+                                    _changeMeal(selectedRecipe);
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) {
+                                  return [
+                                    PopupMenuItem<String>(
+                                      value: 'change',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit, color: Colors.teal),
+                                          SizedBox(width: 8),
+                                          Text('Change Menu'),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem<String>(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.delete, color: Colors.red),
+                                          SizedBox(width: 8),
+                                          Text('Delete Meal'),
+                                        ],
+                                      ),
+                                    ),
+                                  ];
+                                },
+                              ),
+                              onTap: () {
+                                logRecipeClick(
+                                  selectedRecipe['label'],
+                                  selectedRecipe['shareAs'],
+                                );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FoodDetailScreen(
+                                      recipe: selectedRecipe,
+                                      selectedDate: selectedDate,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+              ],
+            ),
           ),
         );
       },
@@ -982,16 +1024,22 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Program Duration Selector
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                Text("Program Duration: ",
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                Icon(Icons.timer, color: Colors.teal[700]),
                 SizedBox(width: 10),
+                Text(
+                  "Program Duration:",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                SizedBox(width: 12),
                 DropdownButton<int>(
                   value: _selectedDuration,
+                  underline: SizedBox(),
+                  style: TextStyle(fontSize: 16, color: Colors.black),
                   items: [1, 7, 15, 30].map((int value) {
                     return DropdownMenuItem<int>(
                       value: value,
@@ -1009,22 +1057,28 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
               ],
             ),
           ),
+
+          // Date Selector
           _buildDateSelector(),
-          SizedBox(
-            child: Text(
-              'TDEE: ${_calculateTDEE() != null ? _calculateTDEE()!.toStringAsFixed(2) : "N/A"} kcal',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+
+          // Daily Calorie Goal
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                Icon(Icons.flag, color: Colors.teal[700]),
+                SizedBox(width: 10),
+                Text(
+                  'Goal: ${calculateDailyCalorieGoal()?.toStringAsFixed(2) ?? "N/A"} kcal/day',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ],
             ),
           ),
+
+          // Weight Goal Input
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'Goal: ${calculateDailyCalorieGoal()?.toStringAsFixed(2) ?? "N/A"} kcal/day',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
                 Expanded(
@@ -1040,7 +1094,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 12),
                 SizedBox(
                   height: 48,
                   child: ElevatedButton.icon(
@@ -1054,17 +1108,16 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : Icon(
-                            Icons.save,
-                            color: Colors.teal[800],
-                          ),
+                        : Icon(Icons.save, color: Colors.teal[800]),
                     label: _isSaving
-                        ? Text('')
+                        ? SizedBox.shrink()
                         : Text(
                             'Save',
                             style: TextStyle(color: Colors.teal[800]),
                           ),
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal[50],
+                      elevation: 0,
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -1075,29 +1128,36 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
               ],
             ),
           ),
-          SizedBox(
-            height: 10,
-          ),
-          Row(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 10, bottom: 10),
-                child: Text(
-                  DateFormat('EEEE, d MMM').format(selectedDate),
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+
+          SizedBox(height: 20),
+
+          // Date Header + Buttons
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    DateFormat('EEEE, d MMM').format(selectedDate),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-              Expanded(child: Container()),
-              Padding(
-                padding: EdgeInsets.only(right: 20),
-                child: Icon(
-                  Icons.add_circle,
-                  size: 32,
-                  color: Colors.teal[800],
+                IconButton(
+                  icon:
+                      Icon(Icons.add_circle, size: 28, color: Colors.teal[800]),
+                  onPressed: () {
+                    // Add action here if needed
+                  },
                 ),
-              ),
-            ],
+                IconButton(
+                  icon: Icon(Icons.refresh, size: 28, color: Colors.teal[800]),
+                  onPressed: _refreshMeals,
+                ),
+              ],
+            ),
           ),
+
+          // Meal Plan UI
           _buildMealPlans(),
         ],
       ),

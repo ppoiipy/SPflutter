@@ -464,17 +464,6 @@ class CategoryFilter extends StatefulWidget {
 
 class _CategoryFilterState extends State<CategoryFilter> {
   final List<String> foodCategories = [
-    //   'American',
-    //   'Italian',
-    //   'Japanese',
-    //   'Chinese',
-    //   'Thai',
-    //   'South East Asia',
-    //   'Mexican',
-    //   'British',
-    //   'Central Europe',
-    //   'Asian'
-    // ];
     'American',
     'Italian',
     'Japanese',
@@ -488,110 +477,151 @@ class _CategoryFilterState extends State<CategoryFilter> {
   User? _user;
 
   @override
+  // void initState() {
+  //   super.initState();
+  //   _user = _auth.currentUser;
+  //   selectedCategories = Set.from(widget.selectedCategories);
+  //   if (_user != null) {
+  //     // _loadFilters();
+  //   }
+  // }
+
   void initState() {
     super.initState();
-    _user = _auth.currentUser;
     selectedCategories = Set.from(widget.selectedCategories);
-    if (_user != null) {
-      _loadFilters();
-    }
   }
 
-  // Load filters from Firebase when the widget is initialized
-  Future<void> _loadFilters() async {
-    DocumentSnapshot snapshot =
-        await _firestore.collection('users').doc(_user!.uid).get();
-    if (snapshot.exists) {
-      Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
-      setState(() {
-        selectedCategories = Set<String>.from(data?['foodCategory'] ?? []);
-      });
-    }
-  }
+  // // Load filters from Firebase when the widget is initialized
+  // Future<void> _loadFilters() async {
+  //   DocumentSnapshot snapshot =
+  //       await _firestore.collection('users').doc(_user!.uid).get();
+  //   if (snapshot.exists) {
+  //     Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
+  //     setState(() {
+  //       selectedCategories = Set<String>.from(data?['foodCategory'] ?? []);
+  //     });
+  //   }
+  // }
 
-  // Save the selected categories to Firebase
-  Future<void> _saveFilters() async {
-    if (_user == null) return;
+  // // Save the selected categories to Firebase
+  // Future<void> _saveFilters() async {
+  //   if (_user == null) return;
 
-    await _firestore.collection('users').doc(_user!.uid).set({
-      'foodCategory': selectedCategories.toList(),
-    }, SetOptions(merge: true));
-    widget.onSelectionChanged(selectedCategories);
-  }
+  //   await _firestore.collection('users').doc(_user!.uid).set({
+  //     'foodCategory': selectedCategories.toList(),
+  //   }, SetOptions(merge: true));
+  //   widget.onSelectionChanged(selectedCategories);
+  // }
 
-  // Reset filters to the original categories from Firebase
+  // // Reset filters to the original categories from Firebase
+  // void _resetFilters() {
+  //   setState(() {
+  //     selectedCategories.clear(); // Clear all selected cate
+  //   });
+  //   widget.onSelectionChanged(
+  //       Set.from(selectedCategories)); // Notify parent with empty set
+  // }
+
+  // Reset the selected allergies
   void _resetFilters() {
     setState(() {
-      selectedCategories = Set.from(widget.selectedCategories);
+      selectedCategories.clear(); // Clears all selected allergies
     });
-    _saveFilters();
+    widget.onSelectionChanged(
+        Set.from(selectedCategories)); // Notify parent with empty set
+  }
+
+  // Save selected allergies to Firebase
+  Future<void> _saveCategories() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'foodCategory': selectedCategories.toList(),
+    }, SetOptions(merge: true));
+  }
+
+  // Apply filters and save to Firebase
+  void _applyFilters() {
+    widget.onSelectionChanged(
+        selectedCategories); // Notify parent with selected allergies
+    _saveCategories(); // Save selected allergies to Firebase
+    Navigator.pop(context, selectedCategories);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("Food Categories",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        Wrap(
-          spacing: 8.0,
-          children: foodCategories.map((option) {
-            bool isSelected = selectedCategories.contains(option);
-            return ChoiceChip(
-              label: Text(option,
-                  style: TextStyle(
-                      color: isSelected ? Color(0xFF39C184) : Colors.black54)),
-              selected: isSelected,
-              onSelected: (bool selectedValue) {
-                setState(() {
-                  if (selectedValue) {
-                    selectedCategories.add(option);
-                  } else {
-                    selectedCategories.remove(option);
-                  }
-                });
-              },
-              selectedColor: Color(0xFF39C184).withOpacity(0.3),
-              side: BorderSide(
-                  color: isSelected ? Color(0xFF39C184) : Colors.grey,
-                  width: 1.4),
-              labelStyle:
-                  TextStyle(color: isSelected ? Colors.white : Colors.black),
-            );
-          }).toList(),
-        ),
-        SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton(
-              onPressed: _resetFilters,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[300],
-                minimumSize: Size(120, 40),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7)),
-              ), // Reset the categories when clicked
-              child: Text('Reset',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.black)),
-            ),
-            ElevatedButton(
-              onPressed: _saveFilters,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF39C184),
-                minimumSize: Size(120, 40),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7)),
-              ), // Save the selected categories
-              child: Text('Apply',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      ],
+    return Container(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Food Categories",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Wrap(
+            spacing: 8.0,
+            children: foodCategories.map((option) {
+              bool isSelected = selectedCategories.contains(option);
+              return ChoiceChip(
+                label: Text(option,
+                    style: TextStyle(
+                        color:
+                            isSelected ? Color(0xFF39C184) : Colors.black54)),
+                selected: isSelected,
+                onSelected: (bool selectedValue) {
+                  setState(() {
+                    if (selectedValue) {
+                      selectedCategories.add(option);
+                    } else {
+                      selectedCategories.remove(option);
+                    }
+                  });
+                },
+                selectedColor: Color(0xFF39C184).withOpacity(0.3),
+                side: BorderSide(
+                    color: isSelected ? Color(0xFF39C184) : Colors.grey,
+                    width: 1.4),
+                labelStyle:
+                    TextStyle(color: isSelected ? Colors.white : Colors.black),
+              );
+            }).toList(),
+          ),
+          SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: _resetFilters,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[300],
+                  minimumSize: Size(120, 40),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(7)),
+                ), // Reset the categories when clicked
+                child: Text('Reset',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.black)),
+              ),
+              ElevatedButton(
+                // onPressed: _saveFilters,
+                onPressed: () {
+                  _applyFilters();
+                  _saveCategories();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF39C184),
+                  minimumSize: Size(120, 40),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(7)),
+                ), // Save the selected categories
+                child: Text('Apply',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -647,14 +677,14 @@ class _IngredientFilterState extends State<IngredientFilter> {
   // Reset filters to the original selected ingredients
   void _resetFilters() {
     setState(() {
-      selectedIngredients.clear(); // Clear all selected ingredients
+      selectedIngredients.clear(); // Clears all selected allergies
     });
     widget.onSelectionChanged(
-        selectedIngredients); // Notify parent with empty set
+        Set.from(selectedIngredients)); // Notify parent with empty set
   }
 
-  // Save the selected filters to Firebase (or any other storage)
-  Future<void> _saveFilters() async {
+  // Save selected allergies to Firebase
+  Future<void> _saveIngredients() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -663,12 +693,12 @@ class _IngredientFilterState extends State<IngredientFilter> {
     }, SetOptions(merge: true));
   }
 
-  // Apply filters and save the selected ingredients (without popping the dialog)
+  // Apply filters and save to Firebase
   void _applyFilters() {
     widget.onSelectionChanged(
-        selectedIngredients); // Notify parent with selected ingredients
-    _saveFilters(); // Save the selected ingredients to Firebase
-    // Navigator.pop(context); // Close the modal
+        selectedIngredients); // Notify parent with selected allergies
+    _saveIngredients(); // Save selected allergies to Firebase
+    Navigator.pop(context, selectedIngredients);
   }
 
   @override
@@ -696,7 +726,7 @@ class _IngredientFilterState extends State<IngredientFilter> {
               ElevatedButton(
                 onPressed: () {
                   _applyFilters();
-                  _saveFilters();
+                  _saveIngredients();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF39C184),
@@ -795,6 +825,15 @@ class _AllergyFilterState extends State<AllergyFilter> {
     selectedAllergies = Set.from(widget.selectedAllergies);
   }
 
+  // Reset the selected allergies
+  void _resetFilters() {
+    setState(() {
+      selectedAllergies.clear(); // Clears all selected allergies
+    });
+    widget.onSelectionChanged(
+        Set.from(selectedAllergies)); // Notify parent with empty set
+  }
+
   // Save selected allergies to Firebase
   Future<void> _saveAllergies() async {
     User? user = FirebaseAuth.instance.currentUser;
@@ -803,15 +842,6 @@ class _AllergyFilterState extends State<AllergyFilter> {
     await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
       'foodAllergy': selectedAllergies.toList(),
     }, SetOptions(merge: true));
-  }
-
-  // Reset the selected allergies
-  void _resetFilters() {
-    setState(() {
-      selectedAllergies.clear(); // Clears all selected allergies
-    });
-    widget.onSelectionChanged(
-        Set.from(selectedAllergies)); // Notify parent with empty set
   }
 
   // Apply filters and save to Firebase

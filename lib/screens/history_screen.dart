@@ -152,11 +152,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
         _loggedMeals.where((meal) => meal['mealType'] == category).toList();
 
     return Card(
-      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 4,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -168,7 +171,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 color: Colors.teal[700],
               ),
             ),
-            const SizedBox(height: 12),
             meals.isEmpty
                 ? Center(
                     child: Padding(
@@ -216,7 +218,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             onPressed: () => _removeMeal(meal),
                           ),
                           onTap: () {
-                            logRecipeClick(recipe['label'], recipe['shareAs']);
+                            logRecipeClick(recipe['label'], recipe['source']);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
