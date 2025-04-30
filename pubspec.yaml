@@ -123,6 +123,7 @@ flutter:
       - assets/fetchMenu/
 
       # Profile Picture
+      - assets/profile/
       - assets/profile/avatar1.png
       - assets/profile/avatar2.png
       - assets/profile/avatar3.png

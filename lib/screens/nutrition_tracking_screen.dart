@@ -42,20 +42,25 @@ class _NutritionScreenState extends State<NutritionScreen> {
     fetchUserData();
     _loadUserData();
     _loadFoodLogData();
-    fetchWeeklyNutritionData();
-    fetchNutrientData('ENERC_KCAL', Colors.orange);
-    fetchNutrientData('PROCNT', Colors.blue);
-    fetchNutrientData('CHOCDF', Colors.green);
-    fetchNutrientData('FAT', Colors.red);
-    fetchNutrientData('FIBTG', Colors.brown);
-    fetchNutrientData('SUGAR', Colors.pink);
-    fetchNutrientData('NA', Colors.purple);
+    // fetchWeeklyNutritionData();
+    fetchCaloriesData('ENERC_KCAL', Colors.orange);
+    fetchProteinData('PROCNT', Colors.blue);
+    fetchCarbsData('CHOCDF', Colors.green);
+    fetchFatsData('FAT', Colors.red);
+    fetchFiberData('FIBTG', Colors.brown);
+    fetchSugarData('SUGAR', Colors.pink);
+    _updateNutrientTotals();
   }
 
-  late List<BarChartGroupData> barGroups;
+  late List<BarChartGroupData> caloriesGroups = [];
+  late List<BarChartGroupData> proteinGroups = [];
+  late List<BarChartGroupData> carbsGroups = [];
+  late List<BarChartGroupData> fatsGroups = [];
+  late List<BarChartGroupData> fiberGroups = [];
+  late List<BarChartGroupData> sugarGroups = [];
 
-  //
-  Future<void> fetchNutrientData(String nutrientKey, Color color) async {
+  // MARK: V1
+  Future<void> fetchCaloriesData(String nutrientKey, Color color) async {
     try {
       DateTime today = selectedDate;
       List<DateTime> dates = List.generate(7, (index) {
@@ -73,7 +78,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
       final user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
-        List<double> nutrientValues = await Future.wait(dates.map((date) async {
+        List<double> caloriesValues = await Future.wait(dates.map((date) async {
           double total = 0;
 
           DateTime startOfDay = DateTime(date.year, date.month, date.day);
@@ -111,17 +116,17 @@ class _NutritionScreenState extends State<NutritionScreen> {
           }
 
           print(
-              "✅ Total $nutrientKey on ${DateFormat('dd/MM').format(date)}: $total\n");
+              "✅✅ Total $nutrientKey on ${DateFormat('dd/MM').format(date)}: $total\n");
           return total;
         }));
 
         setState(() {
-          barGroups = List.generate(7, (index) {
+          caloriesGroups = List.generate(7, (index) {
             return BarChartGroupData(
               x: index,
               barRods: [
                 BarChartRodData(
-                  toY: nutrientValues[index],
+                  toY: caloriesValues[index],
                   color: color,
                   width: 10,
                 ),
@@ -133,11 +138,509 @@ class _NutritionScreenState extends State<NutritionScreen> {
     } catch (e) {
       print("❌ Error fetching nutrient data: $e");
       setState(() {
-        barGroups = [];
+        caloriesGroups = [];
         days = [];
       });
     }
   }
+
+  Future<void> fetchProteinData(String nutrientKey, Color color) async {
+    try {
+      DateTime today = selectedDate;
+      List<DateTime> dates = List.generate(7, (index) {
+        return today.subtract(Duration(days: 6 - index));
+      });
+
+      List<String> formattedDates = dates.map((date) {
+        return DateFormat('dd/MM').format(date);
+      }).toList();
+
+      setState(() {
+        days = formattedDates;
+      });
+
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        List<double> values = await Future.wait(dates.map((date) async {
+          double total = 0;
+
+          DateTime startOfDay = DateTime(date.year, date.month, date.day);
+          DateTime endOfDay = startOfDay
+              .add(Duration(days: 1))
+              .subtract(Duration(milliseconds: 1));
+
+          QuerySnapshot snapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('food_log')
+              .where('date',
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+              .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+              .get();
+
+          print(
+              '📅 ${DateFormat('dd/MM/yyyy').format(date)} → ${snapshot.docs.length} logs found');
+
+          for (var doc in snapshot.docs) {
+            var recipe = doc['recipe'];
+            if (recipe != null &&
+                recipe['totalNutrients'] != null &&
+                recipe['totalNutrients'][nutrientKey] != null) {
+              var nutrient = recipe['totalNutrients'][nutrientKey];
+              num quantity = nutrient['quantity'] ?? 0;
+              String label = nutrient['label'] ?? nutrientKey;
+              String unit = nutrient['unit'] ?? '';
+
+              print('  🔹 $label: $quantity $unit');
+              total += quantity.toDouble();
+            } else {
+              print('  ⚠️ No $nutrientKey data in one log');
+            }
+          }
+
+          print(
+              "✅✅ Total $nutrientKey on ${DateFormat('dd/MM').format(date)}: $total\n");
+          return total;
+        }));
+
+        setState(() {
+          proteinGroups = List.generate(7, (index) {
+            return BarChartGroupData(
+              x: index,
+              barRods: [
+                BarChartRodData(
+                  toY: values[index],
+                  color: color,
+                  width: 10,
+                ),
+              ],
+            );
+          });
+        });
+      }
+    } catch (e) {
+      print("❌ Error fetching nutrient data: $e");
+      setState(() {
+        proteinGroups = [];
+        days = [];
+      });
+    }
+  }
+
+  Future<void> fetchCarbsData(String nutrientKey, Color color) async {
+    try {
+      DateTime today = selectedDate;
+      List<DateTime> dates = List.generate(7, (index) {
+        return today.subtract(Duration(days: 6 - index));
+      });
+
+      List<String> formattedDates = dates.map((date) {
+        return DateFormat('dd/MM').format(date);
+      }).toList();
+
+      setState(() {
+        days = formattedDates;
+      });
+
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        List<double> caloriesValues = await Future.wait(dates.map((date) async {
+          double total = 0;
+
+          DateTime startOfDay = DateTime(date.year, date.month, date.day);
+          DateTime endOfDay = startOfDay
+              .add(Duration(days: 1))
+              .subtract(Duration(milliseconds: 1));
+
+          QuerySnapshot snapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('food_log')
+              .where('date',
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+              .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+              .get();
+
+          print(
+              '📅 ${DateFormat('dd/MM/yyyy').format(date)} → ${snapshot.docs.length} logs found');
+
+          for (var doc in snapshot.docs) {
+            var recipe = doc['recipe'];
+            if (recipe != null &&
+                recipe['totalNutrients'] != null &&
+                recipe['totalNutrients'][nutrientKey] != null) {
+              var nutrient = recipe['totalNutrients'][nutrientKey];
+              num quantity = nutrient['quantity'] ?? 0;
+              String label = nutrient['label'] ?? nutrientKey;
+              String unit = nutrient['unit'] ?? '';
+
+              print('  🔹 $label: $quantity $unit');
+              total += quantity.toDouble();
+            } else {
+              print('  ⚠️ No $nutrientKey data in one log');
+            }
+          }
+
+          print(
+              "✅✅ Total $nutrientKey on ${DateFormat('dd/MM').format(date)}: $total\n");
+          return total;
+        }));
+
+        setState(() {
+          carbsGroups = List.generate(7, (index) {
+            return BarChartGroupData(
+              x: index,
+              barRods: [
+                BarChartRodData(
+                  toY: caloriesValues[index],
+                  color: color,
+                  width: 10,
+                ),
+              ],
+            );
+          });
+        });
+      }
+    } catch (e) {
+      print("❌ Error fetching nutrient data: $e");
+      setState(() {
+        carbsGroups = [];
+        days = [];
+      });
+    }
+  }
+
+  Future<void> fetchFatsData(String nutrientKey, Color color) async {
+    try {
+      DateTime today = selectedDate;
+      List<DateTime> dates = List.generate(7, (index) {
+        return today.subtract(Duration(days: 6 - index));
+      });
+
+      List<String> formattedDates = dates.map((date) {
+        return DateFormat('dd/MM').format(date);
+      }).toList();
+
+      setState(() {
+        days = formattedDates;
+      });
+
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        List<double> caloriesValues = await Future.wait(dates.map((date) async {
+          double total = 0;
+
+          DateTime startOfDay = DateTime(date.year, date.month, date.day);
+          DateTime endOfDay = startOfDay
+              .add(Duration(days: 1))
+              .subtract(Duration(milliseconds: 1));
+
+          QuerySnapshot snapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('food_log')
+              .where('date',
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+              .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+              .get();
+
+          print(
+              '📅 ${DateFormat('dd/MM/yyyy').format(date)} → ${snapshot.docs.length} logs found');
+
+          for (var doc in snapshot.docs) {
+            var recipe = doc['recipe'];
+            if (recipe != null &&
+                recipe['totalNutrients'] != null &&
+                recipe['totalNutrients'][nutrientKey] != null) {
+              var nutrient = recipe['totalNutrients'][nutrientKey];
+              num quantity = nutrient['quantity'] ?? 0;
+              String label = nutrient['label'] ?? nutrientKey;
+              String unit = nutrient['unit'] ?? '';
+
+              print('  🔹 $label: $quantity $unit');
+              total += quantity.toDouble();
+            } else {
+              print('  ⚠️ No $nutrientKey data in one log');
+            }
+          }
+
+          print(
+              "✅✅ Total $nutrientKey on ${DateFormat('dd/MM').format(date)}: $total\n");
+          return total;
+        }));
+
+        setState(() {
+          fatsGroups = List.generate(7, (index) {
+            return BarChartGroupData(
+              x: index,
+              barRods: [
+                BarChartRodData(
+                  toY: caloriesValues[index],
+                  color: color,
+                  width: 10,
+                ),
+              ],
+            );
+          });
+        });
+      }
+    } catch (e) {
+      print("❌ Error fetching nutrient data: $e");
+      setState(() {
+        fatsGroups = [];
+        days = [];
+      });
+    }
+  }
+
+  Future<void> fetchFiberData(String nutrientKey, Color color) async {
+    try {
+      DateTime today = selectedDate;
+      List<DateTime> dates = List.generate(7, (index) {
+        return today.subtract(Duration(days: 6 - index));
+      });
+
+      List<String> formattedDates = dates.map((date) {
+        return DateFormat('dd/MM').format(date);
+      }).toList();
+
+      setState(() {
+        days = formattedDates;
+      });
+
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        List<double> caloriesValues = await Future.wait(dates.map((date) async {
+          double total = 0;
+
+          DateTime startOfDay = DateTime(date.year, date.month, date.day);
+          DateTime endOfDay = startOfDay
+              .add(Duration(days: 1))
+              .subtract(Duration(milliseconds: 1));
+
+          QuerySnapshot snapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('food_log')
+              .where('date',
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+              .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+              .get();
+
+          print(
+              '📅 ${DateFormat('dd/MM/yyyy').format(date)} → ${snapshot.docs.length} logs found');
+
+          for (var doc in snapshot.docs) {
+            var recipe = doc['recipe'];
+            if (recipe != null &&
+                recipe['totalNutrients'] != null &&
+                recipe['totalNutrients'][nutrientKey] != null) {
+              var nutrient = recipe['totalNutrients'][nutrientKey];
+              num quantity = nutrient['quantity'] ?? 0;
+              String label = nutrient['label'] ?? nutrientKey;
+              String unit = nutrient['unit'] ?? '';
+
+              print('  🔹 $label: $quantity $unit');
+              total += quantity.toDouble();
+            } else {
+              print('  ⚠️ No $nutrientKey data in one log');
+            }
+          }
+
+          print(
+              "✅✅ Total $nutrientKey on ${DateFormat('dd/MM').format(date)}: $total\n");
+          return total;
+        }));
+
+        setState(() {
+          fiberGroups = List.generate(7, (index) {
+            return BarChartGroupData(
+              x: index,
+              barRods: [
+                BarChartRodData(
+                  toY: caloriesValues[index],
+                  color: color,
+                  width: 10,
+                ),
+              ],
+            );
+          });
+        });
+      }
+    } catch (e) {
+      print("❌ Error fetching nutrient data: $e");
+      setState(() {
+        fiberGroups = [];
+        days = [];
+      });
+    }
+  }
+
+  Future<void> fetchSugarData(String nutrientKey, Color color) async {
+    try {
+      DateTime today = selectedDate;
+      List<DateTime> dates = List.generate(7, (index) {
+        return today.subtract(Duration(days: 6 - index));
+      });
+
+      List<String> formattedDates = dates.map((date) {
+        return DateFormat('dd/MM').format(date);
+      }).toList();
+
+      setState(() {
+        days = formattedDates;
+      });
+
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        List<double> caloriesValues = await Future.wait(dates.map((date) async {
+          double total = 0;
+
+          DateTime startOfDay = DateTime(date.year, date.month, date.day);
+          DateTime endOfDay = startOfDay
+              .add(Duration(days: 1))
+              .subtract(Duration(milliseconds: 1));
+
+          QuerySnapshot snapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('food_log')
+              .where('date',
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+              .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+              .get();
+
+          print(
+              '📅 ${DateFormat('dd/MM/yyyy').format(date)} → ${snapshot.docs.length} logs found');
+
+          for (var doc in snapshot.docs) {
+            var recipe = doc['recipe'];
+            if (recipe != null &&
+                recipe['totalNutrients'] != null &&
+                recipe['totalNutrients'][nutrientKey] != null) {
+              var nutrient = recipe['totalNutrients'][nutrientKey];
+              num quantity = nutrient['quantity'] ?? 0;
+              String label = nutrient['label'] ?? nutrientKey;
+              String unit = nutrient['unit'] ?? '';
+
+              print('  🔹 $label: $quantity $unit');
+              total += quantity.toDouble();
+            } else {
+              print('  ⚠️ No $nutrientKey data in one log');
+            }
+          }
+
+          print(
+              "✅✅ Total $nutrientKey on ${DateFormat('dd/MM').format(date)}: $total\n");
+          return total;
+        }));
+
+        setState(() {
+          sugarGroups = List.generate(7, (index) {
+            return BarChartGroupData(
+              x: index,
+              barRods: [
+                BarChartRodData(
+                  toY: caloriesValues[index],
+                  color: color,
+                  width: 10,
+                ),
+              ],
+            );
+          });
+        });
+      }
+    } catch (e) {
+      print("❌ Error fetching nutrient data: $e");
+      setState(() {
+        sugarGroups = [];
+        days = [];
+      });
+    }
+  }
+
+  // MARK: V2
+  // Map<String, List<BarChartGroupData>> nutrientBarGroups = {};
+
+  // Future<void> fetchNutrientData(String nutrientKey, Color color) async {
+  //   try {
+  //     DateTime today = selectedDate;
+  //     List<DateTime> dates = List.generate(7, (index) {
+  //       return today.subtract(Duration(days: 6 - index));
+  //     });
+
+  //     List<String> formattedDates = dates.map((date) {
+  //       return DateFormat('dd/MM').format(date);
+  //     }).toList();
+
+  //     setState(() {
+  //       days = formattedDates;
+  //     });
+
+  //     final user = FirebaseAuth.instance.currentUser;
+
+  //     if (user != null) {
+  //       List<double> nutrientValues = await Future.wait(dates.map((date) async {
+  //         double total = 0;
+
+  //         DateTime startOfDay = DateTime(date.year, date.month, date.day);
+  //         DateTime endOfDay = startOfDay
+  //             .add(Duration(days: 1))
+  //             .subtract(Duration(milliseconds: 1));
+
+  //         QuerySnapshot snapshot = await FirebaseFirestore.instance
+  //             .collection('users')
+  //             .doc(user.uid)
+  //             .collection('food_log')
+  //             .where('date',
+  //                 isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+  //             .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+  //             .get();
+
+  //         for (var doc in snapshot.docs) {
+  //           var recipe = doc['recipe'];
+  //           if (recipe != null &&
+  //               recipe['totalNutrients'] != null &&
+  //               recipe['totalNutrients'][nutrientKey] != null) {
+  //             var nutrient = recipe['totalNutrients'][nutrientKey];
+  //             num quantity = nutrient['quantity'] ?? 0;
+  //             total += quantity.toDouble();
+  //           }
+  //         }
+
+  //         return total;
+  //       }));
+
+  //       // Set the barGroups for the given nutrient
+  //       setState(() {
+  //         nutrientBarGroups[nutrientKey] = List.generate(7, (index) {
+  //           return BarChartGroupData(
+  //             x: index,
+  //             barRods: [
+  //               BarChartRodData(
+  //                 toY: nutrientValues[index],
+  //                 color: color,
+  //                 width: 10,
+  //               ),
+  //             ],
+  //           );
+  //         });
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print("❌ Error fetching nutrient data: $e");
+  //     setState(() {
+  //       // Handle errors (e.g., empty barGroups)
+  //       nutrientBarGroups[nutrientKey] = [];
+  //       days = [];
+  //     });
+  //   }
+  // }
 
   Future<void> fetchUserData() async {
     try {
@@ -254,7 +757,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
           .collection('food_log')
           .get();
 
-      if (foodLogSnapshot.docs.isNotEmpty) {
+      if (foodLogSnapshot.docs.isNotEmpty && mounted) {
         setState(() {
           foodLogData = foodLogSnapshot.docs
               .map((doc) => doc.data() as Map<String, dynamic>)
@@ -275,15 +778,34 @@ class _NutritionScreenState extends State<NutritionScreen> {
   /// Filter food logs based on the selected date
   List<Map<String, dynamic>> _getFilteredLogs() {
     return foodLogData.where((food) {
-      Timestamp? timestamp = food['date'];
-      if (timestamp == null) return false;
+      final dynamic rawDate = food['date'];
+      DateTime? logDate;
 
-      DateTime logDate = timestamp.toDate();
+      if (rawDate is Timestamp) {
+        logDate = rawDate.toDate();
+      } else if (rawDate is String) {
+        try {
+          logDate = DateTime.parse(rawDate);
+        } catch (_) {
+          return false; // Invalid date string
+        }
+      } else {
+        return false; // Not a recognized date format
+      }
+
       return logDate.year == selectedDate.year &&
           logDate.month == selectedDate.month &&
           logDate.day == selectedDate.day;
     }).toList();
   }
+
+  // MARK:
+  // final int totalCalories = totalNutrients['calories']?.toInt() ?? 0;
+  // final int totalProtein = totalNutrients['protein']?.toInt() ?? 0;
+  // final int totalFat = totalNutrients['fat']?.toInt() ?? 0;
+  // final int totalFiber = totalNutrients['fiber']?.toInt() ?? 0;
+  // final int totalSugar = totalNutrients['sugar']?.toInt() ?? 0;
+  // final int totalCarbs = totalNutrients['carbs']?.toInt() ?? 0;
 
   /// Calculate total nutrients for the selected date
   Map<String, double> _calculateTotalNutrients(
@@ -315,6 +837,33 @@ class _NutritionScreenState extends State<NutritionScreen> {
       'sugar': totalSugar,
       'carbs': totalCarbs,
     };
+  }
+
+  // MARK: V1
+  // Map<String, double> _calculateTotalCalories(
+  //     List<Map<String, dynamic>> logs) {
+  //   double totalCalories = 0;
+
+  //   for (var food in logs) {
+  //     var recipe = food['recipe'] ?? {};
+  //     var nutrients = recipe['totalNutrients'] ?? {};
+
+  //     totalCalories += (nutrients['ENERC_KCAL']?['quantity'] ?? 0).toDouble();
+  //   }
+
+  //   return {
+  //     'calories': totalCalories,
+  //   };
+  // }
+  // MARK: V2
+  double _calculateTotalCalories(List<Map<String, dynamic>> logs) {
+    double totalCalories = 0;
+    for (var food in logs) {
+      var recipe = food['recipe'] ?? {};
+      var nutrients = recipe['totalNutrients'] ?? {};
+      totalCalories += (nutrients['ENERC_KCAL']?['quantity'] ?? 0).toDouble();
+    }
+    return totalCalories;
   }
 
   void _changeDate(int delta) {
@@ -386,9 +935,9 @@ class _NutritionScreenState extends State<NutritionScreen> {
     // Calculate BMR using the Mifflin-St Jeor Equation
     double bmr;
     if (gender == "Male") {
-      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) + 5;
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
     } else {
-      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) - 161;
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
     }
 
     // Assign activity factor based on the activity level
@@ -415,6 +964,29 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
     return bmr * activityFactor;
   }
+
+  double totalCalories = 0;
+  int totalProtein = 0;
+  void _updateNutrientTotals() async {
+    final filteredLogs = _getFilteredLogs();
+    // final totalCaloriess = _calculateTotalCalories(filteredLogs);
+
+    // setState(() {
+    totalCalories = _calculateTotalCalories(filteredLogs);
+    //   // totalProtein = totalNutrients['protein']?.toInt() ?? 0;
+    //   // etc.
+    // });
+  }
+
+  // List<Map<String, dynamic>> filteredLogs = _getFilteredLogs();
+  // Map<String, double> totalNutrients = _calculateTotalNutrients(filteredLogs);
+
+  // final int totalCalories = totalNutrients['calories']?.toInt() ?? 0;
+  // final int totalProtein = totalNutrients['protein']?.toInt() ?? 0;
+  // final int totalFat = totalNutrients['fat']?.toInt() ?? 0;
+  // final int totalFiber = totalNutrients['fiber']?.toInt() ?? 0;
+  // final int totalSugar = totalNutrients['sugar']?.toInt() ?? 0;
+  // final int totalCarbs = totalNutrients['carbs']?.toInt() ?? 0;
 
   // MARK: widget build
   @override
@@ -465,6 +1037,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                 child: IconButton(
                   icon: Icon(Icons.calendar_month),
                   onPressed: _pickDate,
+                  // onPressed: () {},
                 ),
               ),
             ],
@@ -476,69 +1049,88 @@ class _NutritionScreenState extends State<NutritionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(height: 1),
-                      _buildNutritionCard(
+                      // MARK: V1
+                      _buildCaloriesCard(
                         'Calories',
                         totalNutrients['calories']?.toInt() ?? 0,
+                        // totalCalories,
                         _calculateTDEE()?.toInt() ?? 2000,
                         Icons.local_fire_department,
                         Colors.orange,
                         'kcal',
                         'Calories',
                       ),
-                      _buildNutritionCard(
+                      _buildProteinCard(
                         'Protein',
                         totalNutrients['protein']?.toInt() ?? 0,
-                        100,
+                        // totalProtein,
+                        (userData?['weight'] != null)
+                            ? (double.parse(userData!['weight']) * 0.8).toInt()
+                            : 50,
                         Icons.fitness_center,
                         Colors.blue,
                         'g',
                         'Protein',
                       ),
-                      _buildNutritionCard(
+                      _buildCarbsCard(
                         'Carbs',
                         totalNutrients['carbs']?.toInt() ?? 0,
-                        250,
+                        300,
                         Icons.fastfood,
                         Colors.green,
                         'g',
                         'Carbs',
                       ),
-                      _buildNutritionCard(
+                      _buildFatsCard(
                         'Fats',
                         totalNutrients['fat']?.toInt() ?? 0,
-                        70,
+                        65,
                         Icons.opacity,
                         Colors.red,
                         'g',
                         'Fats',
                       ),
-                      _buildNutritionCard(
+                      _buildFiberCard(
                         'Fiber',
                         totalNutrients['fiber']?.toInt() ?? 0,
-                        40,
+                        userData?['gender'] == 'Male' ? 38 : 25,
                         Icons.eco,
                         Colors.brown,
                         'g',
                         'Fiber',
                       ),
-                      _buildNutritionCard(
+                      _buildSugarCard(
                         'Sugar',
                         totalNutrients['sugar']?.toInt() ?? 0,
-                        30,
+                        50,
                         Icons.icecream,
                         Colors.pink,
                         'g',
                         'Sugar',
                       ),
-                      _buildNutritionCardWithImage(
-                        'Sodium',
-                        totalNutrients['sodium']?.toInt() ?? 0,
-                        2000,
-                        'assets/images/salt.png',
-                        Colors.purple,
-                        'mg',
-                        'Sodium',
-                      ),
+                      // MARK: V2
+                      // _buildNutritionCard(
+                      //   'Calories',
+                      //   totalNutrients['calories']?.toInt() ?? 0,
+                      //   _calculateTDEE()?.toInt() ?? 2000,
+                      //   Icons.local_fire_department,
+                      //   Colors.orange,
+                      //   'kcal',
+                      //   'calories',
+                      //   nutrientBarGroups['calories'] ??
+                      //       [], // <- pass the correct data
+                      // ),
+                      // _buildNutritionCard(
+                      //   'Protein',
+                      //   totalNutrients['protein']?.toInt() ?? 0,
+                      //   _calculateTDEE()?.toInt() ?? 2000,
+                      //   Icons.local_fire_department,
+                      //   Colors.orange,
+                      //   'kcal',
+                      //   'protein',
+                      //   nutrientBarGroups['protein'] ??
+                      //       [], // <- pass the correct data
+                      // ),
                     ],
                   ),
                 )
@@ -592,7 +1184,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
   }
 
   // MARK: Card
-  Widget _buildNutritionCard(
+  Widget _buildCaloriesCard(
     String title,
     int value,
     int maxValue,
@@ -600,6 +1192,122 @@ class _NutritionScreenState extends State<NutritionScreen> {
     Color color,
     String unit,
     String key,
+    // List<BarChartGroupData> barChartData,
+  ) {
+    bool isExceeding = value > maxValue;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 6,
+        shadowColor: Colors.black.withOpacity(0.15),
+        margin: EdgeInsets.symmetric(vertical: 0),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [color.withOpacity(0.2), color.withOpacity(0.6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.all(15),
+                leading: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: color.withOpacity(0.2)),
+                  child: Icon(icon, color: color, size: 40),
+                ),
+                title: Text(
+                  title,
+                  style: TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold, color: color),
+                ),
+                subtitle: Text(
+                  'Max: ${formatNumber(maxValue)}',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                trailing: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${formatNumber(value)} $unit',
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: color),
+                    ),
+                    if (isExceeding)
+                      Text(
+                        '⚠ Exceeding!',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  setState(() {
+                    _isExpanded[key] = !(_isExpanded[key] ??
+                        false); // Toggle the expansion state for the selected card
+                  });
+                },
+              ),
+              if (_isExpanded[key] == true) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: SizedBox(
+                    height: 200,
+                    width: MediaQuery.sizeOf(context).width / 1.15,
+                    child: BarChart(
+                      BarChartData(
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    days[value.toInt()],
+                                    style: TextStyle(fontSize: 10),
+                                  );
+                                }),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: true),
+                          ),
+                        ),
+                        borderData: FlBorderData(show: true),
+                        gridData: FlGridData(show: true),
+                        barGroups: caloriesGroups,
+                        // barGroups: barChartData,
+                      ),
+                    ),
+                  ),
+                ),
+              ]
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProteinCard(
+    String title,
+    int value,
+    int maxValue,
+    IconData icon,
+    Color color,
+    String unit,
+    String key,
+    // List<BarChartGroupData> barChartData,
   ) {
     bool isExceeding = value > maxValue;
 
@@ -691,12 +1399,12 @@ class _NutritionScreenState extends State<NutritionScreen> {
                 ),
                 onTap: () {
                   setState(() {
-                    _isExpanded[key] = !_isExpanded[
-                        key]!; // Toggle the expansion state for the selected card
+                    _isExpanded[key] = !(_isExpanded[key] ??
+                        false); // Toggle the expansion state for the selected card
                   });
                 },
               ),
-              if (_isExpanded[key]!) ...[
+              if (_isExpanded[key] == true) ...[
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: SizedBox(
@@ -722,7 +1430,588 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         ),
                         borderData: FlBorderData(show: true),
                         gridData: FlGridData(show: true),
-                        barGroups: barGroups,
+                        barGroups: proteinGroups,
+                        // barGroups: barChartData,
+                      ),
+                    ),
+                  ),
+                ),
+              ]
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCarbsCard(
+    String title,
+    int value,
+    int maxValue,
+    IconData icon,
+    Color color,
+    String unit,
+    String key,
+    // List<BarChartGroupData> barChartData,
+  ) {
+    bool isExceeding = value > maxValue;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 6,
+        shadowColor: Colors.black.withOpacity(0.15),
+        margin: EdgeInsets.symmetric(vertical: 0),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [color.withOpacity(0.2), color.withOpacity(0.6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.all(15),
+                leading: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: color.withOpacity(0.2)),
+                  child: Icon(icon, color: color, size: 40),
+                ),
+                title: Text(
+                  title,
+                  style: TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold, color: color),
+                ),
+                subtitle: Text(
+                  'Max: ${formatNumber(maxValue)}',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                trailing: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${formatNumber(value)} $unit',
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: color),
+                    ),
+                    if (isExceeding)
+                      // Padding(
+                      //   padding: const EdgeInsets.only(top: 4),
+                      //   child: Container(
+                      //     height: 200,
+                      //     child: BarChart(
+                      //       BarChartData(
+                      //         titlesData: FlTitlesData(
+                      //           show: true,
+                      //           bottomTitles: AxisTitles(
+                      //             sideTitles: SideTitles(
+                      //                 showTitles: true,
+                      //                 getTitlesWidget: (value, meta) {
+                      //                   return Text(
+                      //                     days[value.toInt()],
+                      //                     style: TextStyle(fontSize: 10),
+                      //                   );
+                      //                 }),
+                      //           ),
+                      //           leftTitles: AxisTitles(
+                      //             sideTitles: SideTitles(showTitles: true),
+                      //           ),
+                      //         ),
+                      //         borderData: FlBorderData(show: true),
+                      //         gridData: FlGridData(show: true),
+                      //         barGroups:
+                      //             barGroups, // Using the updated barGroups
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      Text(
+                        '⚠ Exceeding!',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  setState(() {
+                    _isExpanded[key] = !(_isExpanded[key] ??
+                        false); // Toggle the expansion state for the selected card
+                  });
+                },
+              ),
+              if (_isExpanded[key] == true) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: SizedBox(
+                    height: 200,
+                    width: MediaQuery.sizeOf(context).width / 1.15,
+                    child: BarChart(
+                      BarChartData(
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    days[value.toInt()],
+                                    style: TextStyle(fontSize: 10),
+                                  );
+                                }),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: true),
+                          ),
+                        ),
+                        borderData: FlBorderData(show: true),
+                        gridData: FlGridData(show: true),
+                        barGroups: carbsGroups,
+                        // barGroups: barChartData,
+                      ),
+                    ),
+                  ),
+                ),
+              ]
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFatsCard(
+    String title,
+    int value,
+    int maxValue,
+    IconData icon,
+    Color color,
+    String unit,
+    String key,
+    // List<BarChartGroupData> barChartData,
+  ) {
+    bool isExceeding = value > maxValue;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 6,
+        shadowColor: Colors.black.withOpacity(0.15),
+        margin: EdgeInsets.symmetric(vertical: 0),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [color.withOpacity(0.2), color.withOpacity(0.6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.all(15),
+                leading: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: color.withOpacity(0.2)),
+                  child: Icon(icon, color: color, size: 40),
+                ),
+                title: Text(
+                  title,
+                  style: TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold, color: color),
+                ),
+                subtitle: Text(
+                  'Max: ${formatNumber(maxValue)}',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                trailing: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${formatNumber(value)} $unit',
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: color),
+                    ),
+                    if (isExceeding)
+                      // Padding(
+                      //   padding: const EdgeInsets.only(top: 4),
+                      //   child: Container(
+                      //     height: 200,
+                      //     child: BarChart(
+                      //       BarChartData(
+                      //         titlesData: FlTitlesData(
+                      //           show: true,
+                      //           bottomTitles: AxisTitles(
+                      //             sideTitles: SideTitles(
+                      //                 showTitles: true,
+                      //                 getTitlesWidget: (value, meta) {
+                      //                   return Text(
+                      //                     days[value.toInt()],
+                      //                     style: TextStyle(fontSize: 10),
+                      //                   );
+                      //                 }),
+                      //           ),
+                      //           leftTitles: AxisTitles(
+                      //             sideTitles: SideTitles(showTitles: true),
+                      //           ),
+                      //         ),
+                      //         borderData: FlBorderData(show: true),
+                      //         gridData: FlGridData(show: true),
+                      //         barGroups:
+                      //             barGroups, // Using the updated barGroups
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      Text(
+                        '⚠ Exceeding!',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  setState(() {
+                    _isExpanded[key] = !(_isExpanded[key] ??
+                        false); // Toggle the expansion state for the selected card
+                  });
+                },
+              ),
+              if (_isExpanded[key] == true) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: SizedBox(
+                    height: 200,
+                    width: MediaQuery.sizeOf(context).width / 1.15,
+                    child: BarChart(
+                      BarChartData(
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    days[value.toInt()],
+                                    style: TextStyle(fontSize: 10),
+                                  );
+                                }),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: true),
+                          ),
+                        ),
+                        borderData: FlBorderData(show: true),
+                        gridData: FlGridData(show: true),
+                        barGroups: fatsGroups,
+                        // barGroups: barChartData,
+                      ),
+                    ),
+                  ),
+                ),
+              ]
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFiberCard(
+    String title,
+    int value,
+    int maxValue,
+    IconData icon,
+    Color color,
+    String unit,
+    String key,
+    // List<BarChartGroupData> barChartData,
+  ) {
+    bool isExceeding = value > maxValue;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 6,
+        shadowColor: Colors.black.withOpacity(0.15),
+        margin: EdgeInsets.symmetric(vertical: 0),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [color.withOpacity(0.2), color.withOpacity(0.6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.all(15),
+                leading: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: color.withOpacity(0.2)),
+                  child: Icon(icon, color: color, size: 40),
+                ),
+                title: Text(
+                  title,
+                  style: TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold, color: color),
+                ),
+                subtitle: Text(
+                  'Max: ${formatNumber(maxValue)}',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                trailing: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${formatNumber(value)} $unit',
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: color),
+                    ),
+                    if (isExceeding)
+                      // Padding(
+                      //   padding: const EdgeInsets.only(top: 4),
+                      //   child: Container(
+                      //     height: 200,
+                      //     child: BarChart(
+                      //       BarChartData(
+                      //         titlesData: FlTitlesData(
+                      //           show: true,
+                      //           bottomTitles: AxisTitles(
+                      //             sideTitles: SideTitles(
+                      //                 showTitles: true,
+                      //                 getTitlesWidget: (value, meta) {
+                      //                   return Text(
+                      //                     days[value.toInt()],
+                      //                     style: TextStyle(fontSize: 10),
+                      //                   );
+                      //                 }),
+                      //           ),
+                      //           leftTitles: AxisTitles(
+                      //             sideTitles: SideTitles(showTitles: true),
+                      //           ),
+                      //         ),
+                      //         borderData: FlBorderData(show: true),
+                      //         gridData: FlGridData(show: true),
+                      //         barGroups:
+                      //             barGroups, // Using the updated barGroups
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      Text(
+                        '⚠ Exceeding!',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  setState(() {
+                    _isExpanded[key] = !(_isExpanded[key] ??
+                        false); // Toggle the expansion state for the selected card
+                  });
+                },
+              ),
+              if (_isExpanded[key] == true) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: SizedBox(
+                    height: 200,
+                    width: MediaQuery.sizeOf(context).width / 1.15,
+                    child: BarChart(
+                      BarChartData(
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    days[value.toInt()],
+                                    style: TextStyle(fontSize: 10),
+                                  );
+                                }),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: true),
+                          ),
+                        ),
+                        borderData: FlBorderData(show: true),
+                        gridData: FlGridData(show: true),
+                        barGroups: fiberGroups,
+                        // barGroups: barChartData,
+                      ),
+                    ),
+                  ),
+                ),
+              ]
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSugarCard(
+    String title,
+    int value,
+    int maxValue,
+    IconData icon,
+    Color color,
+    String unit,
+    String key,
+    // List<BarChartGroupData> barChartData,
+  ) {
+    bool isExceeding = value > maxValue;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 6,
+        shadowColor: Colors.black.withOpacity(0.15),
+        margin: EdgeInsets.symmetric(vertical: 0),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [color.withOpacity(0.2), color.withOpacity(0.6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.all(15),
+                leading: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: color.withOpacity(0.2)),
+                  child: Icon(icon, color: color, size: 40),
+                ),
+                title: Text(
+                  title,
+                  style: TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold, color: color),
+                ),
+                subtitle: Text(
+                  'Max: ${formatNumber(maxValue)}',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                trailing: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${formatNumber(value)} $unit',
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: color),
+                    ),
+                    if (isExceeding)
+                      // Padding(
+                      //   padding: const EdgeInsets.only(top: 4),
+                      //   child: Container(
+                      //     height: 200,
+                      //     child: BarChart(
+                      //       BarChartData(
+                      //         titlesData: FlTitlesData(
+                      //           show: true,
+                      //           bottomTitles: AxisTitles(
+                      //             sideTitles: SideTitles(
+                      //                 showTitles: true,
+                      //                 getTitlesWidget: (value, meta) {
+                      //                   return Text(
+                      //                     days[value.toInt()],
+                      //                     style: TextStyle(fontSize: 10),
+                      //                   );
+                      //                 }),
+                      //           ),
+                      //           leftTitles: AxisTitles(
+                      //             sideTitles: SideTitles(showTitles: true),
+                      //           ),
+                      //         ),
+                      //         borderData: FlBorderData(show: true),
+                      //         gridData: FlGridData(show: true),
+                      //         barGroups:
+                      //             barGroups, // Using the updated barGroups
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      Text(
+                        '⚠ Exceeding!',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  setState(() {
+                    _isExpanded[key] = !(_isExpanded[key] ??
+                        false); // Toggle the expansion state for the selected card
+                  });
+                },
+              ),
+              if (_isExpanded[key] == true) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: SizedBox(
+                    height: 200,
+                    width: MediaQuery.sizeOf(context).width / 1.15,
+                    child: BarChart(
+                      BarChartData(
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    days[value.toInt()],
+                                    style: TextStyle(fontSize: 10),
+                                  );
+                                }),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: true),
+                          ),
+                        ),
+                        borderData: FlBorderData(show: true),
+                        gridData: FlGridData(show: true),
+                        barGroups: sugarGroups,
+                        // barGroups: barChartData,
                       ),
                     ),
                   ),
@@ -853,7 +2142,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         ),
                         borderData: FlBorderData(show: true),
                         gridData: FlGridData(show: true),
-                        barGroups: barGroups, // Using the updated barGroups
+                        // barGroups: barGroups, // Using the updated barGroups
+                        barGroups: sugarGroups,
                       ),
                     ),
                   ),
@@ -889,99 +2179,100 @@ class _NutritionScreenState extends State<NutritionScreen> {
     'sodium': [],
   };
 
-  Future<void> fetchWeeklyNutritionData() async {
-    try {
-      DateTime today = selectedDate; // same as your base
-      List<DateTime> dates = List.generate(7, (index) {
-        return today.subtract(Duration(days: 6 - index));
-      });
+  // Future<void> fetchWeeklyNutritionData() async {
+  //   try {
+  //     DateTime today = selectedDate;
+  //     List<DateTime> dates = List.generate(7, (index) {
+  //       return today.subtract(Duration(days: 6 - index));
+  //     });
 
-      List<String> formattedDates = dates.map((date) {
-        return DateFormat('dd/MM').format(date);
-      }).toList();
+  //     List<String> formattedDates = dates.map((date) {
+  //       return DateFormat('dd/MM').format(date);
+  //     }).toList();
 
-      setState(() {
-        days = formattedDates;
-      });
+  //     setState(() {
+  //       days = formattedDates;
+  //     });
 
-      final user = FirebaseAuth.instance.currentUser;
+  //     final user = FirebaseAuth.instance.currentUser;
 
-      if (user != null) {
-        // initialize all nutrients
-        Map<String, List<int>> weeklyNutrients = {
-          'calories': [],
-          'protein': [],
-          'carbs': [],
-          'fat': [],
-          'fiber': [],
-          'sugar': [],
-          'sodium': [],
-        };
+  //     if (user != null) {
+  //       // initialize all nutrients
+  //       Map<String, List<int>> weeklyNutrients = {
+  //         'calories': [],
+  //         'protein': [],
+  //         'carbs': [],
+  //         'fat': [],
+  //         'fiber': [],
+  //         'sugar': [],
+  //         'sodium': [],
+  //       };
 
-        for (var date in dates) {
-          // Declare the variables as num to avoid type issues
-          num cal = 0,
-              protein = 0,
-              carbs = 0,
-              fat = 0,
-              fiber = 0,
-              sugar = 0,
-              sodium = 0;
+  //       for (var date in dates) {
+  //         // Declare the variables as num to avoid type issues
+  //         num cal = 0,
+  //             protein = 0,
+  //             carbs = 0,
+  //             fat = 0,
+  //             fiber = 0,
+  //             sugar = 0,
+  //             sodium = 0;
 
-          DateTime startOfDay = DateTime(date.year, date.month, date.day);
-          DateTime endOfDay = startOfDay
-              .add(Duration(days: 1))
-              .subtract(Duration(milliseconds: 1));
+  //         DateTime startOfDay = DateTime(date.year, date.month, date.day);
+  //         DateTime endOfDay = startOfDay
+  //             .add(Duration(days: 1))
+  //             .subtract(Duration(milliseconds: 1));
 
-          QuerySnapshot snapshot = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .collection('food_log')
-              .where('date',
-                  isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-              .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
-              .get();
+  //         QuerySnapshot snapshot = await FirebaseFirestore.instance
+  //             .collection('users')
+  //             .doc(user.uid)
+  //             .collection('food_log')
+  //             .where('date',
+  //                 isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+  //             .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+  //             .get();
 
-          for (var doc in snapshot.docs) {
-            var recipe = doc['recipe'];
-            var nutrients = recipe?['totalNutrients'];
+  //         for (var doc in snapshot.docs) {
+  //           var recipe = doc['recipe'];
+  //           var nutrients = recipe?['totalNutrients'];
 
-            if (nutrients != null) {
-              cal += (nutrients['ENERC_KCAL']?['quantity'] ?? 0).toDouble();
-              protein += (nutrients['PROCNT']?['quantity'] ?? 0).toDouble();
-              carbs += (nutrients['CHOCDF']?['quantity'] ?? 0).toDouble();
-              fat += (nutrients['FAT']?['quantity'] ?? 0).toDouble();
-              fiber += (nutrients['FIBTG']?['quantity'] ?? 0).toDouble();
-              sugar += (nutrients['SUGAR']?['quantity'] ?? 0).toDouble();
-              sodium += (nutrients['NA']?['quantity'] ?? 0).toDouble();
-            }
-          }
+  //           if (nutrients != null) {
+  //             cal += (nutrients['ENERC_KCAL']?['quantity'] ?? 0).toDouble();
+  //             protein += (nutrients['PROCNT']?['quantity'] ?? 0).toDouble();
+  //             carbs += (nutrients['CHOCDF']?['quantity'] ?? 0).toDouble();
+  //             fat += (nutrients['FAT']?['quantity'] ?? 0).toDouble();
+  //             fiber += (nutrients['FIBTG']?['quantity'] ?? 0).toDouble();
+  //             sugar += (nutrients['SUGAR']?['quantity'] ?? 0).toDouble();
+  //             sodium += (nutrients['NA']?['quantity'] ?? 0).toDouble();
+  //           }
+  //         }
 
-          weeklyNutrients['calories']!.add(cal.toInt());
-          weeklyNutrients['protein']!.add(protein.toInt());
-          weeklyNutrients['carbs']!.add(carbs.toInt());
-          weeklyNutrients['fat']!.add(fat.toInt());
-          weeklyNutrients['fiber']!.add(fiber.toInt());
-          weeklyNutrients['sugar']!.add(sugar.toInt());
-          weeklyNutrients['sodium']!.add(sodium.toInt());
+  //         weeklyNutrients['calories']!.add(cal.toInt());
+  //         weeklyNutrients['protein']!.add(protein.toInt());
+  //         weeklyNutrients['carbs']!.add(carbs.toInt());
+  //         weeklyNutrients['fat']!.add(fat.toInt());
+  //         weeklyNutrients['fiber']!.add(fiber.toInt());
+  //         weeklyNutrients['sugar']!.add(sugar.toInt());
+  //         weeklyNutrients['sodium']!.add(sodium.toInt());
 
-          print(
-              "Date: ${DateFormat('dd/MM').format(date)} | Cal: $cal, Protein: $protein, Carbs: $carbs, Fat: $fat, Fiber: $fiber, Sugar: $sugar, Sodium: $sodium");
-        }
+  //         print(
+  //             "Date: ${DateFormat('dd/MM').format(date)} | Cal: $cal, Protein: $protein, Carbs: $carbs, Fat: $fat, Fiber: $fiber, Sugar: $sugar, Sodium: $sodium");
+  //       }
 
-        // Save in state for graphing
-        setState(() {
-          _weeklyData = weeklyNutrients;
-        });
-      }
-    } catch (e) {
-      print("Error fetching nutrition data: $e");
-      setState(() {
-        _weeklyData = {};
-        days = [];
-      });
-    }
-  }
+  //       // Save in state for graphing
+  //       setState(() {
+  //         _weeklyData = weeklyNutrients;
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print("Error fetching nutrition data: $e");
+  //     setState(() {
+  //       _weeklyData = {};
+  //       days = [];
+  //     });
+  //     print(weeklyData);
+  //   }
+  // }
 }
 
 class GraphWidget extends StatelessWidget {

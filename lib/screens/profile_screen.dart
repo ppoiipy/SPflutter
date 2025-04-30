@@ -11,7 +11,6 @@ import 'package:intl/intl.dart';
 import 'history_screen.dart';
 import 'favorite_screen.dart';
 import 'calculate_screen.dart';
-import 'package:ginraidee/SQLite/sqlite.dart';
 import 'package:ginraidee/screens/homepage.dart';
 import 'package:ginraidee/screens/login_screen.dart';
 import 'package:ginraidee/screens/profile_edit_screen.dart';
@@ -53,7 +52,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _selected = 'D';
   String _selectedTrack = 'Body Weight';
   String selectedTab = "profile";
-  final DatabaseHelper _dbHelper = DatabaseHelper();
   Map<String, String> userProfile = {};
 
   @override
@@ -138,22 +136,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             itemBuilder: (context, index) {
               return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _profileImageUrl = null; // Clear Firebase URL if needed
-                      _selectedAssetImage = _profileImages[index];
-                    });
-                    Navigator.pop(context); // Close bottom sheet
-                  },
-                  child: CircleAvatar(
-                    radius: 60,
-                    backgroundImage: _profileImageUrl != null
-                        ? NetworkImage(_profileImageUrl!)
-                        : _selectedAssetImage != null
-                            ? AssetImage('assets/profile/$_selectedAssetImage')
-                            : const AssetImage('assets/images/default.png')
-                                as ImageProvider,
-                  ));
+                onTap: () {
+                  setState(() {
+                    _profileImageUrl = null; // Clear Firebase URL if needed
+                    _selectedAssetImage = _profileImages[index];
+                  });
+                  Navigator.pop(context); // Close bottom sheet
+                },
+                child: CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.white,
+                  backgroundImage: _profileImageUrl != null
+                      ? NetworkImage(_profileImageUrl!)
+                      : _selectedAssetImage != null
+                          ? AssetImage('assets/profile/$_selectedAssetImage')
+                          : const AssetImage('assets/profile/avatar2.png'),
+                ),
+              );
             },
           ),
         );
@@ -164,6 +163,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // MARK: build
   @override
   Widget build(BuildContext context) {
+    final label =
+        userData?['profileImage']?.toLowerCase().replaceAll(' ', '_') ??
+            'avatar4.png';
+    final imagePath = 'assets/profile/$label';
+    print("label: $label");
+    print("imagePath: $imagePath");
+
+    final imageName = userData?['profileImage'] ?? 'avatar1.png';
+    final assetImage = AssetImage('assets/profile/$imageName');
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       // appBar: SliverAppBar(),
@@ -260,12 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             backgroundColor: Colors.white,
                             backgroundImage: _profileImageUrl != null
                                 ? NetworkImage(_profileImageUrl!)
-                                : _selectedAssetImage != null
-                                    ? AssetImage(
-                                        'assets/profile/$_selectedAssetImage')
-                                    : const AssetImage(
-                                            'assets/profile/avatar1.png')
-                                        as ImageProvider,
+                                : assetImage,
                           ),
                         ),
                       ),
@@ -807,9 +811,9 @@ Future<void> saveUserData(Map<String, dynamic> userData) async {
   // Calculate BMR using Mifflin-St Jeor Equation (assuming male/female based on gender)
   double bmr;
   if (gender == 'Male') {
-    bmr = 9.99 * weight + 6.25 * height - 4.92 * age + 5;
+    bmr = 10 * weight + 6.25 * height - 5 * age + 5;
   } else {
-    bmr = 9.99 * weight + 6.25 * height - 4.92 * age - 161;
+    bmr = 10 * weight + 6.25 * height - 5 * age - 161;
   }
 
   // Calculate TDEE based on activity level

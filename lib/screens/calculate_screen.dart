@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 
-import 'package:ginraidee/SQLite/sqlite.dart';
 import 'homepage.dart';
 import 'history_screen.dart';
 import 'favorite_screen.dart';
@@ -38,8 +37,6 @@ class _CalculateScreenState extends State<CalculateScreen> {
   ];
 
   double? _bmi, _bmr, _tdee;
-
-  final DatabaseHelper _dbHelper = DatabaseHelper();
 
   // Activity level multipliers
   final Map<String, double> _activityMultipliers = {
@@ -84,10 +81,10 @@ class _CalculateScreenState extends State<CalculateScreen> {
       if (_selectedCalculation == 'BMR') {
         if (gender == 'Male') {
           // _bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age!);
-          _bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age!) + 5;
+          _bmr = (10 * weight) + (6.25 * height) - (5 * age!) + 5;
         } else {
           // _bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age!);
-          _bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age!) - 161;
+          _bmr = (10 * weight) + (6.25 * height) - (5 * age!) - 161;
         }
       }
 
@@ -95,9 +92,9 @@ class _CalculateScreenState extends State<CalculateScreen> {
       // Calculate TDEE
       if (_selectedCalculation == 'TDEE') {
         if (gender == 'Male') {
-          _bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age!) + 5;
+          _bmr = (10 * weight) + (6.25 * height) - (5 * age!) + 5;
         } else {
-          _bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age!) - 161;
+          _bmr = (10 * weight) + (6.25 * height) - (5 * age!) - 161;
         }
         _tdee = _bmr! * _activityMultipliers[activityLevel]!;
       }
@@ -249,7 +246,7 @@ class _CalculateScreenState extends State<CalculateScreen> {
                 centerTitle: true,
                 automaticallyImplyLeading: false,
                 title: Text(
-                  'Body Metrics Calculation',
+                  'Body Metric Calculations',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Inter',

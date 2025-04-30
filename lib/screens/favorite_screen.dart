@@ -135,7 +135,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           centerTitle: true,
           automaticallyImplyLeading: false,
           title: Text(
-            'Favorite Recipes',
+            'Favorite Menus',
             style: TextStyle(
               fontWeight: FontWeight.w600,
               fontFamily: 'Inter',
@@ -155,7 +155,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                   ),
                   SizedBox(height: 20),
                   Text(
-                    'No favorite recipes added yet.',
+                    'No favorite menus added yet.',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

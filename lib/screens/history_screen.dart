@@ -67,7 +67,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2101),
+      lastDate: DateTime.now().add(Duration(days: 365)),
     );
     if (newSelectedDate != null && newSelectedDate != selectedDate) {
       setState(() {
@@ -138,6 +138,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         .collection('food_log')
         .where('recipe.label', isEqualTo: meal['recipe']['label'])
         .where('mealType', isEqualTo: meal['mealType'])
+        .where('loggedDate', isEqualTo: meal['loggedDate'])
         .get();
 
     for (var doc in query.docs) {
@@ -297,10 +298,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
               Positioned(
                 right: 30,
-                child: Icon(Icons.calendar_month),
+                child: IconButton(
+                  onPressed: () {
+                    _pickDate();
+                  },
+                  icon: Icon(Icons.calendar_month),
+                ),
               ),
             ],
           ),
+
           // Row(
           //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           //   children: [

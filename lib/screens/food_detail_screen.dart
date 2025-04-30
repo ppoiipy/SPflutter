@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class FoodDetailScreen extends StatefulWidget {
   final Map<String, dynamic> recipe;
@@ -97,7 +98,31 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     });
   }
 
-  //
+  // MARK: V1
+  // Future<void> _toggleLog(String mealType) async {
+  //   var user = _auth.currentUser;
+  //   if (user == null) return;
+
+  //   var logRef =
+  //       _firestore.collection('users').doc(user.uid).collection('food_log');
+
+  //   DateTime dateToLog = widget.selectedDate ?? DateTime.now();
+  //   Timestamp firestoreTimestamp = Timestamp.fromDate(dateToLog);
+  //   Timestamp loggedDate = Timestamp.fromDate(DateTime.now());
+
+  //   // Always add the log without checking for existing entries
+  //   await logRef.add({
+  //     'recipe': widget.recipe,
+  //     'mealType': mealType,
+  //     'date': firestoreTimestamp,
+  //     'loggedDate': loggedDate,
+  //   });
+
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     SnackBar(content: Text("${widget.recipe['label']} added to $mealType")),
+  //   );
+  // }
+  // MARK: V2
   Future<void> _toggleLog(String mealType) async {
     var user = _auth.currentUser;
     if (user == null) return;
@@ -105,11 +130,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     var logRef =
         _firestore.collection('users').doc(user.uid).collection('food_log');
 
-    DateTime dateToLog = widget.selectedDate ?? DateTime.now();
-    Timestamp firestoreTimestamp = Timestamp.fromDate(dateToLog);
+    Timestamp firestoreTimestamp = Timestamp.fromDate(selectedDate);
     Timestamp loggedDate = Timestamp.fromDate(DateTime.now());
 
-    // Always add the log without checking for existing entries
     await logRef.add({
       'recipe': widget.recipe,
       'mealType': mealType,
@@ -118,25 +141,170 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("${widget.recipe['label']} added to $mealType")),
+      SnackBar(
+        content: Text(
+          "${widget.recipe['label']} added to $mealType on ${DateFormat('dd MMM yyyy').format(selectedDate)}",
+        ),
+      ),
     );
   }
 
-  void _showMealTypeSelection() {
+  DateTime selectedDate = DateTime.now();
+
+  Future<void> _pickDate() async {
+    DateTime? newSelectedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (newSelectedDate != null && newSelectedDate != selectedDate) {
+      setState(() {
+        selectedDate = newSelectedDate;
+      });
+    }
+  }
+
+  void _changeDate(int dayOffset) async {
+    setState(() {
+      selectedDate = selectedDate.add(Duration(days: dayOffset));
+    });
+  }
+
+  void _showMealTypeSelection() async {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: ['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((meal) {
-            return ListTile(
-              title: Text(meal),
-              onTap: () {
-                _toggleLog(meal);
-                Navigator.pop(context);
-              },
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Header
+                  Text(
+                    "Select Date & Meal",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1F5F5B),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Date Selector Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.arrow_left,
+                            color: Color(0xFF1F5F5B), size: 28),
+                        onPressed: () {
+                          setState(() {
+                            selectedDate =
+                                selectedDate.subtract(Duration(days: 1));
+                          });
+                          setModalState(() {});
+                        },
+                      ),
+                      GestureDetector(
+                        onTap: () async {
+                          DateTime? newSelectedDate = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now().add(Duration(days: 365)),
+                          );
+                          if (newSelectedDate != null &&
+                              newSelectedDate != selectedDate) {
+                            setState(() {
+                              selectedDate = newSelectedDate;
+                            });
+                            setModalState(() {});
+                          }
+                          _pickDate();
+                        },
+                        child: Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFE8F2F1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            DateFormat('dd MMM yyyy').format(selectedDate),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1F5F5B),
+                            ),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.arrow_right,
+                            color: Color(0xFF1F5F5B), size: 28),
+                        onPressed: () {
+                          setState(() {
+                            selectedDate = selectedDate.add(Duration(days: 1));
+                          });
+                          setModalState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 24),
+
+                  // Meal Options
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.center,
+                    children: ['Breakfast', 'Lunch', 'Dinner', 'Snack'].map(
+                      (meal) {
+                        return GestureDetector(
+                          onTap: () {
+                            _toggleLog(meal);
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Color(0xFF1F5F5B),
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                )
+                              ],
+                            ),
+                            child: Text(
+                              meal,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ).toList(),
+                  ),
+                ],
+              ),
             );
-          }).toList(),
+          },
         );
       },
     );

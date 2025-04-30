@@ -24,8 +24,6 @@ import 'meal_planning_screen.dart';
 // import 'package:flutter_application_1/api/fetch_food_api.dart';
 // import 'fetch_food_data.dart';
 
-// Get DB Path
-
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
 
@@ -44,7 +42,7 @@ class _HomepageState extends State<Homepage> {
   bool isLoading = false;
   final TextEditingController searchController = TextEditingController();
 
-  Timer? _recipeStatsTimer;
+  // Timer? _recipeStatsTimer;
 
   List<dynamic> recipes = [];
   List<dynamic> filteredRecipes = [];
@@ -76,17 +74,25 @@ class _HomepageState extends State<Homepage> {
   Future<void> _loadDataAndApplyFilters() async {
     // Ensure that data is loaded first
     // await loadJsonData();
-    await _loadUserFilters();
-    // await loadRecommendations();
-    await loadRecipeData();
+    _loadUserFilters();
+    loadRecommendations();
+    loadRecipeData();
 
     // After all data is loaded, apply filters based on user data
-    await _applyFiltersFromUserData();
+    _applyFiltersFromUserData();
+
+    Timer.periodic(Duration(seconds: 5), (timer) async {
+      if (_searchQuery == null || _searchQuery.isEmpty) {
+        // applySearchFilter();
+        _applyFiltersFromUserData(); // Only apply when not searching
+        loadRecommendations();
+      }
+    });
   }
 
   @override
   void dispose() {
-    _recipeStatsTimer?.cancel();
+    // _recipeStatsTimer?.cancel();
     super.dispose();
   }
 
@@ -109,9 +115,8 @@ class _HomepageState extends State<Homepage> {
   Future<void> loadRecommendations() async {
     User? user = _auth.currentUser; // Get current user
     if (user != null) {
-      final results =
-          // await getCollaborativeRecommendations(user.uid);
-          await getRecommendedRecipes(user.uid);
+      final results = await getCollaborativeRecommendations(user.uid);
+      await getRecommendedRecipes(user.uid);
       setState(() {
         recommendedLabels = results;
         isLoading = false;
@@ -151,7 +156,7 @@ class _HomepageState extends State<Homepage> {
 
     var userDoc = await _firestore.collection('users').doc(user.uid).get();
 
-    if (userDoc.exists) {
+    if (userDoc.exists && mounted) {
       var data = userDoc.data();
       setState(() {
         selectedCategories = (data?['foodCategory'] as List<dynamic>?)
@@ -173,7 +178,7 @@ class _HomepageState extends State<Homepage> {
     await _loadFavorites();
 
     setState(() {
-      filteredRecipes = List.from(recipes);
+      // filteredRecipes = List.from(recipes);
       allRecipes = List.from(recipes);
     });
   }
@@ -437,7 +442,7 @@ class _HomepageState extends State<Homepage> {
     });
 
     print(
-        "Filtered Recipes by Categories: ${filteredRecipes.map((r) => r['label']).toList()}");
+        "Filtered Recipes by Cuisines: ${filteredRecipes.map((r) => r['label']).toList()}");
   }
 
   // MARK: Ingredient
@@ -674,8 +679,9 @@ class _HomepageState extends State<Homepage> {
     });
   }
 
-  void applyAllFilters(String query, String cuisineType) {
-    List<dynamic> filtered = allRecipes; // Start from full list
+  void applyAllFilters(
+      String query, String cuisineType, List<String> recommendedLabels) {
+    List<dynamic> filtered = allRecipes;
 
     // Category filter
     if (selectedCategories != null && selectedCategories.isNotEmpty) {
@@ -720,6 +726,21 @@ class _HomepageState extends State<Homepage> {
             label.contains(cuisineType.toLowerCase());
         return searchMatch && cuisineMatch;
       }).toList();
+    }
+
+    // Prioritize recommended labels
+    if (recommendedLabels.isNotEmpty) {
+      filtered.sort((a, b) {
+        final aLabel = a['label']?.toString() ?? '';
+        final bLabel = b['label']?.toString() ?? '';
+        final aIndex = recommendedLabels.indexOf(aLabel);
+        final bIndex = recommendedLabels.indexOf(bLabel);
+
+        if (aIndex == -1 && bIndex == -1) return 0;
+        if (aIndex == -1) return 1;
+        if (bIndex == -1) return -1;
+        return aIndex.compareTo(bIndex);
+      });
     }
 
     setState(() {
@@ -845,12 +866,37 @@ class _HomepageState extends State<Homepage> {
         return ingredientLines is List && ingredientLines.isNotEmpty;
       }).toList();
 
+      // Add recommended labels to the filtered list if available
+      if (recommendedLabels.isNotEmpty) {
+        // Combine filtered recipes with recommended recipes (avoiding duplicates)
+        currentList.addAll(allRecipes.where((recipe) {
+          final label = recipe['label']?.toString().toLowerCase() ?? '';
+          return recommendedLabels.any(
+            (recommendedLabel) =>
+                label.contains(recommendedLabel.toLowerCase()),
+          );
+        }));
+      }
+
       filteredRecipes = currentList;
 
       // Now get the recommendations based on the filtered recipes
       // _fetchRecommendations(user.uid);
     });
   }
+
+  void applySearchFilter() async {
+    setState(() {
+      if (_searchQuery.isNotEmpty) {
+        filteredRecipes = filteredRecipes.where((recipe) {
+          final label = recipe['label']?.toString().toLowerCase() ?? '';
+          return label.contains(_searchQuery);
+        }).toList();
+      }
+    });
+  }
+
+  String _searchQuery = '';
 
   // MARK: with rec system
   // Future<List<String>> _applyFiltersFromUserData(
@@ -1069,10 +1115,20 @@ class _HomepageState extends State<Homepage> {
                           prefixIcon: IconButton(
                             icon: Icon(Icons.search, color: Colors.grey[700]),
                             splashRadius: 22,
+                            // onPressed: () {
+                            //   filterRecipes(
+                            //       searchController.text, selectedCuisineType);
+                            //   applyAllFilters(searchController.text,
+                            //       selectedCuisineType, recommendedLabels);
+                            // },
                             onPressed: () {
-                              filterRecipes(
-                                  searchController.text, selectedCuisineType);
-                              // applyAllFilters(searchController.text);
+                              // setState(() {
+                              //   _searchQuery =
+                              //       searchController.text.trim().toLowerCase();
+                              // });
+                              // applyAllFilters(_searchQuery, selectedCuisineType,
+                              //     recommendedLabels);
+                              applySearchFilter();
                             },
                           ),
                           hintText: 'Search food...',
@@ -1091,53 +1147,96 @@ class _HomepageState extends State<Homepage> {
                                   selectedCategories =
                                       result['category']; // Error likely here
                                 });
-                                applyAllFilters(
-                                    searchController.text, selectedCuisineType);
+                                applyAllFilters(searchController.text,
+                                    selectedCuisineType, recommendedLabels);
+                                User? user =
+                                    _auth.currentUser; // Get current user
+                                if (user != null) {
+                                  final results =
+                                      await getCollaborativeRecommendations(
+                                          user.uid);
+                                  await getRecommendedRecipes(user.uid);
+                                  setState(() {
+                                    recommendedLabels = results;
+                                    isLoading = false;
+                                  });
+                                } else {
+                                  print('User not logged in!');
+                                }
                               }
+                              setState(() async {
+                                User? user =
+                                    _auth.currentUser; // Get current user
+                                if (user != null) {
+                                  final results =
+                                      await getCollaborativeRecommendations(
+                                          user.uid);
+                                  await getRecommendedRecipes(user.uid);
+                                  setState(() {
+                                    recommendedLabels = results;
+                                    isLoading = false;
+                                  });
+                                } else {
+                                  print('User not logged in!');
+                                }
+                              });
                             },
                             icon: Icon(Icons.tune, color: Color(0xFF1F5F5B)),
                             splashRadius: 22,
                           ),
                         ),
+                        onChanged: (value) {
+                          setState(() {
+                            // _searchQuery = value.trim().toLowerCase();
+                            applyAllFilters(_searchQuery, selectedCuisineType,
+                                recommendedLabels);
+                          });
+                          // applyAllFilters(_searchQuery, selectedCuisineType,
+                          //     recommendedLabels);
+                          // applySearchFilter();
+                        },
                         onFieldSubmitted: (query) {
-                          // filterRecipes(query, selectedCuisineType);
-                          applyAllFilters(query, selectedCuisineType);
+                          setState(() {
+                            _searchQuery = query.trim().toLowerCase();
+                          });
+                          applyAllFilters(_searchQuery, selectedCuisineType,
+                              recommendedLabels);
                         },
                       ),
                     ),
                   ),
-                  // MARK: New Icon
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Recommended Recipes',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.filter_alt, color: Colors.deepOrange),
-                        tooltip: "Filter from preferences",
-                        onPressed: () async {
-                          // Get the current user
-                          final user = FirebaseAuth.instance.currentUser;
-                          if (user != null) {
-                            // Assuming getRecommendedRecipes takes the user UID as an argument
-                            List<dynamic> allRecipes =
-                                await getRecommendedRecipes(user.uid);
-                            // Apply filters based on user preferences
-                            // MARK: apply ver 1
-                            _applyFiltersFromUserData();
-                            // MARK: apply ver 2
-                            // await _applyFiltersFromUserData(allRecipes);
-                          } else {
-                            // Handle case where the user is not logged in
-                            print("No user logged in.");
-                          }
-                        },
-                      ),
-                    ],
-                  ),
+                  // MARK: To Delete
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //   children: [
+                  //     Text(
+                  //       'Recommended Recipes',
+                  //       style: TextStyle(
+                  //           fontSize: 18, fontWeight: FontWeight.bold),
+                  //     ),
+                  //     IconButton(
+                  //       icon: Icon(Icons.filter_alt, color: Colors.deepOrange),
+                  //       tooltip: "Filter from preferences",
+                  //       onPressed: () async {
+                  //         // Get the current user
+                  //         final user = FirebaseAuth.instance.currentUser;
+                  //         if (user != null) {
+                  //           // Assuming getRecommendedRecipes takes the user UID as an argument
+                  //           List<dynamic> allRecipes =
+                  //               await getRecommendedRecipes(user.uid);
+                  //           // Apply filters based on user preferences
+                  //           // MARK: apply ver 1
+                  //           _applyFiltersFromUserData();
+                  //           // MARK: apply ver 2
+                  //           // await _applyFiltersFromUserData(allRecipes);
+                  //         } else {
+                  //           // Handle case where the user is not logged in
+                  //           print("No user logged in.");
+                  //         }
+                  //       },
+                  //     ),
+                  //   ],
+                  // ),
 
                   Padding(
                     padding: const EdgeInsets.only(left: 20, bottom: 5),
@@ -1202,6 +1301,9 @@ class _HomepageState extends State<Homepage> {
                                     });
                                     print(
                                         "Updated Calories: $_selectedCalories");
+                                    setState(() {
+                                      loadRecommendations();
+                                    });
                                   }
                                 } else if (icon == Icons.fastfood) {
                                   double? result = await showCalorieFilterSheet(
@@ -1224,7 +1326,7 @@ class _HomepageState extends State<Homepage> {
                                           startFromAllRecipes: true);
                                     });
                                     print(
-                                        "Selected Categories: $selectedCategories");
+                                        "Selected Cuisines: $selectedCategories");
                                   }
                                 } else if (icon == Icons.kitchen) {
                                   Set<String>? result =
@@ -1288,11 +1390,11 @@ class _HomepageState extends State<Homepage> {
                                       //     ? 'Edit'
                                       // : icon == Icons.category
                                       icon == Icons.category
-                                          ? 'Category'
+                                          ? 'Cuisines'
                                           : icon == Icons.kitchen
                                               ? 'Ingredients'
                                               : icon == Icons.warning
-                                                  ? 'Allergy'
+                                                  ? 'Allergies'
                                                   : 'Calories',
                                       style: TextStyle(
                                         fontSize: 13,
@@ -1765,15 +1867,21 @@ Future<Map<String, int>> fetchUserData(String userId) async {
   final Map<String, int> recipeData = {};
 
   for (var doc in clickSnapshot.docs) {
+    // print('click label: ${doc.data()}');
     recipeData[doc['label']] = (recipeData[doc['label']] ?? 0) + 1;
   }
+
   for (var doc in favoriteSnapshot.docs) {
+    // print('favorite label: ${doc.data()}');
     recipeData[doc['label']] = (recipeData[doc['label']] ?? 0) + 2;
   }
+
   for (var doc in foodLogSnapshot.docs) {
+    // print('food log label: ${doc.data()}');
     recipeData[doc['label']] = (recipeData[doc['label']] ?? 0) + 3;
   }
 
+  // print('Recipe data for $userId: $recipeData');
   return recipeData;
 }
 
@@ -1792,20 +1900,29 @@ Future<Map<String, Map<String, int>>> fetchAllUserData() async {
 }
 
 double cosineSimilarity(Map<String, int> a, Map<String, int> b) {
-  final commonKeys = a.keys.toSet().intersection(b.keys.toSet());
+  final allKeys = <String>{...a.keys, ...b.keys};
+  final aVector = allKeys.map((k) => a[k] ?? 0).toList();
+  final bVector = allKeys.map((k) => b[k] ?? 0).toList();
 
-  if (commonKeys.isEmpty) return 0.0;
+  // print("Comparing vectors:");
+  // print("A: $aVector");
+  // print("B: $bVector");
+
+  if (aVector.every((element) => element == 0) ||
+      bVector.every((element) => element == 0)) {
+    return 0.0; // No similarity if either vector is all zeros
+  }
 
   final dotProduct =
-      commonKeys.fold<double>(0.0, (sum, key) => sum + (a[key]! * b[key]!));
-  final magnitudeA =
-      sqrt(a.values.fold<double>(0.0, (sum, value) => sum + pow(value, 2)));
-  final magnitudeB =
-      sqrt(b.values.fold<double>(0.0, (sum, value) => sum + pow(value, 2)));
+      List.generate(aVector.length, (i) => aVector[i] * bVector[i])
+          .reduce((a, b) => a + b);
 
-  if (magnitudeA == 0 || magnitudeB == 0) return 0.0;
+  final aMagnitude = sqrt(aVector.map((x) => x * x).reduce((a, b) => a + b));
+  final bMagnitude = sqrt(bVector.map((x) => x * x).reduce((a, b) => a + b));
 
-  return dotProduct / (magnitudeA * magnitudeB);
+  if (aMagnitude == 0 || bMagnitude == 0) return 0.0;
+
+  return dotProduct / (aMagnitude * bMagnitude);
 }
 
 // MARK: load Recipe
@@ -1821,7 +1938,7 @@ Future<Map<String, dynamic>> loadRecipeData() async {
     recipeMap[recipe['label']] = recipe;
   }
 
-  print('Total recipes: ${hits.length}');
+  print('Total menus: ${hits.length}');
 
   return recipeMap;
 }
@@ -1892,6 +2009,17 @@ Future<List<String>> getRecommendedRecipes(String currentUserId) async {
     return [];
   }
 
+  final currentUserData = await fetchUserData(currentUserId);
+  final allUserData = await fetchAllUserData();
+
+  final Map<String, double> similarityScores = {};
+
+  allUserData.forEach((otherUserId, data) {
+    if (otherUserId != currentUserId) {
+      similarityScores[otherUserId] = cosineSimilarity(currentUserData, data);
+    }
+  });
+
   final Map<String, dynamic> clicks =
       Map<String, dynamic>.from(statsDoc['clicks'] ?? {});
   final Map<String, dynamic> favorites =
@@ -1961,6 +2089,9 @@ Future<List<String>> getCollaborativeRecommendations(
   final topUsers = similarityScores.entries.where((e) => e.value > 0).toList()
     ..sort((a, b) => b.value.compareTo(a.value));
 
+  // print("Similarity scores: $similarityScores");
+  // print("Top similar users: $topUsers");
+
   final Map<String, double> recommendedRecipes = {};
 
   for (var entry in topUsers.take(5)) {
@@ -1973,9 +2104,15 @@ Future<List<String>> getCollaborativeRecommendations(
           (recommendedRecipes[recipe] ?? 0) + count * similarity;
     });
   }
+  print("Weighted recipe scores: $recommendedRecipes");
 
   final sorted = recommendedRecipes.entries.toList()
     ..sort((a, b) => b.value.compareTo(a.value));
+  print("Sorted recommendations: $sorted");
 
-  return sorted.map((e) => e.key).toList();
+  final recommendedLabels = sorted.map((e) => e.key).toList();
+  print("Final recommended recipe labels: $recommendedLabels");
+  return recommendedLabels;
+
+  // return sorted.map((e) => e.key).toList();
 }

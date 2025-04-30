@@ -24,7 +24,7 @@ class MealPlanningScreen extends StatefulWidget {
 }
 
 class _MealPlanningScreenState extends State<MealPlanningScreen> {
-  int _selectedDuration = 1;
+  int _selectedDuration = 7;
   void _updateMealPlan(int duration) {
     setState(() {
       _selectedDuration = duration;
@@ -48,11 +48,14 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
   List<Map<String, dynamic>> allRecipes = [];
   Random _random = Random();
   bool mealsGenerated = false; // Flag to track meal generation
+  // MARK: V1
   Map<String, List<Map<String, dynamic>>> mealPlan = {
     'Breakfast': [],
     'Lunch': [],
     'Dinner': [],
   };
+  // MARK: V2
+  Map<DateTime, List<Map<String, dynamic>>> mealsByDate = {};
 
   // MARK: initState
   @override
@@ -67,6 +70,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     _controller.text = userData?['weightGoal']?.toString() ?? '';
     // _initializeMealsIfNeeded();
     _initializeMeals();
+    generateOrLoadMealPlan(selectedDate);
   }
 
   void _initializeMeals() {
@@ -78,11 +82,12 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     }
   }
 
+  // MARK: V1
   void _generateMeals() {
     double dailyCalorieGoal = calculateDailyCalorieGoal() ?? 2000;
     double breakfastCalories = dailyCalorieGoal * 0.3;
-    double lunchCalories = dailyCalorieGoal * 0.4;
-    double dinnerCalories = dailyCalorieGoal * 0.3;
+    double lunchCalories = dailyCalorieGoal * 0.35;
+    double dinnerCalories = dailyCalorieGoal * 0.35;
 
     _loadRecipesFromJson().then((recipes) {
       setState(() {
@@ -96,6 +101,8 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
       });
     });
   }
+
+  // MARK: V2
 
   // void _initializeMeals() {
   //   double dailyCalorieGoal = calculateDailyCalorieGoal() ?? 2000;
@@ -182,7 +189,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
         return [];
       }
     } catch (e) {
-      print("Error loading recipes: $e");
+      print("Error loading menus: $e");
       return [];
     }
   }
@@ -440,9 +447,9 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     // Calculate BMR using the Mifflin-St Jeor Equation
     double bmr;
     if (gender == "Male") {
-      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) + 5;
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
     } else {
-      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) - 161;
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
     }
 
     // Assign activity factor based on the activity level
@@ -535,51 +542,222 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
   //   });
   // }
 
-  void _refreshMeals() {
-    setState(() {
-      double dailyCalorieGoal = calculateDailyCalorieGoal() ?? 2000;
-      double breakfastCalories = dailyCalorieGoal * 0.3;
-      double lunchCalories = dailyCalorieGoal * 0.4;
-      double dinnerCalories = dailyCalorieGoal * 0.3;
+  // MARK: V1
+  // void _refreshMeals(DateTime selectedDate) async {
+  //   setState(() {
+  //     dailyMeals.clear(); // Clear current meals to show loading if needed
+  //   });
 
-      _loadRecipesFromJson().then((recipes) {
-        // Assign updated recipes to the dailyMeals
+  //   double dailyCalorieGoal = calculateDailyCalorieGoal() ?? 2000;
+  //   double breakfastCalories = dailyCalorieGoal * 0.3;
+  //   double lunchCalories = dailyCalorieGoal * 0.35;
+  //   double dinnerCalories = dailyCalorieGoal * 0.35;
+
+  //   final recipes = await _loadRecipesFromJson();
+  //   if (recipes.isEmpty) return;
+
+  //   // Get recommended meals for each
+  //   final breakfast =
+  //       _getRecipesForMeal(recipes, breakfastCalories, shuffle: true);
+  //   final lunch = _getRecipesForMeal(recipes, lunchCalories, shuffle: true);
+  //   final dinner = _getRecipesForMeal(recipes, dinnerCalories, shuffle: true);
+
+  //   // Save to local state
+  //   setState(() {
+  //     dailyMeals['Breakfast'] = breakfast;
+  //     dailyMeals['Lunch'] = lunch;
+  //     dailyMeals['Dinner'] = dinner;
+  //   });
+
+  //   // Save to Firestore
+  //   final userId = FirebaseAuth.instance.currentUser!.uid;
+  //   final mealPlanRef = FirebaseFirestore.instance
+  //       .collection('users')
+  //       .doc(userId)
+  //       .collection('meal_plan')
+  //       .doc(DateFormat('yyyy-MM-dd')
+  //           .format(selectedDate)); // format: "2025-04-26"
+
+  //   await mealPlanRef.set({
+  //     'date': Timestamp.fromDate(selectedDate),
+  //     'Breakfast': breakfast,
+  //     'Lunch': lunch,
+  //     'Dinner': dinner,
+  //   });
+  // }
+  // MARK: V2
+  void _refreshMeals(DateTime selectedDate) async {
+    setState(() {
+      dailyMeals.clear(); // Clear the current meal plan to force a refresh
+    });
+
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final mealPlanRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('meal_plan')
+        .doc(DateFormat('yyyy-MM-dd')
+            .format(selectedDate)); // Use formatted date
+
+    // Generate the new meal plan
+    double dailyCalorieGoal = calculateDailyCalorieGoal() ?? 2000;
+    double breakfastCalories = dailyCalorieGoal * 0.3;
+    double lunchCalories = dailyCalorieGoal * 0.35;
+    double dinnerCalories = dailyCalorieGoal * 0.35;
+
+    final recipes = await _loadRecipesFromJson();
+    if (recipes.isEmpty) return;
+
+    // Get recommended meals for each
+    final breakfast =
+        _getRecipesForMeal(recipes, breakfastCalories, shuffle: true);
+    final lunch = _getRecipesForMeal(recipes, lunchCalories, shuffle: true);
+    final dinner = _getRecipesForMeal(recipes, dinnerCalories, shuffle: true);
+
+    // Save the newly generated meal plan to Firestore
+    await mealPlanRef.set({
+      'date': Timestamp.fromDate(selectedDate),
+      'Breakfast': breakfast,
+      'Lunch': lunch,
+      'Dinner': dinner,
+    });
+
+    // Update the UI with the newly generated meal plan
+    setState(() {
+      dailyMeals['Breakfast'] = breakfast;
+      dailyMeals['Lunch'] = lunch;
+      dailyMeals['Dinner'] = dinner;
+    });
+  }
+
+  Future<void> generateOrLoadMealPlan(DateTime date) async {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final mealPlanRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('meal_plan')
+        .doc(DateFormat('yyyy-MM-dd').format(date));
+
+    final mealPlanSnapshot = await mealPlanRef.get();
+
+    if (mealPlanSnapshot.exists) {
+      // If meal plan exists, load it
+      final data = mealPlanSnapshot.data();
+      setState(() {
         dailyMeals['Breakfast'] =
-            _getRecipesForMeal(recipes, breakfastCalories, shuffle: true);
+            List<Map<String, dynamic>>.from(data?['Breakfast'] ?? []);
         dailyMeals['Lunch'] =
-            _getRecipesForMeal(recipes, lunchCalories, shuffle: true);
+            List<Map<String, dynamic>>.from(data?['Lunch'] ?? []);
         dailyMeals['Dinner'] =
-            _getRecipesForMeal(recipes, dinnerCalories, shuffle: true);
+            List<Map<String, dynamic>>.from(data?['Dinner'] ?? []);
       });
+    } else {
+      // If no meal plan exists, generate a new one
+      await _generateAndSaveMealPlan(date);
+    }
+  }
+
+  Future<void> _generateAndSaveMealPlan(DateTime date) async {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final mealPlanRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('meal_plan')
+        .doc(DateFormat('yyyy-MM-dd').format(date));
+
+    final double dailyCalorieGoal = calculateDailyCalorieGoal() ?? 2000;
+    final double breakfastCalories = dailyCalorieGoal * 0.3;
+    final double lunchCalories = dailyCalorieGoal * 0.35;
+    final double dinnerCalories = dailyCalorieGoal * 0.35;
+
+    final recipes = await _loadRecipesFromJson();
+    if (recipes.isEmpty) return;
+
+    final breakfast =
+        _getRecipesForMeal(recipes, breakfastCalories, shuffle: true);
+    final lunch = _getRecipesForMeal(recipes, lunchCalories, shuffle: true);
+    final dinner = _getRecipesForMeal(recipes, dinnerCalories, shuffle: true);
+
+    await mealPlanRef.set({
+      'date': Timestamp.fromDate(date),
+      'Breakfast': breakfast,
+      'Lunch': lunch,
+      'Dinner': dinner,
+    });
+
+    setState(() {
+      dailyMeals['Breakfast'] = breakfast;
+      dailyMeals['Lunch'] = lunch;
+      dailyMeals['Dinner'] = dinner;
     });
   }
 
   // MARK: UI - Build Meal
-  List<Map<String, dynamic>> _getRecipesForMeal(
-      List<Map<String, dynamic>> recipes, double targetCalories,
-      {bool shuffle = false}) {
-    final used = <Map<String, dynamic>>[];
-    final remaining = List<Map<String, dynamic>>.from(recipes);
+  // MARK: V1
+  // List<Map<String, dynamic>> _getRecipesForMeal(
+  //     List<Map<String, dynamic>> recipes, double targetCalories,
+  //     {bool shuffle = false}) {
+  //   final used = <Map<String, dynamic>>[];
+  //   final remaining = List<Map<String, dynamic>>.from(recipes);
 
+  //   if (shuffle) {
+  //     remaining.shuffle(); // Only shuffle when needed
+  //   }
+
+  //   double totalCalories = 0;
+  //   List<Map<String, dynamic>> selectedRecipes = [];
+
+  //   for (final recipe in remaining) {
+  //     final kcal =
+  //         recipe['totalNutrients']?['ENERC_KCAL']?['quantity']?.toDouble();
+  //     if (kcal == null || used.contains(recipe)) continue;
+
+  //     if (totalCalories + kcal <= targetCalories + 50) {
+  //       selectedRecipes.add(recipe);
+  //       used.add(recipe);
+  //       totalCalories += kcal;
+  //     }
+
+  //     if (totalCalories >= targetCalories - 50) break;
+  //   }
+
+  //   return selectedRecipes;
+  // }
+  // MARK: V2
+  List<Map<String, dynamic>> _getRecipesForMeal(
+      List<Map<String, dynamic>> recipes, double calorieGoal,
+      {bool shuffle = false}) {
+    List<Map<String, dynamic>> selectedRecipes = [];
+    double totalCalories = 0;
+
+    List<Map<String, dynamic>> availableRecipes = List.from(recipes);
     if (shuffle) {
-      remaining.shuffle(); // Only shuffle when needed
+      availableRecipes.shuffle();
     }
 
-    double totalCalories = 0;
-    List<Map<String, dynamic>> selectedRecipes = [];
-
-    for (final recipe in remaining) {
-      final kcal =
-          recipe['totalNutrients']?['ENERC_KCAL']?['quantity']?.toDouble();
-      if (kcal == null || used.contains(recipe)) continue;
-
-      if (totalCalories + kcal <= targetCalories + 50) {
-        selectedRecipes.add(recipe);
-        used.add(recipe);
-        totalCalories += kcal;
+    for (final recipe in availableRecipes) {
+      final totalNutrients = recipe['totalNutrients'];
+      if (totalNutrients == null || totalNutrients['ENERC_KCAL'] == null) {
+        continue; // Skip recipes without calorie info
       }
 
-      if (totalCalories >= targetCalories - 50) break;
+      final recipeCalories =
+          (totalNutrients['ENERC_KCAL']['quantity'] as num).toDouble();
+
+      if (recipeCalories > 1200) {
+        continue; // Skip super high-calorie recipes
+      }
+
+      // Check if adding this recipe would exceed the calorieGoal
+      if (totalCalories + recipeCalories <= calorieGoal) {
+        selectedRecipes.add(recipe);
+        totalCalories += recipeCalories;
+      }
+
+      // If close enough (e.g., 95% of goal), stop early to avoid infinite loop
+      if (totalCalories >= calorieGoal * 0.95) {
+        break;
+      }
     }
 
     return selectedRecipes;
@@ -616,6 +794,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
   //   return selectedRecipes;
   // }
 
+  // MARK: V1
   Widget _buildMealPlans() {
     return Expanded(
       child: Column(
@@ -636,6 +815,8 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     );
   }
 
+  // MARK: V2
+
   Widget _buildMealCategory(String category, DateTime date) {
     double dailyCalorieGoal = calculateDailyCalorieGoal() ?? 2000;
     double calorieGoal;
@@ -645,10 +826,10 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
         calorieGoal = dailyCalorieGoal * 0.3;
         break;
       case 'Lunch':
-        calorieGoal = dailyCalorieGoal * 0.4;
+        calorieGoal = dailyCalorieGoal * 0.35;
         break;
       case 'Dinner':
-        calorieGoal = dailyCalorieGoal * 0.3;
+        calorieGoal = dailyCalorieGoal * 0.35;
         break;
       default:
         calorieGoal = dailyCalorieGoal / 3;
@@ -681,6 +862,17 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
         }
 
         final recipes = snapshot.data ?? [];
+
+        final filteredRecipes = recipes.where((recipe) {
+          final totalNutrients = recipe['totalNutrients'];
+          if (totalNutrients == null || totalNutrients['ENERC_KCAL'] == null) {
+            return false; // If missing calories data, skip this recipe
+          }
+          double calories =
+              (totalNutrients['ENERC_KCAL']['quantity'] as num).toDouble();
+          return calories <= 1200; // ✅ Only keep recipes with ≤ 1200 calories
+        }).toList();
+
         List<Map<String, dynamic>> selectedRecipes = dailyMeals[category] ?? [];
 
         int totalCalories = selectedRecipes.fold(0, (sum, recipe) {
@@ -775,22 +967,67 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
                               ),
                               trailing: PopupMenuButton<String>(
                                 icon: Icon(Icons.more_vert, color: Colors.teal),
-                                onSelected: (String value) {
-                                  if (value == 'delete') {
-                                    _removeMeal(selectedRecipe);
-                                  } else if (value == 'change') {
-                                    _changeMeal(selectedRecipe);
+                                onSelected: (String value) async {
+                                  final userId =
+                                      FirebaseAuth.instance.currentUser?.uid;
+                                  if (value == 'delete' && userId != null) {
+                                    setState(() {
+                                      selectedRecipes.remove(selectedRecipe);
+                                    });
+
+                                    final mealPlanDoc = await FirebaseFirestore
+                                        .instance
+                                        .collection('users')
+                                        .doc(userId)
+                                        .collection('meal_plan')
+                                        .doc(DateFormat('yyyy-MM-dd')
+                                            .format(selectedDate))
+                                        .get();
+
+                                    if (mealPlanDoc.exists) {
+                                      final mealData = mealPlanDoc.data();
+                                      final updatedMeals =
+                                          List<Map<String, dynamic>>.from(
+                                        mealData?[selectedRecipe['mealType']] ??
+                                            [],
+                                      );
+
+                                      updatedMeals.removeWhere((meal) =>
+                                          meal['label'] ==
+                                          selectedRecipe['label']);
+
+                                      await FirebaseFirestore.instance
+                                          .collection('users')
+                                          .doc(userId)
+                                          .collection('meal_plan')
+                                          .doc(DateFormat('yyyy-MM-dd')
+                                              .format(selectedDate))
+                                          .update({
+                                        selectedRecipe['mealType']:
+                                            updatedMeals,
+                                      });
+                                    }
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              "${selectedRecipe['label']} has been deleted.")),
+                                    );
+                                  } else if (value == 'favorite') {
+                                    _changeMeal(
+                                        selectedRecipe); // You can remove this if not needed.
                                   }
                                 },
                                 itemBuilder: (BuildContext context) {
                                   return [
                                     PopupMenuItem<String>(
-                                      value: 'change',
+                                      value: 'addLog',
                                       child: Row(
                                         children: [
-                                          Icon(Icons.edit, color: Colors.teal),
+                                          Icon(Icons.add_circle_outline,
+                                              color: Colors.green),
                                           SizedBox(width: 8),
-                                          Text('Change Menu'),
+                                          Text('Add Log Menu'),
                                         ],
                                       ),
                                     ),
@@ -800,7 +1037,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
                                         children: [
                                           Icon(Icons.delete, color: Colors.red),
                                           SizedBox(width: 8),
-                                          Text('Delete Meal'),
+                                          Text('Delete Menu'),
                                         ],
                                       ),
                                     ),
@@ -810,7 +1047,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
                               onTap: () {
                                 logRecipeClick(
                                   selectedRecipe['label'],
-                                  selectedRecipe['shareAs'],
+                                  selectedRecipe['source'],
                                 );
                                 Navigator.push(
                                   context,
@@ -844,6 +1081,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
 
   List<Map<String, dynamic>> _loggedMeals = [];
 
+  // MARK: V1
   Future<void> _loadFoodLog() async {
     var user = _auth.currentUser;
     if (user == null) return;
@@ -871,105 +1109,129 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
       print("Loaded meals: $_loggedMeals");
     });
   }
-
-  // MARK: Date
-  Future<void> _pickDate() async {
-    DateTime? newSelectedDate = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2101),
-    );
-    if (newSelectedDate != null && newSelectedDate != selectedDate) {
-      setState(() {
-        selectedDate = newSelectedDate;
-      });
-      _loadFoodLog();
-    }
-  }
-
-  void _changeDate(int dayOffset) {
-    setState(() {
-      selectedDate = selectedDate.add(Duration(days: dayOffset));
-    });
-    _loadFoodLog();
-  }
+  // MARK: V2
+  // void _loadFoodLog() async {
+  //   // Fetch or generate meals for the selected date if they aren't already loaded
+  //   if (!mealsByDate.containsKey(selectedDate)) {
+  //     // Logic to load meals for the selected date
+  //     var meals = await _fetchMealsForDate(
+  //         selectedDate); // Replace with your meal fetching logic
+  //     setState(() {
+  //       mealsByDate[selectedDate] = meals;
+  //     });
+  //   }
+  // }
 
   // MARK: Date Selector
+  // MARK: V1
   Widget _buildDateSelector() {
     List<DateTime> programDays = List.generate(
       _selectedDuration,
       (index) => DateTime.now().add(Duration(days: index)),
     );
 
-    List<DateTime> last7Days =
-        List.generate(7, (index) => DateTime.now().add(Duration(days: index)));
-
     return Container(
       height: 100,
       alignment: Alignment.center,
       child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        shrinkWrap: true,
-        itemCount: programDays.length, // ← use the correct list length here
-        itemBuilder: (context, index) {
-          DateTime date = programDays[index];
-          bool isSelected = selectedDate.day == date.day &&
-              selectedDate.month == date.month &&
-              selectedDate.year == date.year;
+          scrollDirection: Axis.horizontal,
+          shrinkWrap: true,
+          itemCount: programDays.length,
+          itemBuilder: (context, index) {
+            DateTime date = programDays[index];
+            bool isSelected = selectedDate.day == date.day &&
+                selectedDate.month == date.month &&
+                selectedDate.year == date.year;
 
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6.0),
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  selectedDate = date;
-                });
-                _loadFoodLog();
-              },
-              child: Column(
-                children: [
-                  Text(
-                    DateFormat.E().format(date),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.teal : Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.teal : Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.teal),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      date.day.toString(),
+            bool isFirstOfMonth = date.day == 1;
+            bool isLastOfMonth = (index + 1 < programDays.length) &&
+                date.month != programDays[index + 1].month;
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6.0),
+              child: GestureDetector(
+                onTap: () async {
+                  setState(() {
+                    selectedDate = date;
+                  });
+
+                  await generateOrLoadMealPlan(selectedDate);
+
+                  final allMeals = [
+                    ...?dailyMeals['Breakfast'],
+                    ...?dailyMeals['Lunch'],
+                    ...?dailyMeals['Dinner'],
+                  ];
+
+                  double totalCalories = 0;
+                  for (var meal in allMeals) {
+                    if (meal.containsKey('calories')) {
+                      totalCalories += (meal['calories'] as num).toDouble();
+                    }
+                  }
+
+                  final dailyGoal = calculateDailyCalorieGoal() ?? 2000;
+                  final lowerThreshold = dailyGoal * 0.8;
+
+                  if (totalCalories > dailyGoal ||
+                      totalCalories < lowerThreshold) {
+                    await _generateAndSaveMealPlan(selectedDate);
+                  }
+                },
+                child: Column(
+                  children: [
+                    Text(
+                      DateFormat.E().format(date),
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.white : Colors.black,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected ? Colors.teal : Colors.black87,
                       ),
                     ),
-                  ),
-                ],
+                    SizedBox(height: 4),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.teal : Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.teal),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        date.day.toString(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    if (isFirstOfMonth || isLastOfMonth)
+                      Text(
+                        DateFormat.MMM().format(date),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.teal,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
-      ),
+            );
+          }),
     );
   }
+
+  // MARK: V2
 
   Future<void> _changeMeal(Map<String, dynamic> meal) async {
     // Implement the logic to allow the user to change the meal.
@@ -993,6 +1255,37 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
     }
 
     _loadFoodLog();
+  }
+
+  // MARK: add meal to history
+  Future<void> addMealsToHistory(
+    List<Map<String, dynamic>>
+        meals, // List of meals (for breakfast, lunch, etc.)
+    DateTime date, // The selected date
+    String mealType, // The meal type (e.g., Breakfast, Lunch, etc.)
+  ) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final logRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('food_log');
+    final firestoreTimestamp = Timestamp.fromDate(date);
+    final loggedDate = Timestamp.fromDate(DateTime.now());
+
+    // Loop through the list of meals and add them as separate logs
+    for (var meal in meals) {
+      await logRef.add({
+        'recipe': meal, // Meal details (e.g., name, ingredients, etc.)
+        'mealType': mealType, // Meal type (Breakfast, Lunch, etc.)
+        'date': firestoreTimestamp, // Timestamp for the selected date
+        'loggedDate': loggedDate, // Timestamp for the current time of logging
+      });
+
+      // Optional: Show a snack bar for each added meal
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("${meal['label']} added to $mealType")),
+      );
+    }
   }
 
   // MARK: Widget Build
@@ -1036,20 +1329,43 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 SizedBox(width: 12),
+                // MARK: V1
+                // DropdownButton<int>(
+                //   value: _selectedDuration,
+                //   underline: SizedBox(),
+                //   style: TextStyle(fontSize: 16, color: Colors.black),
+                //   items: [1, 7, 15, 30].map((int value) {
+                //     return DropdownMenuItem<int>(
+                //       value: value,
+                //       child: Text('$value days'),
+                //     );
+                //   }).toList(),
+                //   onChanged: (int? newValue) {
+                //     if (newValue != null) {
+                //       setState(() {
+                //         _selectedDuration = newValue;
+                //       });
+                //     }
+                //   },
+                // ),
+                // MARK: V2
                 DropdownButton<int>(
                   value: _selectedDuration,
-                  underline: SizedBox(),
-                  style: TextStyle(fontSize: 16, color: Colors.black),
-                  items: [1, 7, 15, 30].map((int value) {
-                    return DropdownMenuItem<int>(
-                      value: value,
-                      child: Text('$value days'),
-                    );
-                  }).toList(),
-                  onChanged: (int? newValue) {
-                    if (newValue != null) {
+                  items: [
+                    DropdownMenuItem(child: Text("1 Week"), value: 7),
+                    DropdownMenuItem(child: Text("15 Days"), value: 15),
+                    DropdownMenuItem(child: Text("1 Month"), value: 30),
+                    DropdownMenuItem(child: Text("2 Month"), value: 60),
+                    DropdownMenuItem(child: Text("3 Month"), value: 90),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
                       setState(() {
-                        _selectedDuration = newValue;
+                        // Validate the selected value to ensure it's one of the allowed values
+                        if ([7, 15, 30, 60, 90].contains(value)) {
+                          _selectedDuration = value!;
+                          _generateMeals(); // Regenerate meals for the new duration
+                        }
                       });
                     }
                   },
@@ -1098,7 +1414,12 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
                 SizedBox(
                   height: 48,
                   child: ElevatedButton.icon(
-                    onPressed: _isSaving ? null : _saveWeightGoal,
+                    onPressed: _isSaving
+                        ? null
+                        : () async {
+                            _saveWeightGoal();
+                            // _refreshMeals(selectedDate);
+                          },
                     icon: _isSaving
                         ? SizedBox(
                             height: 16,
@@ -1145,13 +1466,53 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
                 IconButton(
                   icon:
                       Icon(Icons.add_circle, size: 28, color: Colors.teal[800]),
-                  onPressed: () {
-                    // Add action here if needed
+                  onPressed: () async {
+                    final userId = FirebaseAuth.instance.currentUser?.uid;
+                    final dateKey =
+                        DateFormat('yyyy-MM-dd').format(selectedDate);
+
+                    if (userId == null) return;
+
+                    final mealPlanDoc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(userId)
+                        .collection('meal_plan')
+                        .doc(dateKey)
+                        .get();
+
+                    if (mealPlanDoc.exists) {
+                      final mealData = mealPlanDoc.data();
+
+                      for (final mealType in ['Breakfast', 'Lunch', 'Dinner']) {
+                        final meals = List<Map<String, dynamic>>.from(
+                            mealData?[mealType] ?? []);
+
+                        // Loop through each meal and add them individually to the history
+                        for (final meal in meals) {
+                          await addMealsToHistory([meal], selectedDate,
+                              mealType); // Add each meal separately
+                        }
+                      }
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(
+                                "Meals added to food log for ${DateFormat('d MMM').format(selectedDate)}")),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(
+                                "No meals found in meal plan for this date.")),
+                      );
+                    }
                   },
                 ),
                 IconButton(
                   icon: Icon(Icons.refresh, size: 28, color: Colors.teal[800]),
-                  onPressed: _refreshMeals,
+                  onPressed: () {
+                    _refreshMeals(selectedDate);
+                  },
                 ),
               ],
             ),

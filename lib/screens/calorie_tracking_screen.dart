@@ -85,6 +85,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
     });
 
     fetchUserData(); // Fetch the data for the newly selected date
+    checkLoggedMealTypes();
   }
 
   void _pickDate() async {
@@ -92,7 +93,7 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: DateTime.now().add(Duration(days: 365)),
     );
 
     if (pickedDate != null && pickedDate != selectedDate) {
@@ -101,7 +102,8 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
         _generateLast7Days();
       });
 
-      fetchUserData(); // Fetch the data for the newly selected date
+      fetchUserData();
+      checkLoggedMealTypes();
     }
   }
 
@@ -315,9 +317,9 @@ class _CalorieTrackingScreenScreenState extends State<CalorieTrackingScreen> {
     // Calculate BMR using the Mifflin-St Jeor Equation
     double bmr;
     if (gender == "Male") {
-      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) + 5;
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
     } else {
-      bmr = (9.99 * weight) + (6.25 * height) - (4.92 * age) - 161;
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
     }
 
     // Assign activity factor based on the activity level

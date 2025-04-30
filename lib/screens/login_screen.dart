@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'dart:developer';
 
-// import 'package:flutter_application_1/SQLite/sqlite.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:ginraidee/screens/wrapper.dart';
