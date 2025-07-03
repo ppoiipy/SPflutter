@@ -1,16 +1,45 @@
-# flutter_application_1
+# GinRaiDee 🍽️
+<p align="center">
+  
+</p>
 
-A new Flutter project.
+**GinRaiDee** is a Flutter mobile application that recommends food based on user preferences and health data. It uses Firebase for backend services and supports personalized recommendations through content-based and collaborative filtering algorithms.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🔧 System Requirements
 
-A few resources to get you started if this is your first Flutter project:
+- Flutter 3.x
+- Dart SDK
+- Android Studio / VSCode or any...
+- Android Device or Emulator
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 📌 How to Use
+
+1. Launch the app
+2. Register and set your profile info/preferences
+3. Browse recommended meals
+4. Click meal to view details / mark as favorites / log ...
+5. Track your food intake and view progress charts
+
+---
+
+## 🚀 Installation
+
+1. Clone this repository (Open Command Prompt):
+```bash
+git clone https://github.com/ppoiipy/SPflutter.git
+cd SPflutter
+```
+
+2. Get dependencies:
+```bash
+flutter pub get
+```
+
+3. Run the app:
+```bash
+flutter run
+```
